@@ -34,6 +34,7 @@ function validate(){
 // ===== 카드 =====
 const SIL={B:'<path d="M50 30a11 11 0 1 1 0 .1zM36 26h28l-3 6H39z"/><path d="M34 52c4-8 28-8 32 0l6 48H28z"/><path d="M64 46l26-34 4 3-26 35z"/>',
   P:'<path d="M48 32a11 11 0 1 1 0 .1zM34 28h28l-3 6H37z"/><path d="M32 54c4-8 28-8 32 0l4 46H28z"/><path d="M62 52l18-20 8-14 5 3-8 15-19 22z"/>'};
+const handTxt=c=>c.ph||c.bh?`${c.ph==='L'?'좌투':c.ph==='R'?'우투':''}${c.bh==='L'?'좌타':c.bh==='S'?'양타':c.bh==='R'?'우타':''}`:'';
 const photo=c=>(S&&S.photos&&S.photos[c.id])||(c.img&&c.img.f)||null;
 function effRaw(c){const r={...c.r},sk=S&&S.owned[c.id]?skillOf(c.id,S.blocks):{};for(const k in sk)r[k]=Math.min(120,r[k]+sk[k]);return {r,sk}}
 function cardHTML(c,o={}){
@@ -63,7 +64,7 @@ function vModal(){if(!modal)return '';const c=byId[modal],owned=S.owned[c.id],gp
     <h2>${esc(c.name)} <small>${c.year} ${esc(c.team)}</small></h2><p class="mini">${esc(statLine(c))}</p>
     <p class="cred">${S.photos&&S.photos[c.id]?'사진: 직접 올린 이미지 (이 브라우저에만 저장)':c.img?`사진: ${esc(c.img.a)} · ${esc(c.img.l)} · <a href="${esc(c.img.u)}" target="_blank" rel="noopener">위키미디어 공용</a>`:'사진 없음'}
     <label class="up">내 이미지로 바꾸기 <input type="file" accept="image/*" data-up="${esc(c.id)}"></label>${S.photos&&S.photos[c.id]?` <button data-a="rmphoto">원래대로</button>`:''}</p>
-    ${c.type==='B'?`<p class="chips">${Object.entries(c.ps||{}).map(([p,v])=>`<span>${PK[p]} <b>${GRADE(v)}</b></span>`).join('')||'<span>지명타자</span>'}</p>`:
+    ${handTxt(c)?`<p class="chips"><span>${handTxt(c)}</span></p>`:''}${c.type==='B'?`<p class="chips">${Object.entries(c.ps||{}).map(([p,v])=>`<span>${PK[p]} <b>${GRADE(v)}</b></span>`).join('')||'<span>지명타자</span>'}</p>`:
       `<p class="chips"><span>최고구속 <b>${kmh(c)}km/h</b></span>${Object.entries(c.pt||{}).map(([k,g])=>`<span>${esc(k)} <b>${g}</b></span>`).join('')}</p>`}
     <h3>스킬 블록 <small>16칸 모두 열림</small></h3>
     ${owned?'':'<p class="warn">보유한 카드만 블록을 끼울 수 있어요.</p>'}

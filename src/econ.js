@@ -32,12 +32,12 @@ const TITLES={avg:'타율',hr:'홈런',rbi:'타점',sb:'도루',w:'다승',era:'
 // titles: 내 선수가 딴 부문 키 배열, mvp: 리그 MVP(내 선수면 true). mode 'league'|'year'
 function titleBonus(mode,tier,titles,mvp){const m=mode==='league'?tierMul(tier):1;return {pt:Math.round(((titles||[]).filter(k=>TITLES[k]).length*TITLE_PT+(mvp?MVP_PT:0))*m)}}
 // 시즌 시상(OOTP식 종료 보상): 리그 골든글러브(포지션별 1명, 투수·포수·1B·2B·3B·SS·외야3·DH = 10명) 1명당 200P, 올스타(포지션별 상위 2명 = 24명 안팎) 1명당 80P
-const AWARD_PT={gg:200,as:80};
+const AWARD_PT={gg:200,df:150,as:80}; // df=수비상(야수 포지션별 1명, 외야 3, 최대 8명)
 // a = {titles:[...], mvp:bool, gg:내 선수 GG 수, as:내 선수 올스타 수}. 반환 {pt, lines:[[항목,P]]}
 // repeat=true(이미 우승한 연도 리그를 다시 돌 때)면 시상 보상 절반
 function seasonAwards(mode,tier,a,repeat){a=a||{};const m=(mode==='league'?tierMul(tier):1)*(repeat?.5:1),L=[];
   for(const k of a.titles||[])if(TITLES[k])L.push([TITLES[k]+' 1위',TITLE_PT]);if(a.mvp)L.push(['MVP',MVP_PT]);
-  if(a.gg)L.push([`골든글러브 ${a.gg}명`,a.gg*AWARD_PT.gg]);if(a.as)L.push([`올스타 ${a.as}명`,a.as*AWARD_PT.as]);
+  if(a.gg)L.push([`골든글러브 ${a.gg}명`,a.gg*AWARD_PT.gg]);if(a.df)L.push([`수비상 ${a.df}명`,a.df*AWARD_PT.df]);if(a.as)L.push([`올스타 ${a.as}명`,a.as*AWARD_PT.as]);
   const lines=L.map(([n,p])=>[n,Math.round(p*m)]);return {pt:lines.reduce((s,x)=>s+x[1],0),lines}}
 const yearGame=res=>({pt:{w:25,d:12,l:8}[res]|0}); // 연도 리그 경기당(정규·포스트시즌 공통). 144경기·하루 약 60경기 기준 하루 약 1,100P → 상한 1,500P 안
 function yearLeague(rank,firstWin){if(rank===1)return firstWin?{pt:3000,tix:{gg:1}}:{pt:500};return {pt:[0,0,800,500][rank]||200}}
@@ -157,6 +157,8 @@ const STUDY_BY=Object.fromEntries(STUDY.map(x=>[x[0],x])),RUSH=500;
 const studyFee=(d,cost)=>{const x=STUDY_BY[d]||STUDY[0];return Math.round(500*Math.pow(x[1],.6)*x[2]*(1+(cost||0)/5)/10)*10};
 function studyRoll(d){const x=STUDY_BY[d]||STUDY[0],N=['대성공','성공','보통','실패'];let u=rnd()*100;
   for(let i=0;i<4;i++)if((u-=x[3][i])<0)return {name:N[i],gain:i<3?x[4][i]:0};return {name:'실패',gain:0}}
+// 유학 가능 여부(경제 쪽 검사): 특수 카드(올스타·골글·EX)는 불가. 나이 조건 등은 UI/엔진에서 추가 검사
+const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 유학 갈 수 없어요'}:{ok:true};
 const rushFee=msLeft=>Math.max(0,Math.ceil(msLeft/36e5))*RUSH;
 function pay(S,p){if((S.pt||0)<p)return {err:'포인트가 모자라요'};S.pt-=p;return {pt:p}}
 // 쿠폰: Firestore coupons/{코드} 문서를 읽어 data로 넘김. 같은 코드는 한 번만(S.coupons에 기록). exp(만료 시각, ms 또는 Timestamp) 지나면 거절
@@ -175,6 +177,6 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
   S.dexDone=S.dexDone||{};return S}
 
 const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,yearGame,yearLeague,W,PACKS,PITY,FLOOR,blockGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
-  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,redeem,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,rushFee,pay,setRnd:f=>{rnd=f}};
+  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,redeem,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);

@@ -21,5 +21,9 @@ for(const y of years){const Y=base.filter(c=>c.y===y),ex=new Set();
   for(const c of Y)if(MVP.has(nm(c)+y))ex.add(c);const mv=new Set([...ex].map(nm));
   for(const k of ['P','B']){const c=Y.filter(c=>c.k===k&&!mv.has(nm(c))).sort((a,b)=>b.o-a.o)[0];if(c)ex.add(c)}
   for(const c of ex)add.push({...c,v:'EX',r:c.r.map(v=>Math.min(120,v+5)),o:c.o+4,c:Math.min(10,c.c+1)})}
+// 철인(IR): 야수는 그해 전 경기 출장(그 연도 타자 최다 경기 수 이상), 투수는 그해 등판 수 상위 3명. 능력치·코스트는 기본 카드와 같고 스킬 블록 효과 ×1.5(엔진)
+for(const y of years){const Y=base.filter(c=>c.y===y),mg=Math.max(...Y.filter(c=>c.k==='B').map(c=>c.s[4]));
+  for(const c of Y.filter(c=>c.k==='B'&&c.s[4]>=mg))add.push({...c,v:'IR'});
+  for(const c of Y.filter(c=>c.k==='P').sort((a,b)=>b.s[7]-a.s[7]||b.o-a.o).slice(0,3))add.push({...c,v:'IR'})}
 D.cards.push(...add);fs.writeFileSync(cp+'.tmp',JSON.stringify(D));fs.renameSync(cp+'.tmp',cp);
-console.log('AS',add.filter(c=>c.v==='AS').length,'GG',add.filter(c=>c.v==='GG').length,'EX',add.filter(c=>c.v==='EX').length,'못 찾음',miss.length,miss.join(', '));
+console.log('IR',add.filter(c=>c.v==='IR').length,'AS',add.filter(c=>c.v==='AS').length,'GG',add.filter(c=>c.v==='GG').length,'EX',add.filter(c=>c.v==='EX').length,'못 찾음',miss.length,miss.join(', '));
