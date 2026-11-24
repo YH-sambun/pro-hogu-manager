@@ -183,11 +183,35 @@ SUPS.forEach(x=>{if(!x[2])x[2]=SUPS.find(y=>y[0]===x[0].slice(0,-1))[2]});
 const SUP_BY=Object.fromEntries(SUPS.map(x=>[x[0],x]));
 const SUP_MAX=2;
 // 합성: kind p(선수 3장)·b(블록 3개)·s(같은 서포트 3장)·t(같은 등급 작전 카드 3장). 결과만 돌려주고 재료 차감은 호출하는 쪽에서
+// 선수 합성 조합 규칙: 재료 3장이 공통점을 가지면 결과가 그 범위에서 나오거나 확률이 오른다. 여러 규칙이 겹치면 모두 적용
+// up = [+1, +2, +3] 확률(기본 70/25/5)
+function synthRules(cs){const all=f=>cs.length===3&&cs.every(f),same=k=>all(c=>c[k]!=null&&c[k]===cs[0][k]),L=[];let up=[.70,.25,.05],gg=false;
+  if(same('pk'))L.push({n:'같은 선수 3장 → 그 선수의 다른 시즌 중 최고 카드',player:1});
+  else{
+    if(same('year')&&same('team'))L.push({n:`같은 팀(${cs[0].year} ${cs[0].team}) → 그 팀 선수`,f:c=>c.year===cs[0].year&&c.team===cs[0].team});
+    else{if(same('line'))L.push({n:`같은 구단 계보(${cs[0].line}) → 그 계보 선수`,f:c=>c.line===cs[0].line});
+      if(same('year'))L.push({n:`같은 연도(${cs[0].year}) → 그해 선수`,f:c=>c.year===cs[0].year});
+      else{const dec=c=>Math.floor(c.year/10)*10;if(all(c=>dec(c)===dec(cs[0])))L.push({n:`같은 연대(${dec(cs[0])}년대) → 그 연대 선수`,f:c=>dec(c)===dec(cs[0])})}}
+    if(same('hs'))L.push({n:`같은 고교(${cs[0].hs}) → 그 고교 출신`,f:c=>c.hs===cs[0].hs});
+    if(same('pos'))L.push({n:`같은 포지션(${PK[cs[0].pos]||cs[0].pos}) → 같은 포지션`,f:c=>c.pos===cs[0].pos});
+    else if(same('type'))L.push({n:cs[0].type==='B'?'타자 3장 → 타자':'투수 3장 → 투수',f:c=>c.type===cs[0].type})}
+  if(same('cost')){up=[.55,.35,.10];L.push({n:'같은 코스트 3장 → +2 이상 확률 45%'})}
+  if(all(c=>c.v==='GG'||c.v==='EX'||c.v==='AS')){gg=true;L.push({n:'특별 카드 3장 → 골든글러브판 25%'})}
+  const player=L.some(x=>x.player)?c=>c.pk===cs[0].pk&&!cs.some(m=>m.year===c.year):null;return {list:L,up,gg,player}}
 function synth(kind,mats,locks){
   if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):String(m).split('#')[0];if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 합성 재료로 쓸 수 없어요'}}
   if(kind!=='b'&&mats.length!==3)return {err:'재료 3개가 필요해요'};
-  if(kind==='p'){const cs=mats.map(id=>byId[String(id).split('#')[0]]);if(cs.some(c=>!c))return {err:'없는 카드'};const a=Math.round(cs.reduce((s,c)=>s+c.cost,0)/3),u=rnd(),t=Math.min(10,a+(u<.05?3:u<.3?2:1));
-    const L=CARDS.filter(c=>c.cost===t);return {kind,out:pick(L).id,cost:t}}
+  if(kind==='p'){const cs=mats.map(id=>byId[String(id).split('#')[0]]);if(cs.some(c=>!c))return {err:'없는 카드'};
+    const R=synthRules(cs),a=Math.round(cs.reduce((s,c)=>s+c.cost,0)/3),u=rnd(),up=R.up;
+    const t=Math.min(10,a+(u<up[2]?3:u<up[2]+up[1]?2:1));
+    // 규칙의 조건(f)을 모두 만족하는 카드 중 목표 코스트. 없으면 조건을 뒤에서부터 하나씩 풀고, 그래도 없으면 가장 가까운 코스트
+    let fs=R.list.filter(x=>x.f).map(x=>x.f),out=null;const base=c=>c.v!=='EX'&&c.v!=='AS';
+    if(R.player){const P=CARDS.filter(c=>base(c)&&R.player(c)).sort((x,y)=>y.cost-x.cost);if(P.length){out=P[0];fs=[]}}
+    if(!out)for(;;){const P=CARDS.filter(c=>base(c)&&fs.every(f=>f(c)));if(P.length){const T=P.filter(c=>c.cost===t);if(T.length){out=pick(T);break}
+        const hi=P.filter(c=>c.cost>a&&c.cost<=t).sort((x,y)=>Math.abs(x.cost-t)-Math.abs(y.cost-t));if(hi.length){out=pick(hi.filter(c=>c.cost===hi[0].cost));break}}
+      if(!fs.length){out=pick(CARDS.filter(c=>base(c)&&c.cost===t));break}fs=fs.slice(0,-1)}
+    if(R.gg&&rnd()<.25){const g=CARDS.find(c=>c.v==='GG'&&c.pk===out.pk&&c.year===out.year);if(g)out=g}
+    return {kind,out:out.id,cost:out.cost,rules:R.list.filter(x=>R.player?x.player&&out.pk===cs[0].pk:(!x.f||fs.includes(x.f))).map(x=>x.n)}}
   if(kind==='b'){if(mats.length!==2)return {err:'블록 2개가 필요해요'};const t=mats[0].t;if(mats.some(b=>b.t!==t))return {err:'같은 종류(타자용/투수용) 블록만 합성할 수 있어요'};
     const order='CBAS',a=order.indexOf(mats[0].g),b=order.indexOf(mats[1].g);const g=a===b?(rnd()<.6?order[Math.min(3,a+1)]:order[a]):order[Math.max(a,b)];return {kind,out:mkBlock(t,g)}}
   if(kind==='s'){if(mats.some(x=>x!==mats[0]))return {err:'같은 서포트 카드 3장이 필요해요'};if(mats[0].endsWith('+'))return {err:'강화판은 더 합성할 수 없어요'};return {kind,out:mats[0]+'+'}}

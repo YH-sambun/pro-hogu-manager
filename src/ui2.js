@@ -155,7 +155,7 @@ function doSynth(){const k=S.sk||'p',pool=synPool(k),m=pool.filter(x=>S.mat.incl
   const mats=k==='p'?m.map(x=>x.c.id):k==='b'?m.map(x=>x.b):m.map(x=>x.x[0]);const r=synth(k,mats,S.locks.filter(x=>!x.includes('#')));if(r.err){S.msg=r.err;return}
   if(k==='p'){const ids=new Set(m.map(x=>x.c.id)),back=S.blocks.filter(b=>ids.has(b.on)).length;S.blocks=S.blocks.filter(b=>!ids.has(b.on));
     for(const x of m){const id=x.c.id.split('#')[0];S.owned[id]=(S.owned[id]|0)-1;if(S.owned[id]<=0){delete S.owned[id];S.blocks=S.blocks.filter(b=>b.on!==id)}}
-    S.locks=S.locks.filter(x=>!ids.has(x));const got=r.out;ECON.gain(S,[got]);const c=byId[got];out=card(c,{})+`<small>코스트 ${r.cost} 선수 획득${back?` · 끼워 둔 스킬 블록 ${back}개도 사라짐`:''}</small>`}
+    S.locks=S.locks.filter(x=>!ids.has(x));const got=r.out;ECON.gain(S,[got]);const c=byId[got];out=card(c,{})+`<small>코스트 ${r.cost} 선수 획득${r.rules&&r.rules.length?' · '+esc(r.rules.join(' · ')):''}${back?` · 끼워 둔 스킬 블록 ${back}개도 사라짐`:''}</small>`}
   else if(k==='b'){const us=new Set(m.map(x=>x.b.u));S.blocks=S.blocks.filter(b=>!us.has(b.u));S.blocks.push(r.out);out=`<b>${r.out.g}등급 · ${esc(bname(r.out))}</b><small>${Object.entries(r.out.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')}</small>`}
   else if(k==='s'){const id=m[0].x[0];S.sq[id]-=3;S.sq[r.out]=(S.sq[r.out]||0)+1;const x=SUP_BY[r.out];out=`<b>${esc(x[1])}</b><small>${esc(x[3])} · ${x[4]}경기</small>`}
   else{for(const x of m)S.tq[x.x[0]]--;S.tq[r.out]=(S.tq[r.out]||0)+1;if(S.tsel&&!(S.tq[S.tsel]>0))S.tsel=null;const x=TC_BY[r.out];out=tcard(x,{})+`<small>${r.grade} 작전 카드</small>`}
@@ -361,7 +361,7 @@ function synCheck(k,m){if(m.length<NEED(k))return `재료를 ${NEED(k)}개 골�
  if(k==='b'&&new Set(m.map(x=>x.b.t)).size>1)return '타자용과 투수용 블록은 섞을 수 없어요.';
  if(k==='s'&&new Set(m.map(x=>x.x[0])).size>1)return '같은 서포트 카드 3장이 필요해요.';
  if(k==='t'&&new Set(m.map(x=>x.x[3])).size>1)return '같은 등급 작전 카드 3장이 필요해요.';return ''}
-function synPreview(k,m){if(k==='p'){const a=m.reduce((s,x)=>s+x.c.cost,0)/m.length;return `코스트 ${Math.min(10,Math.round(a)+1)}~${Math.min(10,Math.round(a)+3)} 선수`}
+function synPreview(k,m){if(k==='p'){const a=m.reduce((s,x)=>s+x.c.cost,0)/m.length,R=synthRules(m.map(x=>byId[x.c.id.split('#')[0]]));return `코스트 ${Math.min(10,Math.round(a)+1)}~${Math.min(10,Math.round(a)+3)} 선수`+(R.list.length?' · '+R.list.map(x=>x.n).join(' · '):'')}
  if(k==='b'){const g=['C','B','A','S'][Math.max(...m.map(x=>'CBAS'.indexOf(x.b.g)))];return m[0].b.g===m[1].b.g?`${GUP[g]}등급 60% · ${g}등급 40%`:`${g}등급 블록`}
  if(k==='s')return `${m[0].x[1]}+ (효과 1.5배, 3경기)`;return `${TUP[m[0].x[3]]} 작전 카드`}
 
@@ -466,6 +466,9 @@ function lineChart(L,links){const W=360,H=170,px=i=>24+i*(W-40)/8,lo=Math.min(50
  <polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round"/>
  ${L.map((x,i)=>{const c=by[S.lu[i][1]];return `<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="${x.ok?4.5:6}" fill="${!x.ok?'var(--bad)':x.adj?'#5aa9ff':'var(--gold)'}" stroke="#1b1d1c" stroke-width="1.5"><title>${i+1}번 ${c?esc(c.name):''} ${x.v}${x.ok?'':' (적성 밖 -10%)'}${x.adj?' (인접 +'+x.adj+')':''}</title></circle><text x="${pts[i][0]}" y="${pts[i][1]-9}" class="ltv">${x.v}</text>
  <text x="${pts[i][0]}" y="${H-16}" class="ltx">${i+1}</text><text x="${pts[i][0]}" y="${H-4}" class="ltn">${c?esc(c.name):''}</text>`}).join('')}</svg>`}
+function luList(pool,ids,dupC,B){const keys=B?BK:PKEY;
+ return `<div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th>${keys.map(k=>`<th>${SKN[k]}</th>`).join('')}<th>장수</th><th>상태</th></tr></thead><tbody>
+ ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td><td>${c.cost}</td>${keys.map(k=>`<td>${c.r[k]}</td>`).join('')}<td>${dupC[c.id]?'×'+(dupC[c.id]+1):'1'}</td><td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div>`}
 function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','라인업'],['mgr','감독'],['tcard','작전 카드'],['sup','서포트 카드']].map(([k,n])=>`<button role="tab" aria-selected="${S.sub===k}" class="${S.sub===k?'on':''}" data-sub="${k}">${n}</button>`).join('')}</div>`;
  if(S.sub==='sup')return `<section class="band">${sub}<h2 style="margin-top:16px">서포트 카드</h2>${vSup()}</section>`;
  if(S.sub==='tcard')return `<section class="band">${sub}<h2 style="margin-top:16px">작전 카드</h2>${vTcard()}</section>`;
@@ -475,7 +478,8 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  const ord={ovr:(a,b)=>b.ovr-a.ovr,cost:(a,b)=>b.cost-a.cost,year:(a,b)=>a.year-b.year};
  const pf=F[S.pf]?S.pf:'all',base=OWN.filter(F[pf]),teams=[...new Set(base.map(c=>c.team))].sort(),years=[...new Set(base.map(c=>c.year))].sort((a,b)=>b-a);
  if(S.fteam!=='all'&&!teams.includes(S.fteam))S.fteam='all';if(S.fyear!=='all'&&!years.includes(+S.fyear))S.fyear='all';
- const pool=base.filter(c=>(S.fteam==='all'||c.team===S.fteam)&&(S.fyear==='all'||c.year===+S.fyear)).sort(ord[S.sort]);
+ const dupC={};for(const c of OWN)if(c.dup){const b=c.id.split('#')[0];dupC[b]=(dupC[b]||0)+1}
+ const pool=base.filter(c=>!c.dup).filter(c=>(S.fteam==='all'||c.team===S.fteam)&&(S.fyear==='all'||c.year===+S.fyear)).sort(ord[S.sort]);
  const FN=B?[['all','전체 야수'],['C','포수'],['IF','내야수'],['OF','외야·지명']]:[['all','전체 투수'],['SP','선발'],['RP','불펜']];
  const SIDE=B?[['line','타선 분석'],['field','수비 위치']]:[['bat','배터리 분석']],side=SIDE.some(x=>x[0]===S.side)?S.side:SIDE[0][0];
  return `<section class="band">${sub}<div class="tools" style="margin-top:16px"><div class="tabs tb" role="tablist">${[['B','야수'],['P','투수']].map(([k,n])=>`<button role="tab" aria-selected="${S.tb===k}" class="${S.tb===k?'on':''}" data-tb="${k}">${n}</button>`).join('')}</div>${nextOpp()}<button class="ghost" data-rec="${S.recm||'power'}" style="margin-left:auto">추천 라인업</button>${S.undo?'<button class="ghost" data-a="recundo">되돌리기</button>':''}</div>${recPanel()}${deckBar()}
@@ -486,8 +490,8 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  <div class="tabs" role="tablist">${FN.map(([k,n])=>`<button role="tab" aria-selected="${pf===k}" class="${pf===k?'on':''}" data-pf="${k}">${n}</button>`).join('')}</div>
  <select id="sort" aria-label="정렬"><option value="ovr">능력 순</option><option value="cost" ${S.sort==='cost'?'selected':''}>코스트 순</option><option value="year" ${S.sort==='year'?'selected':''}>연도 순</option></select>
  <select id="fteam" aria-label="구단 필터"><option value="all">전체 구단</option>${teams.map(t=>`<option value="${esc(t)}" ${S.fteam===t?'selected':''}>${esc(t)}</option>`).join('')}</select>
- <select id="fyear" aria-label="연도 필터"><option value="all">전체 연도</option>${years.map(y=>`<option value="${y}" ${String(S.fyear)===String(y)?'selected':''}>${y}</option>`).join('')}</select><span class="pill">${pool.length}장</span></div>
- <div class="pool">${pool.map(c=>card(c,{pick:1,dim:ids.has(c.id),inUse:ids.has(c.id)})).join('')}</div></div>
+ <select id="fyear" aria-label="연도 필터"><option value="all">전체 연도</option>${years.map(y=>`<option value="${y}" ${String(S.fyear)===String(y)?'selected':''}>${y}</option>`).join('')}</select><span class="pill">${pool.length}종</span><div class="tabs" role="tablist" aria-label="보기 방식" style="margin-left:auto">${[['card','카드'],['list','일람']].map(([k,n])=>`<button role="tab" aria-selected="${(S.luView||'card')===k}" class="${(S.luView||'card')===k?'on':''}" data-a="luview" data-v="${k}">${n}</button>`).join('')}</div></div>
+ ${S.luView==='list'?luList(pool,ids,dupC,B):`<div class="pool">${pool.map(c=>`<div class="pw">${card(c,{pick:1,dim:ids.has(c.id),inUse:ids.has(c.id)})}${dupC[c.id]?`<span class="dupn" title="같은 카드 ${dupC[c.id]+1}장">×${dupC[c.id]+1}</span>`:''}</div>`).join('')}</div>`}</div>
  <div class="box"><div class="tabs" role="tablist">${SIDE.map(([k,n])=>`<button role="tab" aria-selected="${side===k}" class="${side===k?'on':''}" data-side="${k}">${n}</button>`).join('')}</div>
  <div style="margin-top:12px">${side==='bat'?batteryPanel():side==='line'?lineupChart():field()}</div></div></section>`}
 const KIND=k=>k==='lu'||k==='bench'?'B':'P';
@@ -720,13 +724,14 @@ function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}r
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','coupon']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','coupon']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
   else if(a==='end'){simAll(G);render()}else if(a==='fin'){if(G.friendly)oFinish();else endGame()}
   else if(a==='tk'){const k=b.dataset.k;tactic(G,k,k==='ph'?$('#phs').value:null);pa(G);render()}
   else if(a==='more'){flt.lim+=240;render()}
+  else if(a==='luview'){S.luView=b.dataset.v;render()}
   else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=0;render()}
   else if(a==='dexmore'){{const st=(S.dexK||'all')==='all'?60:24;S.dexLim=(S.dexLim||st)+st};render()}
   else if(a==='coupon')redeemCoupon();
