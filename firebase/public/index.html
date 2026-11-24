@@ -1069,7 +1069,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['sel','modal','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['sel','modal','dexView','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -1167,9 +1167,9 @@ function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN
   <div class="dexl">${L.slice(0,lim).map(({s,p})=>{const done=!!S.dexDone[s.id],ids=(s.ids||[]).filter(id=>!F.h||(F.h==='have')===!!dexHas(id));if(s.ids&&!ids.length)return '';
    return `<div class="dexs${done?' done':''}"><div class="dexh"><b>${esc(s.name)}</b><span class="pill">${p.have}/${p.need}</span><span class="dexrw">${esc(rwText(s.rw))}</span>${done?'<span class="pill dexok">완성 · 지급됨</span>':''}</div>
    <span class="abbar"><i style="width:${p.have/p.need*100}%"></i></span>
-   ${s.ids?`<div class="dexg">${ids.map(id=>{const c=dexCard(id),h=dexHas(id);if(!c)return '';return `<div class="dexc${h?'':' no'}" ${h&&S.owned[id]?`data-pick="${esc(id)}" role="button" tabindex="0"`:''} title="${esc(c.name)} ${c.year}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`}).join('')}</div>`:''}</div>`}).join('')||'<p class="note">조건에 맞는 세트가 없어요.</p>'}</div>
+   ${s.ids?`<div class="dexg">${ids.map(id=>{const c=dexCard(id),h=dexHas(id);if(!c)return '';return `<div class="dexc${h?'':' no'}" ${S.owned[id]?`data-pick="${esc(id)}"`:`data-dexv="${esc(id)}"`} role="button" tabindex="0" title="${esc(c.name)} ${c.year}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`}).join('')}</div>`:''}</div>`}).join('')||'<p class="note">조건에 맞는 세트가 없어요.</p>'}</div>
   ${L.length>lim?`<div class="tools" style="justify-content:center;margin-top:12px"><button class="ghost" data-a="dexmore">더 보기 (${L.length-lim})</button></div>`:''}</section>`}
-const dexCell=c=>{const h=dexHas(c.id);return `<div class="dexc${h?'':' no'}" ${h&&S.owned[c.id]?`data-pick="${esc(c.id)}" role="button" tabindex="0"`:''} title="${esc(c.name)} ${c.year} ${esc(c.team)}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`};
+const dexCell=c=>{const h=dexHas(c.id);return `<div class="dexc${h?'':' no'}" ${S.owned[c.id]?`data-pick="${esc(c.id)}"`:`data-dexv="${esc(c.id)}"`} role="button" tabindex="0" title="${esc(c.name)} ${c.year} ${esc(c.team)}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`};
 let DEXYS=null;
 function dexAll(KN,tix,sel,q){const F=S.dexF,lim=S.dexLim||60;DEXYS=DEXYS||[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);
   const TS=[...new Set(CARDS.filter(c=>!F.y||c.year===+F.y).map(c=>c.team))].sort(),VK=[['n','일반 카드'],...Object.entries(VN)];
@@ -1626,20 +1626,27 @@ function cmpView(a,b){const head=`<div class="mhead"><b>선수 비교</b><button
  return `<div class="modal" data-close="1"><div class="mbox cmpbox" role="dialog" aria-modal="true" aria-label="선수 비교">${head}
  <div class="cmpg"><div>${card(a,{stats:0})}</div><table class="cmpt"><thead><tr><th>${esc(a.name)} ${String(a.year).slice(2)}'</th><th></th><th>${esc(b.name)} ${String(b.year).slice(2)}'</th></tr></thead><tbody>${rows.join('')}${extra}</tbody></table><div>${card(b,{stats:0})}</div></div>
  <p class="note help" style="text-align:center">능력치는 스킬 블록 포함 값. 코스트·ERA는 낮을수록 좋음.</p></div></div>`}
-function modal(){const c=by[S.modal];if(!c)return '';if(S.cmpA&&S.cmpA!==c.id)return cmpView(by[S.cmpA],c);
+function dexViewModal(){const c=byId[S.dexView];if(!c)return '';const h=dexHas(c.id);
+ return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
+ <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b><span class="pill">${h?'모은 적 있음 · 지금은 없음':'아직 없는 카드'}</span><button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
+ <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',PFULL[c.pos]||'',c.v?VN[c.v]:''].filter(Boolean).join(' · ')}</p>
+ <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
+ <p class="note" style="text-align:center">카드팩·합성으로 얻을 수 있어요.${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
+function modal(){if(S.dexView)return dexViewModal();const c=by[S.modal];if(!c)return '';if(S.cmpA&&S.cmpA!==c.id)return cmpView(by[S.cmpA],c);
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button><button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.un?`대학 <b>${esc(c.un)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',!c.rg&&!c.hs?'출신 정보 없음':'',`${esc(lname(c.line))} 계보`,c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null?(abAge(c)?'유학 가능':'유학 불가'):''].filter(Boolean).join(' · ')}</p>${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  <p class="note" style="text-align:center"><a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
-vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
+vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
  if(abAct(D)||shopAct(D)){render();return}
  if(D.dexk){S.dexK=D.dexk;S.dexLim=0;render();return}
+ if(D.dexv){S.dexView=D.dexv;S.mflip=false;render();return}
  if(D.dexgot){S.dexGot=S.dexGot||{};S.dexGot[D.dexgot]=Date.now();render();return}
  if(D.cmp){S.cmpA=D.cmp;S.modal=null;S.mslot=null;render();return}
  if(D.cmpx){S.cmpA=null;S.modal=null;render();return}
  if(D.cmpre){S.modal=null;render();return}
- if(D.close){if(e.target===t||t.tagName==='BUTTON'){S.modal=null;S.mslot=null}else return}
+ if(D.close){if(e.target===t||t.tagName==='BUTTON'){S.modal=null;S.mslot=null;S.dexView=null}else return}
  else if(D.mflip)S.mflip=!S.mflip;
  else if(D.detail){S.cardId=D.detail;S.back=false;S.modal=null;location.hash='card';render();return}
  else if(D.bigflip)S.back=!S.back;
@@ -1677,7 +1684,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[d
   if(a==='synth')doSynth();if(a==='synclr'){S.mat=[];S.synRes=null}if(a==='synauto'){const m=synAuto(S.sk||'p');S.synRes=null;if(m)S.mat=m;else{S.mat=[];S.msg='넣을 수 있는 재료가 부족해요.'}}
   if(a==='tdraw'){if(ECON.pay(S,100).err)S.msg='포인트가 모자라요';else{const u=Math.random(),g=u<.05?'황금':u<.25?'특수':'일반',x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;S.tdraw=x[0]}}}
  render()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.modal){S.modal=null;render()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(S.modal||S.dexView)){S.modal=null;S.dexView=null;render()}});
 // 드래그해서 넣기 (데스크톱). 누르고 칸 누르기도 그대로 됨
 // 라인업 드래그 앤 드롭 (컴퓨터): 보유 카드 → 자리에 놓으면 넣기, 자리 → 자리에 놓으면 맞바꾸기. 폰은 누르기 방식 그대로
 let DRAG=null;
@@ -1702,7 +1709,7 @@ vw.addEventListener('dragover',e=>{const c=e.target.closest&&e.target.closest('[
  vw.querySelectorAll('[data-cell].fhint').forEach(x=>x.classList.remove('fhint'));f.forEach(i=>{const x=vw.querySelector(`[data-cell="${i}"]`);if(x)x.classList.add('fhint')})});
 
 vw.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('[data-cell]');if(!c)return;e.preventDefault();vw.dataset.foot='';tapBlk(+c.dataset.cell,location.hash==='#skill'?S.skc:S.cardId);render()});
-vw.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset.pick){e.preventDefault();e.target.click()}});
+vw.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&(e.target.dataset.pick||e.target.dataset.dexv)){e.preventDefault();e.target.click()}});
 vw.addEventListener('change',e=>{const t=e.target;S.msg='';if(t.id==='sort')S.sort=t.value;if(t.id==='fteam')S.fteam=t.value;if(t.id==='fyear')S.fyear=t.value;if(t.dataset.sf){S.sf={...(S.sf||SF0),[t.dataset.sf]:t.value};S.mat=[]}if(t.id==='cpick'){S.cardId=t.value;S.back=false}if(t.dataset.pos)setPos(+t.dataset.pos,t.value);if(t.id==='t-live')S.tacLive=t.checked;render()});
 
 const abd=id=>ABD.find(d=>d[0]===id),abOpen=d=>!d[2]||(ABU[d[2]]?ABU[d[2]][0]():false);
@@ -2069,7 +2076,7 @@ function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}r
   if(FBMODE()&&!ON.user&&!S.guest){document.body.dataset.bg='field';hdr.innerHTML='';vw.innerHTML=loginView();return}
   const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=head(k);let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면을 그리지 못했어요</h2><p class="note">${esc(e.message)}</p></section>`}
   vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+cmpBar()+modal();S.toast='';
-  const sv=$('#sv');if(sv)sv.value=btoa(unescape(encodeURIComponent(JSON.stringify(S,function(kk,v){return this===S&&TRANS.has(kk)?undefined:v}))));if(S.modal)scrollTo(0,y);saveSoon()}
+  const sv=$('#sv');if(sv)sv.value=btoa(unescape(encodeURIComponent(JSON.stringify(S,function(kk,v){return this===S&&TRANS.has(kk)?undefined:v}))));if(S.modal||S.dexView)scrollTo(0,y);saveSoon()}
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
