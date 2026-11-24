@@ -592,7 +592,7 @@ function loadCards(json){
   for(const c of CARDS)if(!c.v)(TEAMYEARS[c.year+' '+c.team]=TEAMYEARS[c.year+' '+c.team]||[]).push(c.id)}
 // 시뮬레이션용 능력치로 변환
 // 구종별 땅볼 성향(등급 S~D 배율). 싱커·포크·스플리터·체인지업은 땅볼, 하이 패스트볼(직구)은 뜬공
-const PT_GB={'싱커':.07,'포크':.045,'스플리터':.045,'체인지업':.03,'커브':.02,'커터':.015,'슬라이더':0,'직구':-.02},PT_G={S:1.5,A:1.25,B:1,C:.7,D:.4};
+const PT_GB={'싱커':.11,'포크':.07,'스플리터':.07,'체인지업':.045,'커브':.03,'커터':.02,'슬라이더':-.01,'직구':-.045},PT_G={S:1.5,A:1.25,B:1,C:.7,D:.4};
 const gbOf=(c,r)=>cl(.45+Object.entries(c.pt||{}).reduce((s,[k,g])=>s+(PT_GB[k]||0)*(PT_G[g]||.7),0)-(r.vel-70)*.0015,.3,.64);
 function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45,hv:r.stu,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men}}
 // 타순 적성: T 테이블세터(1·2번), C 클린업(3~6번), L 하위 타선(7~9번, 누구나 가능). 적성 밖 타순이면 교타·장타·선구 -10%
@@ -616,8 +616,6 @@ const adjBonus=(L,i)=>{const n=L.length;if(n<2)return 0;return adjPair(L[i],L[(i
 const ABD=[['d1','국내 2군 캠프',null,2,1,['con','eye','ctl','men'],'처음부터 열림'],['d2','호주 윈터리그','ai3',4,1,['con','pow','eye','spd','def','vel','stu','brk','ctl','sta'],'AI 시즌 3위 안'],
  ['d3','일본 캠프','aiW',8,2,['con','eye','bun','ctl','brk'],'AI 시즌 우승'],['d4','도미니카 윈터리그','aiW2',12,2,['spd','def','pow','vel','sta'],'AI 시즌 2회 우승 또는 승률 6할'],['d5','미국 캠프','fr',24,3,['pow','con','vel','stu'],'친구 리그 우승']];
 const AB_BY=Object.fromEntries(ABD.map(d=>[d[0],d])),AB_CAP=12,ABG=[['대성공',.15,6],['성공',.6,4],['보통',1,2]];
-// 코스트별 유학 효율(2026-11-24, SJ): 저코스트일수록 상승 폭·상한이 크고 고코스트는 미미. 등급별 기본 상승치 × AB_MUL[코스트](반올림, 최소 1), 상한 = 20 × min(배율,1.5)(최소 2)
-const AB_MUL=[0,1.6,1.45,1.3,1.15,1,.8,.6,.45,.3,.2],abMul=c=>AB_MUL[Math.min(10,Math.max(1,c|0))],abGain=(g,c)=>g>0?Math.max(1,Math.round(g*abMul(c))):0,abCap=c=>Math.max(2,Math.round(20*Math.min(1.5,abMul(c))));
 const ageOf=c=>c&&c.b?c.year-c.b:null,abAge=c=>{if(c&&(c.v==='IR'||c.v==='RY'))return false;const a=ageOf(c);return a!=null&&(a<=25||a>=35)};
 // used: 이 카드의 지금까지 유학 상승 합계. 반환 {g:등급, st:{능력:+n}}
 function abRoll(d,c,used){d=AB_BY[d]||d;const u=rnd(),g=ABG.find(x=>u<x[1]),keys=Object.keys(c.r).filter(k=>d[5].includes(k));let pts=Math.max(0,Math.min(g[2]+(d[4]-1),AB_CAP-(used||0)));const st={};
@@ -926,7 +924,7 @@ function pa(g,manual){
   const plat=!b.bh||!pc.ph?0:b.bh==='S'?.5:b.bh===pc.ph?-1:1; // 같은 손 -1, 반대 손 +1, 스위치 +0.5
   const bBB=cl(LG.bb+(br.eye-70)*.0032,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0016,.002,.1),
     bBA=cl(LG.babip+(br.con-70)*.0028,.2,.42),bGB=cl(LG.gb-(br.pow-70)*.004+(br.spd-70)*.001,.28,.62);
-  const qBB=cl(LG.bb-(ctl-70)*.0065,.012,.25),qK=cl(LG.k+(kv-70)*.011,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005,.008,.05),qBA=cl(LG.babip-(hv-70)*.0012,.24,.36);
+  const qBB=cl(LG.bb-(ctl-70)*.0045,.015,.22),qK=cl(LG.k+(kv-70)*.011,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005,.008,.05),qBA=cl(LG.babip-(hv-70)*.0012,.24,.36);
   const pBB=cl(log5(bBB,qBB,LG.bb)-.003*sw+.002*po,.015,.25),pK=cl(log5(bK,qK,LG.k)*(1-.05*plat)+.006*sw+(g.hnr?.015:0)+(ofx.kp||0),.03,.45),
     pG=log5(bGB,pgb,LG.gb),pHR=cl(log5(bHR,qHR,LG.hr)*(1-pG)/(1-LG.gb)*(1+.07*plat)*(1+.12*sw)+(ofx.hrp||0),.001,.11),
     pBA=log5(bBA,qBA,LG.babip)+.01*plat-.04*X(def)+(g.inf?.03:0)-.003*sw-.004*sh-(risp?(dfx.risp||0):0);
@@ -985,7 +983,7 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
 
 </script>
 <script>
@@ -2196,22 +2194,23 @@ function mAct(a,b){
 // ── 능력치 가이드: 각 능력치가 경기 엔진(core2 pa)에서 어디에 쓰이는지. 엔진 식을 바꾸면 여기도 고칠 것 ──
 function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map((x,i)=>i?`<td>${x}</td>`:`<th scope="row" style="text-align:left;white-space:nowrap;padding-right:8px">${x}</th>`).join('')}</tr>`).join('')}</tbody></table>`,
   sec=(t,b)=>`<section class="band"><h3>${t}</h3>${b}</section>`,up='<b style="color:var(--good,#2e8b57)">▲</b>',dn='<b style="color:var(--bad,#c0392b)">▼</b>';
- return `<section class="band"><h2>능력치 가이드</h2><p class="note">모든 능력치는 <b>70이 리그 보통</b>이에요. 100이면 보통보다 한 단계(+1) 위, 40이면 한 단계 아래로 계산해요. 표의 숫자는 능력치가 70→100으로 오를 때 바뀌는 양이에요.</p></section>
- ${sec('타석 결과는 이렇게 정해져요',`<p class="note">볼넷 → 삼진 → 홈런 → 인플레이 타구 순서로 판정해요. 앞에서 결정되지 않은 타석만 다음 단계로 넘어가요.</p>`+T(['결과','기본','타자','투수·수비'],[
-  ['볼넷','8%',`선구 ${up}3.5%p`,`제구 ${dn}3%p`],
-  ['삼진','18%',`교타 ${dn}6%p · 선구 ${dn}2%p`,`구위 ${up}8%p`],
-  ['홈런','2.6%',`장타 ${up}3.2%p`,`구위 ${dn}1.2%p`],
-  ['인플레이 안타','29%',`교타 ${up}6%p · 주력 ${up}1.5%p`,`구위 ${dn}3%p · 팀 수비 ${dn}4%p`],
-  ['2루타 (안타 중)','18%',`장타 ${up}7%p`,'—'],
-  ['3루타 (안타 중)','2%',`주력 ${up}3%p`,'—'],
-  ['땅볼 / 뜬공','48% / 52%','—','—']]))}
+ return `<section class="band"><h2>능력치 가이드</h2><p class="note">모든 능력치는 <b>70이 리그 보통</b>이에요. 100이면 보통보다 한 단계(+1) 위, 40이면 한 단계 아래로 계산해요. 능력치 70은 그 선수가 뛴 시즌의 리그 평균과 같아요.</p></section>
+ ${sec('타석 결과는 이렇게 정해져요',`<p class="note">타자와 투수가 각자 가진 비율(예: 이 타자의 삼진율, 이 투수의 삼진율)을 <b>log5</b>라는 야구 통계 공식으로 합쳐요. 그래서 삼진 많은 투수와 삼진 많은 타자가 만나면 삼진이 더 많이 나오고, 선수 특징이 경기 기록에 그대로 드러나요. 판정 순서는 볼넷 → 삼진 → 홈런 → 땅볼/뜬공 → 안타 여부예요.</p>`+T(['결과','타자 쪽 (능력치 +10)','투수 쪽 (능력치 +10)'],[
+  ['볼넷',`선구 ${up}3.2%p`,`제구 ${dn}4.5%p`],
+  ['삼진',`교타 ${dn}4.2%p · 선구 ${dn}1.5%p · 장타 ${up}1.8%p`,`구속·변화구 ${up}11%p (구속×0.55 + 변화구×0.45)`],
+  ['홈런',`장타 ${up}1.6%p`,`구위 ${dn}0.5%p · 땅볼 성향이면 더 적게`],
+  ['땅볼 비율',`장타 ${dn}4%p · 주력 ${up}1%p`,`구종(싱커·포크·스플리터·체인지업 ${up}, 직구·슬라이더 ${dn}) · 구속 ${dn}1.5%p`],
+  ['인플레이 안타',`교타 ${up}2.8%p`,`구위 ${dn}1.2%p · 팀 수비`],
+  ['땅볼 타구','안타 3.5%p 덜 됨, 주력 +10마다 내야안타 1.5%p. 장타는 거의 없고 병살 위험','—'],
+  ['뜬공·라인드라이브','안타 3%p 더 됨. 2루타 30% + 장타 +10마다 6%p, 3루타는 주력',`구위 ${dn}2루타`]]))}
+ ${sec('좌우 상성',`<p class="note">타자와 투수가 <b>같은 손</b>이면 타자가 불리해요(삼진 +4%, 안타 −0.8%p, 홈런 −7%). 반대 손이면 그만큼 유리하고, 스위치히터는 언제나 절반만큼 유리해요.</p>`)}
  ${sec('타자 능력치',T(['능력치','쓰이는 곳'],[
-  ['교타','안타 확률, 삼진 줄이기'],['장타','홈런, 2루타'],['선구','볼넷, 삼진 조금 줄이기'],
+  ['교타','인플레이 안타, 삼진 줄이기'],['장타','홈런, 2루타, 뜬공 비율(삼진은 조금 늘어요)'],['선구','볼넷, 삼진 조금 줄이기'],
   ['주력','내야안타, 3루타, 도루 시도·성공, 한 베이스 더 가기, 병살 피하기, 외야 보살 피하기'],
   ['수비','포지션 수비값 → 팀 수비(안타 억제), 실책·보살 확률. 포수는 도루 저지'],
   ['멘탈','7회 이후 2점 차 이내나 득점권에서 교타 +(멘탈−70)×0.2'],['번트','희생번트 성공률']]))}
- ${sec('투수 능력치',`<p class="note">구속·구위·변화구는 합쳐서 하나의 <b>구위</b>로 써요. 구속×0.3 + 구위×0.35 + 변화구×0.35</p>`+T(['능력치','쓰이는 곳'],[
-  ['구위(합산)','삼진, 홈런·안타 억제'],['제구','볼넷 억제'],
+ ${sec('투수 능력치',T(['능력치','쓰이는 곳'],[
+  ['구속','삼진(가장 큼), 뜬공 성향'],['변화구','삼진'],['구위','홈런·안타·2루타 억제'],['구종','땅볼/뜬공 성향. 등급(S~D)이 높을수록 성향이 강해요'],['제구','볼넷 억제'],
   ['체력','투구 한계. 선발 16 + 체력×0.16타자, 불펜 3 + 체력÷20타자. 한계의 70%를 넘기면 구위 최대 −14, 제구 최대 −10'],
   ['멘탈','접전·득점권에서 제구 +(멘탈−70)×0.2']]))}
  ${sec('수비',`<p class="note">포지션마다 수비값이 따로 있어요(대개 80~100, 90이 보통). 포수·유격수·중견수는 1.3배 가중해서 팀 수비를 내요. 팀 수비 +10이면 경기당 실점이 약 0.3점 줄어요.</p>`+T(['항목','계산'],[

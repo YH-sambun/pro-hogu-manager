@@ -83,7 +83,7 @@ const REGION_OF=(c)=>{const t=c.team;if(['MBC','LG','OB','두산','넥센','히�
 const yearKey=c=>(c.year<=1987?'1982-87':String(c.year))+' '+c.line;
 // 덱 효과(팀컬러): 계열마다 하나씩, 등급 S>A>B. Y=연도 계열, F=구단 계열, E=인연 계열(동문)
 const FX_FAM={Y:'연도',F:'구단',E:'인연'};
-function teamColor(cards){
+function teamColor(cards,sel){
   const cnt=f=>{const m={};for(const c of cards){const k=f(c);if(k)m[k]=(m[k]||0)+1}return Object.entries(m).sort((a,b)=>b[1]-a[1])};
   // EX 카드는 같은 계보의 가장 많은 연도에 들어가 단일연도 인원으로 셈
   const yk=(()=>{const m={};for(const c of cards)if(c.v!=='EX'){const k=yearKey(c);m[k]=(m[k]||0)+1}
@@ -93,7 +93,7 @@ function teamColor(cards){
   const tname=k=>{const [yr,l]=k.split(' '),m={};for(const c of cards)if(c.line===l&&yearKey(c).startsWith(yr+' '))m[c.team]=(m[c.team]||0)+1;
     return yr+' '+(Object.entries(m).sort((a,b)=>b[1]-a[1])[0]||[l])[0]};
   const lname=l=>{const m={};for(const c of cards)if(c.line===l)m[c.team]=(m[c.team]||0)+1;return (Object.entries(m).sort((a,b)=>b[1]-a[1])[0]||[l])[0]};
-  const mk=(fam,g,name,d,b,p)=>({fam,g,name,d,b,p,n:`${name} ${g} (${d})`});
+  const mk=(fam,g,name,d,b,p)=>({fam,g,name,d,b,p,key:name+'|'+d,n:`${name} ${g} (${d})`});
   // 연도 계열
   let Y=null;const [y1,n1]=yk[0]||[];
   if(n1>=25)Y=mk('Y','S','단일연도',tname(y1),8,6);else if(n1>=20)Y=mk('Y','A','단일연도',tname(y1),5,4);else if(n1>=12)Y=mk('Y','B','단일연도',tname(y1),3,2);
@@ -109,8 +109,17 @@ function teamColor(cards){
   const hs=uniq(c=>c.hs),un=uniq(c=>c.un);let E=null;
   if(hs[0]&&hs[0][1]>=6)E=mk('E','A','고교 동문',hs[0][0],3,2);else if(hs[0]&&hs[0][1]>=4)E=mk('E','B','고교 동문',hs[0][0],2,1);
   if(!E&&un[0]&&un[0][1]>=5)E=mk('E','B','대학 동문',un[0][0],2,1);
-  if(Y)fx.push(Y);if(F)fx.push(F);if(E)fx.push(E);
-  return {fx,bat:fx.reduce((s,x)=>s+x.b,0),pit:fx.reduce((s,x)=>s+x.p,0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
+  // 2026-11-24(SJ): 계열 구분 없이 달성한 효과(all) 중 등급(S·A·B)별로 하나씩, 최대 3개를 고름. sel=고른 효과 key 배열(없거나 못 쓰는 등급은 그 등급 최고 효과 자동)
+  const all=[];const add=x=>{if(x&&!all.some(y=>y.key===x.key))all.push(x)};
+  {const yy=yk[0];if(yy){const n=yy[1];if(n>=25)add(mk('Y','S','단일연도',tname(yy[0]),8,6));else if(n>=20)add(mk('Y','A','단일연도',tname(yy[0]),5,4));else if(n>=12)add(mk('Y','B','단일연도',tname(yy[0]),3,2))}}
+  for(const l in byLine){const a=byLine[l];if(a.length>=2&&a[0][1]>=8&&a[1][1]>=8&&a[0][1]+a[1][1]>=25)add(mk('Y','A','연도 듀얼',`${a[0][0].split(' ')[0]}+${a[1][0].split(' ')[0]} ${lname(l)}`,5,4))}
+  if(m1>=25)add(mk('F','A','단일구단',lname(l1),5+(cost>=140?2:0),3+(cost>=140?2:0)));else if(m1>=15)add(mk('F','B','단일구단',lname(l1),3,2));
+  if(ln.length>=2&&ln[0][1]>=10&&ln[1][1]>=10&&ln[0][1]+ln[1][1]>=25)add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
+  if(rg[0]&&rg[0][1]>=25)add(mk('F','B','지역',rg[0][0],3,2));
+  if(hs[0]&&hs[0][1]>=6)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=4)add(mk('E','B','고교 동문',hs[0][0],2,1));
+  if(un[0]&&un[0][1]>=5)add(mk('E','B','대학 동문',un[0][0],2,1));
+  const S2=new Set(sel||[]);for(const g of ['S','A','B']){const c=all.filter(x=>x.g===g);if(!c.length)continue;fx.push(c.find(x=>S2.has(x.key))||c.sort((a,b)=>(b.b+b.p)-(a.b+a.p))[0])}
+  return {fx,all,bat:fx.reduce((s,x)=>s+x.b,0),pit:fx.reduce((s,x)=>s+x.p,0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
 // ===== 스킬 블록 =====
 const SHAPES={I2:[[0,0],[0,1]],I3:[[0,0],[0,1],[0,2]],V3:[[0,0],[1,0],[1,1]],O:[[0,0],[0,1],[1,0],[1,1]],I4:[[0,0],[0,1],[0,2],[0,3]],T:[[0,0],[0,1],[0,2],[1,1]],L:[[0,0],[1,0],[2,0],[2,1]],J:[[0,1],[1,1],[2,1],[2,0]],S:[[0,1],[0,2],[1,0],[1,1]],Z:[[0,0],[0,1],[1,1],[1,2]]};
 const GRADES={C:{m:.75,w:50},B:{m:1,w:30},A:{m:1.25,w:15},S:{m:1.5,w:5}};
@@ -257,7 +266,7 @@ function simTeam(T,cond){
   const all=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);
   const M=mgrOf(T),tac=M?{...M.t}:{...TAC_DEF},fx=M?M.fx:{};
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
-  const AS=T.abSt||{},tc=teamColor(all),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{};for(const k in raw){if(k!=='sta')raw[k]+=bon;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
+  const AS=T.abSt||{},tc=teamColor(all,T.fxsel),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{};for(const k in raw){if(k!=='sta')raw[k]+=bon;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
     const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
     const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+bon+(sk.def||0)])):null;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;return {...c,r,ps,rawr:raw}};
   const LC=T.lineup.map(x=>byId[x.id]);
