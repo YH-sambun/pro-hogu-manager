@@ -54,6 +54,7 @@ function ensureUI(){if(S.__ui)return;Object.defineProperty(S,'__ui',{value:1,enu
   if(typeof ECON!=='undefined')ECON.migrate(S);
   const D={locks:[],tq:{},sq:{},blocks:[],gp:{},cond:{},ab:[],abHist:{},abSt:{},abSum:{},photos:{},mat:[],sub:'order',tb:'B',pf:'all',side:'line',sort:'ovr',fteam:'all',fyear:'all',sk:'p',dexK:'all',back:false,pt:0};
   for(const k in D)if(S[k]==null)S[k]=D[k];
+  for(const id in S.owned)if(!byId[id]&&/·EX$/.test(id)){const b=id.replace(/·EX$/,'');if(byId[b])S.owned[b]=(S.owned[b]|0)+S.owned[id];delete S.owned[id]} // EX 축소(2026-11-24)로 빠진 EX 카드는 같은 시즌 기본 카드로 돌려줌
   S.locks=S.locks.map(x=>{const m=/^(.*)#(\d+)$/.exec(x);return m&&!byId[x]&&byId[m[1]]?m[1]+'~'+m[2]:x}); // 예전 저장의 중복 카드 잠금('#k')을 '~k'로
   if(!MG.some(m=>m.id===S.team.mgr))S.team.mgr=MG[0].id;
   pullTeam();if(!byId[S.cardId])S.cardId=used()[0]||Object.keys(S.owned)[0]}
