@@ -186,7 +186,7 @@ const SUP_MAX=2;
 // 선수 합성 조합 규칙: 재료 3장이 공통점을 가지면 결과가 그 범위에서 나오거나 확률이 오른다. 여러 규칙이 겹치면 모두 적용
 // up = [+1, +2, +3] 확률(기본 70/25/5)
 function synthRules(cs){const all=f=>cs.length===3&&cs.every(f),same=k=>all(c=>c[k]!=null&&c[k]===cs[0][k]),L=[];let up=[.70,.25,.05],gg=false;
-  if(same('pk'))L.push({n:'같은 선수 3장 → 그 선수의 다른 시즌 중 최고 카드',player:1});
+  if(same('pk'))L.push({n:'같은 선수 3장 → 목표 코스트 안에서 그 선수의 다른 시즌 카드',player:1});
   else{
     if(same('year')&&same('team'))L.push({n:`같은 팀(${cs[0].year} ${cs[0].team}) → 그 팀 선수`,f:c=>c.year===cs[0].year&&c.team===cs[0].team});
     else{if(same('line'))L.push({n:`같은 구단 계보(${cs[0].line}) → 그 계보 선수`,f:c=>c.line===cs[0].line});
@@ -206,7 +206,8 @@ function synth(kind,mats,locks){
     const t=Math.min(10,a+(u<up[2]?3:u<up[2]+up[1]?2:1));
     // 규칙의 조건(f)을 모두 만족하는 카드 중 목표 코스트. 없으면 조건을 뒤에서부터 하나씩 풀고, 그래도 없으면 가장 가까운 코스트
     let fs=R.list.filter(x=>x.f).map(x=>x.f),out=null;const base=c=>c.v!=='EX'&&c.v!=='AS';
-    if(R.player){const P=CARDS.filter(c=>base(c)&&R.player(c)).sort((x,y)=>y.cost-x.cost);if(P.length){out=P[0];fs=[]}}
+    // 같은 선수 3장: 그 선수 다른 시즌 중 목표 코스트(평균+1~3) 이하에서 가장 높은 카드. 없으면 일반 규칙으로(예전엔 코스트 무시하고 최고 카드라 1코 3장→8~9코가 나왔음)
+    if(R.player){const P=CARDS.filter(c=>base(c)&&R.player(c)&&c.cost>a&&c.cost<=t).sort((x,y)=>y.cost-x.cost);if(P.length){out=P[0];fs=[]}}
     if(!out)for(;;){const P=CARDS.filter(c=>base(c)&&fs.every(f=>f(c)));if(P.length){const T=P.filter(c=>c.cost===t);if(T.length){out=pick(T);break}
         const hi=P.filter(c=>c.cost>a&&c.cost<=t).sort((x,y)=>Math.abs(x.cost-t)-Math.abs(y.cost-t));if(hi.length){out=pick(hi.filter(c=>c.cost===hi[0].cost));break}}
       if(!fs.length){out=pick(CARDS.filter(c=>base(c)&&c.cost===t));break}fs=fs.slice(0,-1)}
