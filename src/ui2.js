@@ -4,7 +4,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['sel','modal','dexView','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['sel','modal','dexView','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -22,7 +22,13 @@ function fresh(){
   autoSet();rollCond();newSeason()}
 function autoSet(){Object.assign(S.team,bestLineup(Object.keys(S.owned).filter(id=>!(S.ab||[]).some(a=>a.id===id&&!a.got))));if(S.__ui)pullTeam()}
 const clean=T=>({...T,rot:T.rot.filter(Boolean),pen:T.pen.filter(Boolean),bench:(T.bench||[]).filter(Boolean)});
-const userT=()=>{syncTeam();return {...clean(S.team),color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{}}};
+// 덱 프리셋·모드별 덱: S.decks=[{id,name,t:{lineup,bench,rot,pen,mgr,tsel}}], S.modeDeck={lg,yl,on}=덱 id(없으면 현재 라인업)
+const MODEK=m=>typeof m==='string'?m:m&&m===S.yl?'yl':'lg',MODEN={lg:'주간 리그',yl:'연도별 리그',on:'친구 리그'};
+const deckIds=t=>[...(t.lineup||[]).map(x=>x.id),...(t.bench||[]),...(t.rot||[]),...(t.pen||[])].filter(Boolean);
+const deckOk=d=>d&&deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got));
+const modeDeck=m=>{const id=(S.modeDeck||{})[MODEK(m)],d=(S.decks||[]).find(x=>x.id===id);return deckOk(d)?d:null};
+const snapT=()=>{syncTeam();const T=S.team;return JSON.parse(JSON.stringify({lineup:T.lineup,bench:T.bench,rot:T.rot,pen:T.pen,mgr:T.mgr,tsel:T.tsel}))};
+const userT=m=>{syncTeam();const d=m!==undefined?modeDeck(m):null;return {...clean({...S.team,...(d?JSON.parse(JSON.stringify(d.t)):{})}),color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{}}};
 const starters=T=>{T=clean(T);return [...T.lineup.map(x=>x.id),...T.rot,...T.pen].filter(Boolean).map(id=>byId[id])};
 const regCards=T=>{T=clean(T);return [...starters(T),...T.bench.map(id=>byId[id])].filter(Boolean)};
 function validate(){syncTeam();
@@ -415,9 +421,10 @@ const pick2=a=>a[Math.floor(Math.random()*a.length)];
 // 추천 라인업: 보유 카드로 자동 편성 (능력 우선 / 덱 효과 우선 / 코스트 절약). 코스트 상한 150 안에서
 const bv=c=>c.r.con*.35+c.r.pow*.35+c.r.eye*.2+c.r.spd*.1;
 function recommend(mode){for(let cp=0;cp<=12;cp+=.5){const r=recommend1(mode,cp);if(recCost(r)<=COST_CAP||cp>=12)return r}}
-function recommend1(mode,cp){const own=[...new Map(OWN.filter(c=>!c.dup&&!abOf(c.id)).sort((x,y)=>x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()];
+const RF0={year:'all',team:'all'},recMatch=c=>{const f=S.recF||RF0;return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'};
+function recommend1(mode,cp){const own=[...new Map(OWN.filter(c=>!c.dup&&!abOf(c.id)).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()];
  const yc={};for(const c of own){const k=c.year+' '+c.team;yc[k]=(yc[k]||0)+1}const topY=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0][0];
- const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost;
+ const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0);
  const B=own.filter(c=>c.type==='B'),P=own.filter(c=>c.type==='P'),used2=new Set(),lu=[];
  for(const p of ['C','SS','CF','2B','3B','RF','LF','1B']){const cand=B.filter(c=>!used2.has(c.id)&&canPos(c,p)).map(c=>[c,(c.ps&&c.ps[p]!=null?c.ps[p]*.5:-1e9)+bv(c)*.8+w(c)]).sort((a,b)=>b[1]-a[1])[0];if(cand){used2.add(cand[0].id);lu.push([p,cand[0].id])}}
  const dh=B.filter(c=>!used2.has(c.id)).sort((a,b)=>bv(b)+w(b)-bv(a)-w(a))[0];if(dh){used2.add(dh.id);lu.push(['DH',dh.id])}
@@ -433,6 +440,9 @@ function recommend1(mode,cp){const own=[...new Map(OWN.filter(c=>!c.dup&&!abOf(c
 function recCost(r){return [...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean).reduce((s,id)=>s+by[id].cost,0)}
 function recPanel(){if(!S.recm)return '';const r=recommend(S.recm),cost=recCost(r),cur=new Set(used()),nw=[...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean),inn=nw.filter(id=>!cur.has(id)),out=[...cur].filter(id=>!nw.includes(id));
  return `<div class="rec box"><div class="tools"><h3 style="margin:0;margin-right:auto">추천 라인업 미리보기</h3>${[['power','능력 우선'],['deck','덱 효과 우선'],['cost','코스트 절약']].map(([k,n])=>`<button class="${S.recm===k?'':'ghost'}" data-rec="${k}">${n}</button>`).join('')}</div>
+ ${(()=>{const f=S.recF||RF0,ys=[...new Set(OWN.map(c=>c.year))].sort((a,b)=>b-a),ts=[...new Set(OWN.filter(c=>f.year==='all'||c.year===+f.year).map(c=>c.team))].sort(),o=(v,n,cur)=>`<option value="${esc(v)}"${String(cur)===String(v)?' selected':''}>${esc(n)}</option>`;
+  const m=r=>[...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean).filter(id=>by[id]&&recMatch(by[id])).length;
+  return `<div class="tools recf"><span class="note" style="margin:0">조건</span><select id="recy" aria-label="추천 연도">${o('all','전체 연도',f.year)}${ys.map(y=>o(y,y+'년',f.year)).join('')}</select><select id="rect" aria-label="추천 구단">${o('all','전체 구단',f.team)}${ts.map(t=>o(t,t,f.team)).join('')}</select>${recOn()?`<span class="note" style="margin:0">조건에 맞는 선수 ${m(r)}명 · 모자라는 자리는 다른 카드로 채워요</span>`:''}</div>`})()}
  <p class="rsum">타순 ${r.lu.map((x,i)=>`<span><b>${i+1}</b>${PN[x[0]]} ${esc(by[x[1]].name)}</span>`).join('')}</p>
  <p class="rsum">선발 ${r.rot.filter(Boolean).map(id=>`<span>${esc(by[id].name)}</span>`).join('')} · 마무리 <span>${r.pen[0]?esc(by[r.pen[0]].name):'–'}</span></p>
  <p class="note">코스트 ${cost}/${COST_CAP} ${cost>COST_CAP?'· 상한 초과':''} · 새로 들어오는 선수 ${inn.length}명${inn.length?` (${inn.slice(0,4).map(id=>esc(by[id].name)).join(', ')}${inn.length>4?' 외':''})`:''} · 빠지는 선수 ${out.length}명</p>
@@ -466,32 +476,57 @@ function lineChart(L,links){const W=360,H=170,px=i=>24+i*(W-40)/8,lo=Math.min(50
  <polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round"/>
  ${L.map((x,i)=>{const c=by[S.lu[i][1]];return `<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="${x.ok?4.5:6}" fill="${!x.ok?'var(--bad)':x.adj?'#5aa9ff':'var(--gold)'}" stroke="#1b1d1c" stroke-width="1.5"><title>${i+1}번 ${c?esc(c.name):''} ${x.v}${x.ok?'':' (적성 밖 -10%)'}${x.adj?' (인접 +'+x.adj+')':''}</title></circle><text x="${pts[i][0]}" y="${pts[i][1]-9}" class="ltv">${x.v}</text>
  <text x="${pts[i][0]}" y="${H-16}" class="ltx">${i+1}</text><text x="${pts[i][0]}" y="${H-4}" class="ltn">${c?esc(c.name):''}</text>`}).join('')}</svg>`}
-function luList(pool,ids,dupC,B){const keys=B?BK:PKEY;
+function luList(pool,ids,dupC,B,rec){const keys=B?BK:PKEY,st=!!S.luStat,f3=v=>v.toFixed(3).replace(/^0/,''),E='<td class="mute">-</td>';
+ const SH=B?['타율','출루율','타수','안타','홈런','타점','볼넷','도루']:['평균자책','이닝','승','세이브','탈삼진','자책'];
+ const SV=c=>{const r=rec&&rec(c);if(!r)return SH.map(()=>E).join('');return (B?[r.ab?f3(r.h/r.ab):'-',f3((r.h+r.bb)/Math.max(1,r.ab+r.bb)),r.ab,r.h,r.hr,r.rbi,r.bb,r.sb]:[r.outs?(r.er*27/r.outs).toFixed(2):'-',`${Math.floor(r.outs/3)}.${r.outs%3}`,r.w,r.sv,r.so,r.er]).map(v=>`<td>${v}</td>`).join('')};
+ if(st)return `<div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th>${SH.map(h=>`<th>${h}</th>`).join('')}<th>상태</th></tr></thead><tbody>
+ ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b></td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td>${SV(c)}<td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div><p class="note">${S.luStat==='yl'?'연도별 리그':'주간 리그'} 이번 시즌, 내 구단에서 뛴 기록이에요.</p>`;
  return `<div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th>${keys.map(k=>`<th>${SKN[k]}</th>`).join('')}<th>장수</th><th>상태</th></tr></thead><tbody>
  ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td><td>${c.cost}</td>${keys.map(k=>`<td>${c.r[k]}</td>`).join('')}<td>${dupC[c.id]?'×'+(dupC[c.id]+1):'1'}</td><td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div>`}
+function presetBar(){const D=S.decks||[],M=S.modeDeck||{},cur=S.deckSel&&D.find(x=>x.id===S.deckSel);
+ const opt=(v,n,sel)=>`<option value="${esc(v)}"${String(sel||'')===String(v)?' selected':''}>${esc(n)}</option>`;
+ return `<div class="box presets"><div class="tools"><b style="margin-right:4px">덱 저장</b><select id="decksel" aria-label="저장한 덱">${opt('','저장한 덱 고르기',S.deckSel)}${D.map(d=>opt(d.id,d.name+(deckOk(d)?'':' (없는 카드 있음)'),S.deckSel)).join('')}</select>
+ <button data-a="deckload" ${cur?'':'disabled'}>불러오기</button><button class="ghost" data-a="decksave" ${cur?'':'disabled'}>덮어쓰기</button><button class="ghost" data-a="deckdel" ${cur?'':'disabled'}>${S.deckDel?'한 번 더 누르면 삭제':'삭제'}</button>
+ <span style="flex:1"></span><input id="deckname" placeholder="새 덱 이름" maxlength="14" style="max-width:150px" value="${esc(S.deckName||'')}"><button data-a="decknew">지금 라인업을 새 덱으로</button></div>
+ <div class="tools" style="margin-top:8px"><b style="margin-right:4px">모드별 덱</b>${Object.entries(MODEN).map(([k,n])=>`<label class="mdk">${n} <select data-mdeck="${k}" aria-label="${n}에서 쓸 덱">${opt('','지금 라인업',M[k])}${D.map(d=>opt(d.id,d.name,M[k])).join('')}</select>${M[k]&&!modeDeck(k)?'<small class="bad">카드가 빠져 지금 라인업으로 뛰어요</small>':''}</label>`).join('')}</div></div>`}
+function deckAct(a){const D=S.decks=S.decks||[],d=D.find(x=>x.id===S.deckSel);
+ if(a==='decknew'){const n=(S.deckName||'').trim()||`덱 ${D.length+1}`;const id='d'+Date.now().toString(36);D.push({id,name:n,t:snapT()});S.deckSel=id;S.deckName='';S.msg=`'${n}' 저장했어요`}
+ else if(a==='decksave'&&d){d.t=snapT();S.msg=`'${d.name}'에 덮어썼어요`}
+ else if(a==='deckload'&&d){if(!deckOk(d)){S.msg='없는 카드가 있어서 불러올 수 없어요';return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}'을 불러왔어요`}
+ else if(a==='deckdel'&&d){if(!S.deckDel){S.deckDel=1;render();return}S.decks=D.filter(x=>x!==d);for(const k in S.modeDeck||{})if(S.modeDeck[k]===d.id)S.modeDeck[k]='';S.deckSel='';S.deckDel=0}
+ save();render()}
 function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','라인업'],['mgr','감독'],['tcard','작전 카드'],['sup','서포트 카드']].map(([k,n])=>`<button role="tab" aria-selected="${S.sub===k}" class="${S.sub===k?'on':''}" data-sub="${k}">${n}</button>`).join('')}</div>`;
  if(S.sub==='sup')return `<section class="band">${sub}<h2 style="margin-top:16px">서포트 카드</h2>${vSup()}</section>`;
  if(S.sub==='tcard')return `<section class="band">${sub}<h2 style="margin-top:16px">작전 카드</h2>${vTcard()}</section>`;
  if(S.sub==='mgr')return `<section class="band">${sub}<h2 style="margin-top:16px">감독 선택</h2>${vMgr()}</section>`;
  const ids=new Set(used()),B=S.tb==='B';
  const F=B?{all:c=>c.type==='B',C:c=>c.type==='B'&&c.pos==='C',IF:c=>c.type==='B'&&['1B','2B','3B','SS'].includes(c.pos),OF:c=>c.type==='B'&&['LF','CF','RF','DH'].includes(c.pos)}:{all:c=>c.type==='P',SP:c=>c.pos==='SP',RP:c=>c.pos==='RP'};
- const ord={ovr:(a,b)=>b.ovr-a.ovr,cost:(a,b)=>b.cost-a.cost,year:(a,b)=>a.year-b.year};
+ const LF=S.lf||(S.lf={}),SL=S.luStat==='yl'?S.yl:S.luStat==='lg'?S.season:null,rec=c=>SL&&SL.ps&&SL.ps['0|'+c.id]||null,keys=B?BK:PKEY;
+ const avg=c=>{const r=rec(c);return r&&r.ab?r.h/r.ab:-1},era=c=>{const r=rec(c);return r&&r.outs?r.er*27/r.outs:99},rv=(c,k)=>{const r=rec(c);return r?r[k]||0:-1};
+ const ord={ovr:(a,b)=>b.ovr-a.ovr,cost:(a,b)=>b.cost-a.cost,costa:(a,b)=>a.cost-b.cost,year:(a,b)=>a.year-b.year,yeard:(a,b)=>b.year-a.year,name:(a,b)=>a.name.localeCompare(b.name),
+  ...Object.fromEntries(keys.map(k=>['r_'+k,(a,b)=>b.r[k]-a.r[k]])),avg:(a,b)=>avg(b)-avg(a),hr:(a,b)=>rv(b,'hr')-rv(a,'hr'),rbi:(a,b)=>rv(b,'rbi')-rv(a,'rbi'),sb:(a,b)=>rv(b,'sb')-rv(a,'sb'),era:(a,b)=>era(a)-era(b),so:(a,b)=>rv(b,'so')-rv(a,'so'),w:(a,b)=>rv(b,'w')-rv(a,'w'),sv:(a,b)=>rv(b,'sv')-rv(a,'sv')};
+ if(!ord[S.sort])S.sort='ovr';
  const pf=F[S.pf]?S.pf:'all',base=OWN.filter(F[pf]),teams=[...new Set(base.map(c=>c.team))].sort(),years=[...new Set(base.map(c=>c.year))].sort((a,b)=>b-a);
  if(S.fteam!=='all'&&!teams.includes(S.fteam))S.fteam='all';if(S.fyear!=='all'&&!years.includes(+S.fyear))S.fyear='all';
  const dupC={};for(const c of OWN)if(c.dup){const b=c.id.split('#')[0];dupC[b]=(dupC[b]||0)+1}
- const pool=base.filter(c=>!c.dup).filter(c=>(S.fteam==='all'||c.team===S.fteam)&&(S.fyear==='all'||c.year===+S.fyear)).sort(ord[S.sort]);
+ const lq=(LF.q||'').trim(),pool=base.filter(c=>!c.dup).filter(c=>(S.fteam==='all'||c.team===S.fteam)&&(S.fyear==='all'||c.year===+S.fyear)&&(!LF.cost||LF.cost==='all'||(LF.cost[0]==='='?c.cost===+LF.cost.slice(1):c.cost<=+LF.cost))&&(!LF.v||LF.v==='all'||(LF.v==='n'?!c.v:c.v===LF.v))&&(!LF.hand||LF.hand==='all'||(B?c.bh===LF.hand:c.ph===LF.hand))&&(!LF.reg||LF.reg==='all'||(LF.reg==='in')===ids.has(c.id))&&(!lq||c.name.includes(lq))).sort(ord[S.sort]);
  const FN=B?[['all','전체 야수'],['C','포수'],['IF','내야수'],['OF','외야·지명']]:[['all','전체 투수'],['SP','선발'],['RP','불펜']];
  const SIDE=B?[['line','타선 분석'],['field','수비 위치']]:[['bat','배터리 분석']],side=SIDE.some(x=>x[0]===S.side)?S.side:SIDE[0][0];
- return `<section class="band">${sub}<div class="tools" style="margin-top:16px"><div class="tabs tb" role="tablist">${[['B','야수'],['P','투수']].map(([k,n])=>`<button role="tab" aria-selected="${S.tb===k}" class="${S.tb===k?'on':''}" data-tb="${k}">${n}</button>`).join('')}</div>${nextOpp()}<button class="ghost" data-rec="${S.recm||'power'}" style="margin-left:auto">추천 라인업</button>${S.undo?'<button class="ghost" data-a="recundo">되돌리기</button>':''}</div>${recPanel()}${deckBar()}
+ return `<section class="band">${sub}${presetBar()}<div class="tools" style="margin-top:16px"><div class="tabs tb" role="tablist">${[['B','야수'],['P','투수']].map(([k,n])=>`<button role="tab" aria-selected="${S.tb===k}" class="${S.tb===k?'on':''}" data-tb="${k}">${n}</button>`).join('')}</div>${nextOpp()}<button class="ghost" data-rec="${S.recm||'power'}" style="margin-left:auto">추천 라인업</button>${S.undo?'<button class="ghost" data-a="recundo">되돌리기</button>':''}</div>${recPanel()}${deckBar()}
  ${B?`<div class="strip"><div class="sh">야수</div><div class="row scroll">${S.lu.map((x,i)=>oc('lu',i,'',{num:(i+1)+'번',under:posSel(i)})).join('')}<span class="gap"></span>${S.bench.map((x,i)=>oc('bench',i,'벤치',{num:(i+1)+'번'})).join('')}</div></div>`
  :`<div class="strip"><div class="sh">투수</div><div class="row scroll">${S.rot.map((x,i)=>(i?'<span class="arr" aria-hidden="true">›</span>':'')+oc('rot',i,'선발',{num:(i+1)+'번',cls:'sp'})).join('')}<span class="gap"></span>${[2,3,4,5].map((j,n)=>oc('pen',j,'중계',{num:(n+1)+'번',cls:'rp'})).join('')}<span class="gap"></span>${oc('pen',1,'셋업',{cls:'su'})}${oc('pen',0,'마무리',{cls:'cl'})}</div></div>`}
  <p class="note hint${S.sel||S.msg?' on':''}" aria-live="polite">${S.msg?esc(S.msg):S.sel?'바꿀 자리나 넣을 카드를 고르세요. 같은 자리를 다시 누르면 취소돼요.':''}</p><p class="note help">${S.sel?'같은 줄의 다른 자리를 누르면 서로 바뀌고, 아래 보유 카드를 누르면 그 카드가 들어갑니다. 같은 자리를 다시 누르면 선택 해제.':'컴퓨터에서는 보유 카드나 자리를 끌어다 다른 자리에 놓아도 바뀌어요. 카드를 누르면 상세 정보가 뜨고, 거기서 [자리 교체하기]를 누른 다음 다른 자리(타순 교체·벤치 교대)나 보유 카드를 누르면 바뀝니다. 빈 자리는 바로 선택돼요. 수비 위치는 카드 아래 메뉴에서 바꾸고, 메뉴 옆 등급은 그 위치 수비 적성입니다.'}</p></section>
  <section class="band lu2"><div><div class="tools"><h2 style="margin:0">보유 카드</h2>
  <div class="tabs" role="tablist">${FN.map(([k,n])=>`<button role="tab" aria-selected="${pf===k}" class="${pf===k?'on':''}" data-pf="${k}">${n}</button>`).join('')}</div>
- <select id="sort" aria-label="정렬"><option value="ovr">능력 순</option><option value="cost" ${S.sort==='cost'?'selected':''}>코스트 순</option><option value="year" ${S.sort==='year'?'selected':''}>연도 순</option></select>
+ <select id="sort" aria-label="정렬">${[['ovr','능력 순'],['cost','코스트 높은 순'],['costa','코스트 낮은 순'],['yeard','최신 연도 순'],['year','오래된 연도 순'],['name','이름 순'],...keys.map(k=>['r_'+k,SKN[k]+' 순']),...(B?[['avg','타율 순(리그)'],['hr','홈런 순(리그)'],['rbi','타점 순(리그)'],['sb','도루 순(리그)']]:[['era','평균자책 순(리그)'],['so','탈삼진 순(리그)'],['w','승 순(리그)'],['sv','세이브 순(리그)']])].map(([v,n])=>`<option value="${v}"${S.sort===v?' selected':''}>${n}</option>`).join('')}</select>
  <select id="fteam" aria-label="구단 필터"><option value="all">전체 구단</option>${teams.map(t=>`<option value="${esc(t)}" ${S.fteam===t?'selected':''}>${esc(t)}</option>`).join('')}</select>
- <select id="fyear" aria-label="연도 필터"><option value="all">전체 연도</option>${years.map(y=>`<option value="${y}" ${String(S.fyear)===String(y)?'selected':''}>${y}</option>`).join('')}</select><span class="pill">${pool.length}종</span><div class="tabs" role="tablist" aria-label="보기 방식" style="margin-left:auto">${[['card','카드'],['list','일람']].map(([k,n])=>`<button role="tab" aria-selected="${(S.luView||'card')===k}" class="${(S.luView||'card')===k?'on':''}" data-a="luview" data-v="${k}">${n}</button>`).join('')}</div></div>
- ${S.luView==='list'?luList(pool,ids,dupC,B):`<div class="pool">${pool.map(c=>`<div class="pw">${card(c,{pick:1,dim:ids.has(c.id),inUse:ids.has(c.id)})}${dupC[c.id]?`<span class="dupn" title="같은 카드 ${dupC[c.id]+1}장">×${dupC[c.id]+1}</span>`:''}</div>`).join('')}</div>`}</div>
+ <select id="fyear" aria-label="연도 필터"><option value="all">전체 연도</option>${years.map(y=>`<option value="${y}" ${String(S.fyear)===String(y)?'selected':''}>${y}</option>`).join('')}</select>
+ ${(o=>`<select data-lf="cost" aria-label="코스트 필터">${o('all','전체 코스트',LF.cost)}${[3,5,7].map(n=>o(n,'★'+n+' 이하',LF.cost)).join('')}${[1,2,3,4,5,6,7,8,9,10].map(n=>o('='+n,'코스트 '+n,LF.cost)).join('')}</select>
+ <select data-lf="v" aria-label="카드 종류">${o('all','모든 종류',LF.v)}${o('n','일반',LF.v)}${Object.entries(VN).map(([k,n])=>o(k,n,LF.v)).join('')}</select>
+ <select data-lf="hand" aria-label="${B?'타석':'투구 손'}">${o('all',B?'모든 타석':'모든 투구',LF.hand)}${(B?[['R','우타'],['L','좌타'],['S','양타']]:[['R','우투'],['L','좌투']]).map(([k,n])=>o(k,n,LF.hand)).join('')}</select>
+ <select data-lf="reg" aria-label="1군 등록">${o('all','1군 포함 전체',LF.reg)}${o('out','미등록만',LF.reg)}${o('in','1군만',LF.reg)}</select>`)((v,n,cur)=>`<option value="${esc(v)}"${String(cur||'all')===String(v)?' selected':''}>${esc(n)}</option>`)}
+ <input data-lf="q" value="${esc(LF.q||'')}" placeholder="이름" aria-label="이름 검색" style="max-width:110px"><span class="pill">${pool.length}종</span><div class="tabs" role="tablist" aria-label="기록 기준">${[['','능력치'],['lg','주간 리그 기록'],['yl','연도별 리그 기록']].map(([k,n])=>`<button class="${(S.luStat||'')===k?'on':''}" data-a="lustat" data-v="${k}">${n}</button>`).join('')}</div><div class="tabs" role="tablist" aria-label="보기 방식" style="margin-left:auto">${[['card','카드'],['list','일람']].map(([k,n])=>`<button role="tab" aria-selected="${(S.luStat?'list':S.luView||'card')===k}" class="${(S.luStat?'list':S.luView||'card')===k?'on':''}" data-a="luview" data-v="${k}">${n}</button>`).join('')}</div></div>
+ ${S.luView==='list'||S.luStat?luList(pool,ids,dupC,B,rec):`<div class="pool">${pool.map(c=>`<div class="pw">${card(c,{pick:1,dim:ids.has(c.id),inUse:ids.has(c.id)})}${dupC[c.id]?`<span class="dupn" title="같은 카드 ${dupC[c.id]+1}장">×${dupC[c.id]+1}</span>`:''}</div>`).join('')}</div>`}</div>
  <div class="box"><div class="tabs" role="tablist">${SIDE.map(([k,n])=>`<button role="tab" aria-selected="${side===k}" class="${side===k?'on':''}" data-side="${k}">${n}</button>`).join('')}</div>
  <div style="margin-top:12px">${side==='bat'?batteryPanel():side==='line'?lineupChart():field()}</div></div></section>`}
 const KIND=k=>k==='lu'||k==='bench'?'B':'P';
@@ -582,10 +617,15 @@ function dexViewModal(){const c=byId[S.dexView];if(!c)return '';const h=dexHas(c
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',PFULL[c.pos]||'',c.v?VN[c.v]:''].filter(Boolean).join(' · ')}</p>
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  <p class="note" style="text-align:center">카드팩·합성으로 얻을 수 있어요.${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
+// 개인 기록: 주간 리그·연도별 리그의 내 구단 시즌 누적(L.ps, 키 '0|카드id')
+function recHTML(c){const f3=v=>v.toFixed(3).replace(/^0/,''),rows=[['주간 리그',S.season],['연도별 리그',S.yl]].map(([n,L])=>{const r=L&&L.ps&&L.ps['0|'+c.id];if(!r)return '';
+  const bat=r.ab+r.bb>0?`타율 <b>${r.ab?f3(r.h/r.ab):'-'}</b> · ${r.ab}타수 ${r.h}안타 ${r.hr}홈런 ${r.rbi}타점 ${r.bb}볼넷 ${r.sb}도루`:'',pit=r.outs>0?`평균자책 <b>${(r.er*27/r.outs).toFixed(2)}</b> · ${Math.floor(r.outs/3)}.${r.outs%3}이닝 ${r.w}승 ${r.sv}세이브 ${r.so}탈삼진`:'';
+  return bat||pit?`<li><span>${n}</span> ${[bat,pit].filter(Boolean).join(' / ')}</li>`:''}).join('');
+ return `<div class="mrec"><b>이번 시즌 개인 기록</b>${rows?`<ul>${rows}</ul>`:'<p class="note" style="margin:4px 0 0">아직 출전 기록이 없어요.</p>'}</div>`}
 function modal(){if(S.dexView)return dexViewModal();const c=by[S.modal];if(!c)return '';if(S.cmpA&&S.cmpA!==c.id)return cmpView(by[S.cmpA],c);
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button><button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
- <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.un?`대학 <b>${esc(c.un)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',!c.rg&&!c.hs?'출신 정보 없음':'',`${esc(lname(c.line))} 계보`,c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null?(abAge(c)?'유학 가능':'유학 불가'):''].filter(Boolean).join(' · ')}</p>${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
+ <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.un?`대학 <b>${esc(c.un)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',!c.rg&&!c.hs?'출신 정보 없음':'',`${esc(lname(c.line))} 계보`,c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null?(abAge(c)?'유학 가능':'유학 불가'):''].filter(Boolean).join(' · ')}</p>${recHTML(c)}${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  <p class="note" style="text-align:center"><a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
 vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
@@ -724,14 +764,16 @@ function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}r
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','coupon']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','coupon']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
   else if(a==='end'){simAll(G);render()}else if(a==='fin'){if(G.friendly)oFinish();else endGame()}
   else if(a==='tk'){const k=b.dataset.k;tactic(G,k,k==='ph'?$('#phs').value:null);pa(G);render()}
   else if(a==='more'){flt.lim+=240;render()}
-  else if(a==='luview'){S.luView=b.dataset.v;render()}
+  else if(a==='luview'){S.luView=b.dataset.v;if(b.dataset.v==='card')S.luStat='';render()}
+  else if(a==='lustat'){S.luStat=b.dataset.v;render()}
+  else if(/^deck/.test(a))deckAct(a);
   else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=0;render()}
   else if(a==='dexmore'){{const st=(S.dexK||'all')==='all'?60:24;S.dexLim=(S.dexLim||st)+st};render()}
   else if(a==='coupon')redeemCoupon();
@@ -746,6 +788,11 @@ vw.addEventListener('change',e=>{const t=e.target;
     S.photos=S.photos||{};S.photos[id]=cv.toDataURL('image/jpeg',.82);try{save()}catch(e){};render()};img.src=URL.createObjectURL(t.files[0]);return}
   if(t.dataset.f){flt[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;flt.lim=120;render();return}
   if(t.id==='tn'){S.team.name=t.value.trim()||'내 구단';save();render();return}
+  if(t.id==='recy'||t.id==='rect'){S.recF={...(S.recF||RF0)};if(t.id==='recy'){S.recF.year=t.value;S.recF.team='all'}else S.recF.team=t.value;render();return}
+  if(t.dataset.lf){S.lf=S.lf||{};S.lf[t.dataset.lf]=t.value;render();return}
+  if(t.id==='decksel'){S.deckSel=t.value;S.deckDel=0;render();return}
+  if(t.id==='deckname'){S.deckName=t.value;return}
+  if(t.dataset.mdeck){S.modeDeck=S.modeDeck||{};S.modeDeck[t.dataset.mdeck]=t.value;save();render();return}
   if(t.id==='tll'){S.pkSel.tl=t.value;render();return}
   if(t.id==='tyl'){S.pkSel.ty={line:t.value,years:[]};render();return}
   if(t.id==='dexq'){S.dexQ=t.value;S.dexLim=0;render();return}

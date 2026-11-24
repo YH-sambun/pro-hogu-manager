@@ -20,14 +20,14 @@ function wkStart(t){const d=new Date((t||Date.now())+H9),day=(d.getUTCDay()+6)%7
 const md=t=>{const d=new Date(t+H9);return `${d.getUTCMonth()+1}/${d.getUTCDate()}`};
 const wkLabel=w=>`${md(w)}(월)~${md(w+6*864e5)}(일)`;
 // --- 공통: 리그 표·대진 ---
-const teamOf=(i,L)=>i===0?userT():(L||S.season).teams[i];
+const teamOf=(i,L)=>i===0?userT(L||S.season):(L||S.season).teams[i];
 const tname=(i,L)=>i===0?S.team.name:(L||S.season).teams[i].name;
 function lgStand(L){return L.st.map((x,i)=>({i,...x,g:x.w+x.l+x.d,pct:x.w+x.l?x.w/(x.w+x.l):0})).sort((a,b)=>b.pct-a.pct||b.w-a.w||(b.rs-b.ra)-(a.rs-a.ra))}
 function standings(){return lgStand(S.season)}
 function lgRec(L,a,h,g){const st=L.st;st[a].rs+=g.sc[0];st[a].ra+=g.sc[1];st[h].rs+=g.sc[1];st[h].ra+=g.sc[0];if(g.res<0){st[a].d++;st[h].d++}else{st[g.res?h:a].w++;st[g.res?a:h].l++}}
 function record(a,h,g){lgRec(S.season,a,h,g)}
 const condMap=T=>{const m={};for(const id of [...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen])m[id]=T.cv;return m};
-function simT(L,i){if(i===0)return simTeam(userT(),S.cond);const T=L.teams[i];return simTeam(T,T.cv?condMap(T):undefined)}
+function simT(L,i){if(i===0)return simTeam(userT(L),S.cond);const T=L.teams[i];return simTeam(T,T.cv?condMap(T):undefined)}
 const sched3=n=>{const base=rr(n%2?n+1:n);return [...base,...base.map(r=>r.map(p=>[p[1],p[0]])),...base]};
 const newSt=n=>Array.from({length:n},()=>({w:0,l:0,d:0,rs:0,ra:0}));
 function curPair(L){
