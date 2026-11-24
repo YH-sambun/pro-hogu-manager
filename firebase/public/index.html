@@ -872,7 +872,7 @@ function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),
 function ladderHTML(s){return `<div class="btns" style="flex-wrap:wrap;margin-top:8px" aria-label="리그 단계">${TIERS.map((t,i)=>`<span class="chip" style="padding:3px 8px;border-radius:10px;border:1px solid ${i+1===s.tier?'#e07a45':'#555'};${i+1===s.tier?'background:#e07a45;color:#111;font-weight:700':i+1<=(S.lgBest||1)?'':'opacity:.5'}">${i+1}. ${t.n}</span>`).join('')}</div>`}
 function vSeason(){
   weekTick();const s=S.season,T=S.team,nxt=s.wk+7*864e5;
-  const head=`<p class="mini">${tierName(s.tier)} · ${s.tier}/10단계 · ${wkLabel(s.wk)} · ${TIER_DESC[s.tier-1]}<br>${s.tier<10?`1위로 마치면 다음 주 <b>${tierName(s.tier+1)}</b>로 승급해요. 주가 끝날 때 남은 경기는 결과만으로 처리돼요(보상 없음).`:'최고 단계예요. 1위를 지켜 보세요.'}</p>${ladderHTML(s)}`;
+  const head=`<p class="mini" title="${esc(TIER_DESC[s.tier-1])} · 주가 끝나면 남은 경기는 결과만 처리(보상 없음)">${wkLabel(s.wk)} · ${s.tier<10?`1위면 <b>${tierName(s.tier+1)}</b> 승급`:'최고 단계'}</p>${ladderHTML(s)}`;
   if(s.over)return `<section class="hero"><h1>${tierName(s.tier)} 종료 · ${esc(T.name)} ${s.rank}위</h1>${head}<p>다음 리그는 <b>${md(nxt)}(월) 0시</b>에 열려요. ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)}로 승급해요.`:'같은 단계에 다시 도전해요.'} 기다리는 동안 <a href="#years">연도별 리그</a>에 도전해 보세요.</p></section>${lastHTML(s)}${tableHTML(s)}${titleHTML(s)}`;
   const pr=curPair(s);
   return `<section class="hero">${head}${pr?muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto'):''}</section>
