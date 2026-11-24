@@ -47,7 +47,7 @@ async function oAct(a,b){const F=fb(),u=ON.user;ON.msg='';
     simAll(G);if(a==='o-quick'){await oFinish();return}G.hl=1;location.hash='game'}
   }catch(e){ON.msg='오류: '+(e.code||e.message)}finally{render()}}
 async function oFinish(){const F=fb(),g=G,f=g.friendly;
-  const res=g.res<0?'d':g.res===0?'w':'l',pay={w:300,d:150,l:100}[res];S.coins+=pay;S.team.rotIdx++;
+  const res=g.res<0?'d':g.res===0?'w':'l',pay={w:300,d:150,l:100}[res];S.pt=(S.pt||0)+pay;S.team.rotIdx++;
   // 대전 경기: 작전 카드 1장 소모, 서포트 남은 경기 1 감소
   const ts=S.team.tsel;if(ts&&S.tq[ts]>0){S.tq[ts]--;if(!S.tq[ts])S.team.tsel=null}
   S.team.sup=(S.team.sup||[]).map(x=>({...x,left:x.left-1})).filter(x=>x.left>0);

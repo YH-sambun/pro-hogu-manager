@@ -39,6 +39,16 @@ function seasonAwards(mode,tier,a,repeat){a=a||{};const m=(mode==='league'?tierM
   for(const k of a.titles||[])if(TITLES[k])L.push([TITLES[k]+' 1위',TITLE_PT]);if(a.mvp)L.push(['MVP',MVP_PT]);
   if(a.gg)L.push([`골든글러브 ${a.gg}명`,a.gg*AWARD_PT.gg]);if(a.df)L.push([`수비상 ${a.df}명`,a.df*AWARD_PT.df]);if(a.as)L.push([`올스타 ${a.as}명`,a.as*AWARD_PT.as]);
   const lines=L.map(([n,p])=>[n,Math.round(p*m)]);return {pt:lines.reduce((s,x)=>s+x[1],0),lines}}
+// 경기 예측(경기 전 목표 3개 제시, 경기 끝나고 달성한 만큼 지급. 포인트를 걸지는 않음)
+// [키, 이름, 기준, 기본 P]. box = 내 팀 기준 {r:득점, h:안타, hr:홈런, k:내 투수 탈삼진, ra:실점, sb:도루}
+// 경기당 평균 약 60P×배율(경기 보상과 비슷한 규모). 주 27경기면 1단계 약 1,600P
+const PRED=[['r','득점 6점 이상',6,50],['h','안타 12개 이상',12,70],['hr','홈런 2개 이상',2,45],['k','탈삼진 8개 이상',8,60],
+  ['sb','도루 1개 이상',1,80],['ra0','무실점 승리',0,250],['bw','5점 차 이상 승리',5,100]]; // 금액 ≈ 20P ÷ 달성률 (4,000경기 시뮬: 득점6+ 41%, 안타12+ 28%, 홈런2+ 41%, 무실점승 4.3%, 5점차승 18.5%, 탈삼진8+ 34%, 도루1+ 22%. 도루는 발야구 감독이면 쉬워져 80으로 낮게)
+// mode 'league'(단계 배율) | 'year'(배율 없음, capped 대상). 반환 [[키,이름,P]] 3개
+function predOffer(mode,tier){const m=mode==='league'?tierMul(tier):1,L=PRED.slice();for(let i=L.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[L[i],L[j]]=[L[j],L[i]]}
+  return L.slice(0,3).map(x=>[x[0],x[1],Math.round(x[3]*m/10)*10])}
+function predSettle(offer,box,won){const ok=k=>{const x=PRED.find(p=>p[0]===k);if(k==='ra0')return won&&box.ra===0;if(k==='bw')return won&&box.r-box.ra>=5;return (box[k]|0)>=x[2]};
+  const hit=(offer||[]).filter(o=>ok(o[0]));return {pt:hit.reduce((s,o)=>s+o[2],0),hit:hit.map(o=>o[1])}}
 const yearGame=res=>({pt:{w:25,d:12,l:8}[res]|0}); // 연도 리그 경기당(정규·포스트시즌 공통). 144경기·하루 약 60경기 기준 하루 약 1,100P → 상한 1,500P 안
 function yearLeague(rank,firstWin){if(rank===1)return firstWin?{pt:3000,tix:{gg:1}}:{pt:500};return {pt:[0,0,800,500][rank]||200}}
 
@@ -48,15 +58,17 @@ const W=[0,30,22,18,12,8,5,3,1.6,.8,.35];
 const PACKS=[
  {k:'n', n:'일반 팩',     p:500, cnt:5,d:'5장 · 전체 무작위 · 1장은 3코스트 이상'},
  {k:'p', n:'프리미엄 팩', p:1800,cnt:5,d:'5장 · 4코스트 이상 · 1장은 스타(6+) · 20팩 안에 레전드(9+) 확정'},
- {k:'t', n:'구단 묶음 팩', p:800, cnt:5,d:'5장 · 고른 구단 계보 최대 3개 · 1장은 3코스트 이상'},
- {k:'y', n:'연도 묶음 팩', p:800, cnt:5,d:'5장 · 고른 연도 최대 3개 · 1장은 3코스트 이상'},
+ {k:'t', n:'구단 묶음 팩', p:800, cnt:5,d:'5장 · 고른 구단 계보 3개 · 1장은 3코스트 이상'},
+ {k:'y', n:'연도 묶음 팩', p:800, cnt:5,d:'5장 · 고른 연도 3개 · 1장은 3코스트 이상'},
  {k:'sx',n:'스타 이벤트 팩',p:1500,cnt:5,d:'5장 · 4코스트 이상 · 장마다 골든글러브·올스타 25% · 1장은 골글·올스타 확정'},
  {k:'ty',n:'팀 팩',       p:1000,cnt:3,d:'3장 · 고른 연도·구단 한 팀 · 1장은 도감에 없는 그 팀 주전 확정'},
  {k:'b', n:'블록 팩',     p:400, cnt:3,d:'스킬 블록 3개 (C50/B30/A15/S5) · 1개는 B급 이상'},
- {k:'tc',n:'작전 카드 팩',p:600, cnt:3,d:'작전 카드 3장 (일반75/특수20/황금5)'},
+ {k:'tc',n:'작전 카드 팩',p:600, cnt:3,d:'작전 카드 3장 (일반75/특수20/황금5) · 1장은 특수 이상'},
  {k:'t1',n:'작전 카드 1장',p:100,cnt:1,d:'작전 카드 1장'},
  {k:'sp',n:'서포트 카드 팩',p:500,cnt:3,d:'서포트 카드 3장'}];
 const PITY={p:20};
+// 작전 카드 팩 등급(일반75/특수20/황금5), 3장 중 1장은 특수 이상 보장. 반환 등급 배열 → 해당 등급 TCARDS에서 뽑기
+function tcGrades(n){n=n||3;const g=()=>{const u=rnd();return u<.05?'황금':u<.25?'특수':'일반'};const o=[];for(let i=0;i<n;i++)o.push(g());if(o.every(x=>x==='일반'))o[n-1]=rnd()<.2?'황금':'특수';return o}
 const FLOOR={n:3,t:3,y:3,p:6};
 // 블록 팩 등급(C50/B30/A15/S5), 3개 중 1개는 B 이상 보장. 반환 등급 배열 → mkBlock(t,g)에 넘김
 function blockGrades(n){n=n||3;const g=()=>{const u=rnd();return u<.05?'S':u<.2?'A':u<.5?'B':'C'};const o=[];for(let i=0;i<n;i++)o.push(g());if(o.every(x=>x==='C')){const u=rnd();o[n-1]=u<.1?'S':u<.4?'A':'B'}return o}  // 프리미엄 팩 연속 20팩 동안 레전드가 없으면 그 팩 마지막 장은 레전드
@@ -78,6 +90,7 @@ function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); 
   return pool}
 // 카드 팩 뽑기: 포인트 차감 + 천장 + 도감 등록까지. 반환 {cards, dex(새로 완성된 세트), err}
 function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','ty','sx'].includes(k))return {err:'카드 팩이 아니에요'};
+  opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개를 골라 주세요'};
   if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드가 없어요'};
   S.pt-=pk.p;const out=[];const sp=k==='sx'?pool.filter(c=>c.v==='GG'||c.v==='AS'):null,nsp=sp&&pool.filter(c=>!c.v);
   for(let i=0;i<pk.cnt;i++)out.push(k==='ty'?pool[Math.floor(rnd()*pool.length)]:sp?wpick(rnd()<.25?sp:nsp):wpick(pool));
@@ -176,7 +189,7 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
     for(const s of SETS)if(s.kind==='meta'&&setProgress(S,s).have>=s.need[1])S.dexDone[s.id]=-1}
   S.dexDone=S.dexDone||{};return S}
 
-const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,yearGame,yearLeague,W,PACKS,PITY,FLOOR,blockGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
+const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
   DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,redeem,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);
