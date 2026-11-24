@@ -472,13 +472,18 @@ input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10
 #hdr{border-bottom:2px dashed var(--line)}
 /* 배경 그림: 팀 화면은 덕아웃, 나머지는 야구장 (글자가 읽히게 어두운 초록 막) */
 body{background-image:none}
-.bgl{position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(9,36,24,.80),rgba(9,36,24,.90)),url(img/bg-field.jpg) center/cover no-repeat}
-body[data-bg=team] .bgl{background-image:linear-gradient(180deg,rgba(12,30,20,.78),rgba(12,30,20,.90)),url(img/bg-dugout.jpg),url(img/bg-field.jpg)}
-body[data-bg=pen] .bgl{background-image:linear-gradient(180deg,rgba(12,30,20,.78),rgba(12,30,20,.90)),url(img/bg-bullpen.jpg),url(img/bg-dugout.jpg)}
-body[data-bg=cage] .bgl{background-image:linear-gradient(180deg,rgba(12,30,20,.78),rgba(12,30,20,.90)),url(img/bg-cage.jpg),url(img/bg-dugout.jpg)}
-body[data-bg=fungo] .bgl{background-image:linear-gradient(180deg,rgba(12,30,20,.78),rgba(12,30,20,.90)),url(img/bg-fungo.jpg),url(img/bg-field.jpg)}
-body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(12,30,20,.78),rgba(12,30,20,.90)),url(img/bg-catch.jpg),url(img/bg-field.jpg)}
-.toast{flex-basis:100%}
+.bgl{position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-field.jpg) center/cover no-repeat}
+body[data-bg=team] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-dugout.jpg),url(img/bg-field.jpg)}
+body[data-bg=pen] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-bullpen.jpg),url(img/bg-dugout.jpg)}
+body[data-bg=cage] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-cage.jpg),url(img/bg-dugout.jpg)}
+body[data-bg=fungo] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-fungo.jpg),url(img/bg-field.jpg)}
+body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-catch.jpg),url(img/bg-field.jpg)}
+.toast{flex-basis:100%}#hdr:empty{display:none}
+/* 그림이 보이게: 막은 옅게, 글자 있는 묶음에만 반투명 바탕 */
+#hdr{background:rgba(6,14,10,.62);border-radius:0 0 16px 16px;padding:14px 18px 12px;border-bottom:0;backdrop-filter:blur(3px)}
+#view>.band,#view>.lg>.band,#view>.lg>.hero,#view>.lg>section.board{background:rgba(6,14,10,.62);border-radius:16px;padding:16px 18px;margin-top:14px;border-bottom:0;backdrop-filter:blur(3px)}
+#view>.band.hub{background:none;backdrop-filter:none;padding:0}
+.login{max-width:440px;margin:12vh auto 0;display:grid;gap:16px;text-align:center;background:rgba(6,25,15,.7);border:1px solid var(--line);border-radius:18px;padding:32px 24px}.login .logo.big{font-size:40px}.login .gbtn{min-height:52px;font-size:18px;background:#fff;color:#1b1d1c;border-color:#fff}
 
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>

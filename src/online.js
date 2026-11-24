@@ -18,7 +18,7 @@ async function loadLeague(){const F=fb(),lid=ON.cur;
   const gs=await F.getDocs(F.query(F.collection(F.db,'leagues',lid,'games'),F.orderBy('at','desc'),F.limit(200)));ON.games=gs.docs.map(d=>d.data())}
 async function afterLogin(){if(!S||!ON.user||ON.pulled===ON.user.uid)return;ON.pulled=ON.user.uid;await cloudPull();await loadLeagues();render()}
 function fbBoot(){const F=fb();if(!F)return;if(fbBoot.done){afterLogin();return}fbBoot.done=1;
-  F.onAuthStateChanged(F.auth,async u=>{ON.user=u;ON.pulled=null;if(u)await afterLogin();else{ON.leagues=[];ON.cur=null;if(S)render()}})}
+  F.onAuthStateChanged(F.auth,async u=>{ON.user=u;ON.pulled=null;ON.ready=1;if(S)render();if(u)await afterLogin();else{ON.leagues=[];ON.cur=null;if(S)render()}})}
 addEventListener('fb-ready',fbBoot);
 const code6=()=>Array.from({length:6},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
 const myName=()=>(ON.user&&(ON.user.displayName||ON.user.email||'').split('@')[0])||'나';

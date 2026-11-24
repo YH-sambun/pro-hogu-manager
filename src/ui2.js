@@ -150,7 +150,7 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   <div class="quick"><a href="#season"><button style="width:100%">주간 리그로</button></a><a href="#years"><button class="ghost" style="width:100%">연도별 리그</button></a><a href="#lineup"><button class="ghost" style="width:100%">라인업 확인</button></a><a href="#shop"><button class="ghost" style="width:100%">카드팩 열기</button></a></div>
   ${e.length?`<p class="note" style="color:var(--bad)">라인업을 먼저 채워 주세요: ${esc(e[0])}</p>`:''}
   <div class="lbl">감독</div><p style="margin:0">${m?`${esc(m.n)} · ${MSTY[m.st]} · [${esc(m.sn)}]`:'없음'}</p><div class="lbl">내 덱 효과</div><p style="margin:0">${d.fx.map(x=>`${esc(x.n)} ${x.g}`).join(' · ')||'팀컬러 없음'} · 야수 +${d.bat} · 투수 +${d.pit} · 코스트 ${d.cost}/${COST_CAP}</p></div>
-  <div class="box"><h3>오늘</h3><p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
+  <div class="box"><h3>오늘</h3>${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 8px">로그인 없이 하는 중이에요. 이 기기에만 저장돼요. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
   <div class="lbl">쿠폰</div><div class="tools" style="flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}</div></section>`}
 async function redeemCoupon(){const el=document.getElementById('cpn'),code=((el&&el.value)||'').trim().toUpperCase();if(!code){S.cpMsg='코드를 넣어 주세요';render();return}
   const F=window.FB;if(!F){S.cpMsg='쿠폰은 온라인(배포판)에서만 쓸 수 있어요';render();return}
@@ -657,6 +657,14 @@ function vGame(){
   <section class="band cols2"><div><h3>${g.hl?'하이라이트 <small>득점·홈런·보살·실책·교체</small>':'문자 중계'}</h3><ol class="glog">${logHTML(g)}</ol></div><div><details open><summary>박스스코어</summary>${box(0)}${box(1)}</details></div></section>`}
 /*MODES*/
 /*ONLINE*/
+// ===== 시작 화면: 배포판(Firebase)은 구글 로그인부터 =====
+const FBMODE=()=>!!document.querySelector('script[type=module]');
+function loginView(){return `<section class="login"><div class="logo big">프로호구 매니저<small>KBO 1982–2026 선수카드 매니저</small></div>
+  <p class="note">구글 계정으로 로그인하면 진행 상황이 클라우드에 저장돼서 어느 기기에서든 이어서 할 수 있고, 친구 리그도 할 수 있어요.</p>
+  ${ON.ready||window.FB?`<button class="big gbtn" data-a="o-login">Google로 로그인</button>`:'<p class="note">로그인 준비 중…</p>'}
+  ${ON.msg?`<p class="note" style="color:var(--bad)">${esc(ON.msg)}</p>`:''}
+  <button class="ghost" data-a="guest">로그인 없이 하기 (이 기기에만 저장)</button></section>`}
+setTimeout(()=>{if(!ON.ready){ON.ready=1;if(S)render()}},8000);
 // ===== 화면 전환 =====
 const ROUTES={home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,lineup:vLineup,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex};
 const LEG=new Set(['season','years','online','game','cards']);
@@ -671,13 +679,14 @@ function head(k){const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b
   <div id="subnav" class="subnav2" role="navigation" aria-label="하위 메뉴" ${L.length<2?'hidden':''}>${L.length>1?L.map(([h,n])=>`<a href="#${h}" class="${h===k?'on':''}"${h===k?' aria-current="page"':''}>${n}</a>`).join(''):''}</div>
   ${S.toast?`<div class="toast">${esc(S.toast)}</div>`:''}`}
 function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}restoreLift();syncTeam();rebuildOwn();
+  if(FBMODE()&&!ON.user&&!S.guest){document.body.dataset.bg='field';hdr.innerHTML='';vw.innerHTML=loginView();return}
   const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=head(k);let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면을 그리지 못했어요</h2><p class="note">${esc(e.message)}</p></section>`}
   vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+cmpBar()+modal();S.toast='';
   const sv=$('#sv');if(sv)sv.value=btoa(unescape(encodeURIComponent(JSON.stringify(S,function(kk,v){return this===S&&TRANS.has(kk)?undefined:v}))));if(S.modal)scrollTo(0,y);saveSoon()}
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','coupon']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','coupon']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -686,6 +695,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='more'){flt.lim+=240;render()}
   else if(a==='dexmore'){S.dexLim=(S.dexLim||24)+24;render()}
   else if(a==='coupon')redeemCoupon();
+  else if(a==='guest'){S.guest=1;save();render()}
   else if(a==='rmphoto'){delete S.photos[S.modal];save();render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
   else if(a==='load'){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#sv').value.trim()))));if(o&&o.team&&o.season){S=o;ensureUI();save();render()}}catch(e){b.textContent='코드를 읽지 못했어요'}}
