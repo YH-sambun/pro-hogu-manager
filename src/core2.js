@@ -33,7 +33,10 @@ function loadCards(json){
   byId=Object.fromEntries(CARDS.map(c=>[c.id,c]));TEAMYEARS={};
   for(const c of CARDS)if(!c.v)(TEAMYEARS[c.year+' '+c.team]=TEAMYEARS[c.year+' '+c.team]||[]).push(c.id)}
 // 시뮬레이션용 능력치로 변환
-function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,ctl:r.ctl,sta:r.sta,men:r.men}}
+// 구종별 땅볼 성향(등급 S~D 배율). 싱커·포크·스플리터·체인지업은 땅볼, 하이 패스트볼(직구)은 뜬공
+const PT_GB={'싱커':.07,'포크':.045,'스플리터':.045,'체인지업':.03,'커브':.02,'커터':.015,'슬라이더':0,'직구':-.02},PT_G={S:1.5,A:1.25,B:1,C:.7,D:.4};
+const gbOf=(c,r)=>cl(.45+Object.entries(c.pt||{}).reduce((s,[k,g])=>s+(PT_GB[k]||0)*(PT_G[g]||.7),0)-(r.vel-70)*.0015,.3,.64);
+function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45,hv:r.stu,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men}}
 // 타순 적성: T 테이블세터(1·2번), C 클린업(3~6번), L 하위 타선(7~9번, 누구나 가능). 적성 밖 타순이면 교타·장타·선구 -10%
 // 실제 기록 기준: 100타석 이상에서 출루율 .330 이상 → 테이블세터, OPS .700 이상 → 클린업(둘 다 가능). 기록이 없으면 능력치로 추정
 const pkt=c=>c.pk+'|'+c.type;
@@ -255,7 +258,7 @@ function simTeam(T,cond){
   const M=mgrOf(T),tac=M?{...M.t}:{...TAC_DEF},fx=M?M.fx:{};
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
   const AS=T.abSt||{},tc=teamColor(all),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{};for(const k in raw){if(k!=='sta')raw[k]+=bon;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
-    const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2}
+    const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
     const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+bon+(sk.def||0)])):null;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;return {...c,r,ps,rawr:raw}};
   const LC=T.lineup.map(x=>byId[x.id]);
   const lu=T.lineup.map((x,i)=>{const c=mod(byId[x.id]);let m=1;if(!boOk(c,i)){m*=BO_PEN;c.boBad=1}const a=adjBonus(LC,i);if(a){m*=1+a*ADJ_PCT/100;c.adj=a}
@@ -264,7 +267,7 @@ function simTeam(T,cond){
   const def=fld.reduce((s,x)=>s+effDef(x.c,x.pos)*w(x.pos),0)/fld.reduce((s,x)=>s+w(x.pos),0)+(fx.def||0);
   return {name:T.name,color:T.color,lu,bench:(T.bench||[]).map(id=>byId[id]).filter(Boolean).map(mod),sp:mod(byId[T.rot[(T.rotIdx||0)%T.rot.length]]),pen:T.pen.map(id=>mod(byId[id])),def,tc,tac,fx,mgr:T.mgr||'',tcards:(T.tsel?[T.tsel]:(T.tcards||[])).slice(0,5),ctx:T.ctx||{}}}
 
-function newPit(g,s,c,starter){if(starter&&g.ta[s].has('p1'))c={...c,r:{...c.r,sta:c.r.sta+10,stu:c.r.stu+3}};const T=g.t[s],tac=T.tac||TAC_DEF,fx=T.fx||{},cat=(T.lu.find(x=>x.pos==='C')||{}).c,bt=battery(c,cat);
+function newPit(g,s,c,starter){if(starter&&g.ta[s].has('p1'))c={...c,r:{...c.r,sta:c.r.sta+10,stu:c.r.stu+3,kv:c.r.kv+3,hv:c.r.hv+3}};const T=g.t[s],tac=T.tac||TAC_DEF,fx=T.fx||{},cat=(T.lu.find(x=>x.pos==='C')||{}).c,bt=battery(c,cat);
   const L=starter?(16+c.r.sta*.16)*[1.2,1.1,1,.92,.85][tac.hook]*(fx.shook||1):(3+c.r.sta/20)*[1.2,1.1,1,.95,.9][tac.relief];
   const p={c,starter,bf:0,outs:0,h:0,r:0,bb:0,k:0,hr:0,L,bat:bt.v,badj:batAdj(bt.v)};g.px[s].push(p);g.used[s].add(c.id);return p}
 function mkGame(A,H){
@@ -276,6 +279,8 @@ function mkGame(A,H){
   say(g,'1회초','i');return g}
 function say(g,txt,k){g.log.push({inn:g.inn,half:g.half,txt,k:k||''})}
 const lim=p=>p.L;
+// 리그 기준(능력치 70일 때 비율). 엔진 안에서만 쓰는 값
+const LG={bb:.085,k:.175,hr:.025,babip:.3,gb:.45},log5=(b,p,l)=>{const o=b/(1-b)*p/(1-p)/(l/(1-l));return o/(1+o)};
 function manage(g,f){
   const T=g.t[f],p=g.pit[f],lead=g.sc[f]-g.sc[1-f],closer=T.pen[0],tac=T.tac||TAC_DEF,cv=tac.relief,fx=T.fx||{},clean=g.outs===0&&!g.bases.some(Boolean);
   const lo=[1,1,1,0,-1][cv],hi=[3,3,4,4,4][cv],cfree=closer&&!g.used[f].has(closer.id)&&p.c.id!==closer.id;
@@ -356,23 +361,31 @@ function pa(g,manual){
    if(Object.keys(m).length){b0={...b0};for(const k in m)b0[k]+=m[k]}}
   let br=clutch?{...b0,con:b0.con+(b0.men-70)*.2+(risp?(ofx.clutch||0):0)}:b0;if(ofx.ace&&pc.ovr>=75)br={...br,con:br.con+ofx.ace};
   const def=g.t[f].def,sw=otac.power-2,sh=dtac.shift-2;
-  const pBB=cl(.08+.035*X(br.eye)-.03*X(ctl)-.003*sw+.002*po+0,.02,.18),pK=cl(.18+.08*X(stu)-.06*X(br.con)-.02*X(br.eye)+.006*sw+(g.hnr?.015:0)+(ofx.kp||0)+0,.05,.38),
-    pHR=cl((.026+.032*X(br.pow)-.012*X(stu)+.004*sw+(ofx.hrp||0))*1,.003,.09),pHit=cl(.29+.06*X(br.con)-.03*X(stu)-.04*X(def)+.015*X(br.spd)+(g.inf?.03:0)-.003*sw-.004*sh-(risp?(dfx.risp||0):0),.2,.45);
+  // ── 타석 모델: 능력치 70 = 그 시즌 리그 평균(카드 변환식 기준). 타자·투수 각자의 비율을 log5로 합쳐 특징이 그대로 드러나게 ──
+  const dS=stu-pc.r.stu,kv=(pc.r.kv!=null?pc.r.kv:pc.r.stu)+dS,hv=(pc.r.hv!=null?pc.r.hv:pc.r.stu)+dS,pgb=pc.r.gb!=null?pc.r.gb:LG.gb;
+  const plat=!b.bh||!pc.ph?0:b.bh==='S'?.5:b.bh===pc.ph?-1:1; // 같은 손 -1, 반대 손 +1, 스위치 +0.5
+  const bBB=cl(LG.bb+(br.eye-70)*.0032,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0016,.002,.1),
+    bBA=cl(LG.babip+(br.con-70)*.0028,.2,.42),bGB=cl(LG.gb-(br.pow-70)*.004+(br.spd-70)*.001,.28,.62);
+  const qBB=cl(LG.bb-(ctl-70)*.0065,.012,.25),qK=cl(LG.k+(kv-70)*.011,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005,.008,.05),qBA=cl(LG.babip-(hv-70)*.0012,.24,.36);
+  const pBB=cl(log5(bBB,qBB,LG.bb)-.003*sw+.002*po,.015,.25),pK=cl(log5(bK,qK,LG.k)*(1-.05*plat)+.006*sw+(g.hnr?.015:0)+(ofx.kp||0),.03,.45),
+    pG=log5(bGB,pgb,LG.gb),pHR=cl(log5(bHR,qHR,LG.hr)*(1-pG)/(1-LG.gb)*(1+.07*plat)*(1+.12*sw)+(ofx.hrp||0),.001,.11),
+    pBA=log5(bBA,qBA,LG.babip)+.01*plat-.04*X(def)+(g.inf?.03:0)-.003*sw-.004*sh-(risp?(dfx.risp||0):0);
   P.bf++;let u=rnd(),txt='',n=0,big='';const sb=g.sc[bat];
   if(u<pBB+.007){const hbp=u>=pBB;n=force(g,run);bs.bb++;P.bb++;txt=hbp?'몸에 맞는 공':'볼넷'}
   else if((u-=pBB+.007)<pK){bs.ab++;bs.k++;P.k++;out(g,1);txt=rnd()<.7?'헛스윙 삼진':'루킹 삼진';
     if(g.hnr&&B[0]&&g.outs<3){const s=B[0];if(rnd()<.55+.25*X(s.c.r.spd)-.04*po+(ofx.hnr||0)){B[1]=s;B[0]=null;g.bx[bat][s.c.id].sb++;txt+=` (히트앤런, ${s.c.name} 2루 안착)`}else{B[0]=null;out(g,1);txt+=` (히트앤런 실패, ${s.c.name} 아웃)`}}}
   else if((u-=pK)<pHR){bs.ab++;bs.h++;bs.hr++;P.h++;P.hr++;g.hits[bat]++;const on=B.filter(Boolean).length;
     for(const r of B)if(r)score(g,r);score(g,run);g.bases=[null,null,null];n=on+1;txt=`${pick(DIR)}월 ${['솔로','투런','스리런','만루'][on]} 홈런!`;big='hr'}
-  else{bs.ab++;
-    if(rnd()<pHit){bs.h++;P.h++;g.hits[bat]++;const t=rnd(),p3=.02+.03*Math.max(0,X(br.spd)),p2=.18+.07*X(br.pow);
+  else{bs.ab++;const gb=rnd()<pG; // 땅볼 타구는 안타가 덜 되고(주력이 빠르면 내야안타) 장타가 거의 없음. 뜬공·라인드라이브는 장타
+    const pHit=cl(pBA+(gb?-.035+(br.spd-70)*.0015:.03),.15,.5);
+    if(rnd()<pHit){bs.h++;P.h++;g.hits[bat]++;const t=rnd(),p3=gb?.004:cl(.025+(br.spd-70)*.0012,.005,.08),p2=gb?cl(.07+(br.pow-70)*.002,.03,.12):cl(.3+(br.pow-70)*.006-(hv-70)*.002,.15,.5);
       if(t<p3){for(const r of B)if(r)score(g,r);n=B.filter(Boolean).length;g.bases=[null,null,run];txt=`${pick(DIR)}중간 3루타`}
       else if(t<p3+p2){const nb=[null,run,null],dd=pick(['좌익선상','좌중간','우중간','우익선상']),F=fld(dd[0]==='좌'?'LF':dd==='우익선상'?'RF':'CF');let ex='';if(B[2]){score(g,B[2]);n++}if(B[1]){score(g,B[1]);n++}
         if(B[0]){if(rnd()<.45+.2*X(B[0].c.r.spd)){if(armOut(F,B[0],.03)){out(g,1);cr(F);ex=` (${F.c.name} 홈 보살, ${B[0].c.name} 아웃)`}else{score(g,B[0]);n++}}else nb[2]=B[0]}g.bases=nb;txt=`${dd} 2루타${ex}`}
       else{const nb=[run,null,null],dr=pick(DIR),F=fld(OFP[dr]);let ex='';if(B[2]){score(g,B[2]);n++}
         if(B[1]){if(rnd()<.65+.2*X(B[1].c.r.spd)+(ofx.xb||0)){if(g.outs<3&&armOut(F,B[1],.035)){out(g,1);cr(F);ex=` (${F.c.name} 홈 보살, ${B[1].c.name} 아웃)`}else{score(g,B[1]);n++}}else nb[2]=B[1]}
         if(B[0]&&g.outs<3){if(!nb[2]&&rnd()<.27+.15*X(B[0].c.r.spd)+(g.hnr?.35+(ofx.hnr||0):0)+(ofx.xb||0)){if(armOut(F,B[0],.02)){out(g,1);cr(F);ex+=` (${F.c.name} 3루 보살, ${B[0].c.name} 아웃)`}else nb[2]=B[0]}else nb[1]=B[0]}g.bases=g.outs<3?nb:[null,null,null];txt=`${dr}전 안타${ex}`}}
-    else{const o0=g.outs,gb=rnd()<.48,fp=gb?pick(['P','1B','2B','SS','3B','SS','2B']):pick(['LF','CF','RF','LF','CF','RF','2B','SS']),FD=fld(fp);
+    else{const o0=g.outs,fp=gb?pick(['P','1B','2B','SS','3B','SS','2B']):pick(['LF','CF','RF','LF','CF','RF','2B','SS']),FD=fld(fp);
       // 실책: 그 타구를 처리한 야수의 수비가 낮을수록 잦음(수비 90 기준 2.5%)
       if(FD&&rnd()<cl(.025-.012*DX(FD.d),.006,.07)){ce(FD);if(B[2]&&B[1]&&B[0]){n=force(g,run)}else{if(B[2]){score(g,B[2]);n++}const nb=[run,B[0]||null,B[1]||null];g.bases=nb}txt=`${PK[fp]} 실책으로 출루`}
       else if(gb){

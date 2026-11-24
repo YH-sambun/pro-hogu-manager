@@ -246,7 +246,7 @@ function face(c){const k=c.type==='P'?'P':c.pos==='C'?'C':'B',sk='#f1d3b5',dk='#
  return `<svg viewBox="0 0 160 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g opacity=".14">${[0,1,2,3,4,5].map(i=>`<rect x="${i*30-10}" y="0" width="12" height="120" transform="skewX(-20)" fill="#fff"/>`).join('')}</g>
  <path d="M22 120 Q26 98 56 94 L104 94 Q134 98 138 120Z" fill="#fff"/><path d="M68 94 L80 108 L92 94" fill="none" stroke="${c.col}" stroke-width="4"/><rect x="70" y="84" width="20" height="14" fill="${sk}"/>
  <ellipse cx="80" cy="64" rx="28" ry="31" fill="${sk}"/><circle cx="70" cy="64" r="3" fill="${dk}"/><circle cx="90" cy="64" r="3" fill="${dk}"/><path d="M72 80 Q80 85 88 80" stroke="${dk}" stroke-width="2.5" fill="none" stroke-linecap="round"/>${cap}${mask}</svg>`}
-function photo(c,credit,full){const up=(S.photos||{})[c.id],m=c.img;const im=src=>`<img src="${esc(src)}" alt="${esc(c.name)}" class="${full?'':'facecrop'}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%">`;
+function photo(c,credit,full){const up=(S.photos||{})[baseId(c.id)]||(S.photos||{})[c.id],m=c.img;const im=src=>`<img src="${esc(src)}" alt="${esc(c.name)}" class="${full?'':'facecrop'}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%">`;
  if(up)return im(up);if(!m)return numArt(c,full);return numArt(c,full)+im(m.f).replace('<img ','<img loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" ')}
 // 사진 없는 선수: 구단 색 + 등번호(없으면 포지션). 실제 로고·엠블럼 없음
 const POSA={C:'C','1B':'1B','2B':'2B','3B':'3B',SS:'SS',LF:'LF',CF:'CF',RF:'RF',DH:'DH',SP:'SP',RP:'RP'};
@@ -643,7 +643,7 @@ function modal(){if(S.dexView)return dexViewModal();const c=by[S.modal];if(!c)re
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button>${(S.owned[baseId(c.id)]|0)>1?`<button class="ghost" data-a="dism" data-id="${esc(baseId(c.id))}" title="${c.v==='EX'?'EX 조각 3개 = 구단 지정 EX 확정권 1장':'코스트 × 30P'}">중복 1장 분해 · ${c.v==='EX'?`EX 조각 ${(S.exShard|0)}/3`:'+'+(c.cost*ECON.DISMANTLE)+'P'}</button>`:''}<button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.un?`대학 <b>${esc(c.un)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',!c.rg&&!c.hs?'출신 정보 없음':'',`${esc(lname(c.line))} 계보`,c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null?(abAge(c)?'유학 가능':'유학 불가'):''].filter(Boolean).join(' · ')}</p>${recHTML(c)}${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
- <p class="note" style="text-align:center"><a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
+ <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · <a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
 vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
  if(abAct(D)||shopAct(D)){render();return}
  if(D.dexk){S.dexK=D.dexk;S.dexLim=0;render();return}
@@ -761,16 +761,16 @@ function loginView(){return `<section class="login"><div class="logo big">프로
   <button class="ghost" data-a="guest">로그인 없이 하기 (이 기기에만 저장)</button></section>`}
 setTimeout(()=>{if(!ON.ready){ON.ready=1;if(S)render()}},8000);
 // ===== 화면 전환 =====
-const ROUTES={home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,lineup:vLineup,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex};
+const ROUTES={home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,lineup:vLineup,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide};
 const LEG=new Set(['season','years','online','game','cards']);
 const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['skill','스킬'],['cards','보유 카드']],cards:[['shop','카드팩'],['synth','합성'],['abroad','유학'],['dex','도감']]};
-const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';
+const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
 function head(k){const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `<div class="logo">프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small></div>
   <div class="wallet"><span id="ptw">${(S.pt||0).toLocaleString()} P</span>${tx?`<a href="#shop" style="text-decoration:none;color:inherit"><span>확정권 ${tx}장</span></a>`:''}<span>블록 ${S.blocks.filter(b=>!b.on).length}</span>${s?`<span>${s.tier?esc(tierName(s.tier)):'시즌 '+s.n} · ${Math.min(s.round+1,s.sched.length)}/${s.sched.length}</span>`:''}</div>
-  <nav id="nav">${Object.entries(NAVS).map(([gk,LL])=>`<a href="#${LL[0][0]}" data-g="${gk}" class="${gk===g?'on':''}">${NAVN[gk]}</a>`).join('')}<button id="helpBtn" class="ghost" aria-pressed="${document.body.classList.contains('showhelp')}" style="margin-left:auto">${document.body.classList.contains('showhelp')?'설명 숨기기':'설명 보기'}</button></nav>
+  <nav id="nav">${Object.entries(NAVS).map(([gk,LL])=>`<a href="#${LL[0][0]}" data-g="${gk}" class="${gk===g?'on':''}">${NAVN[gk]}</a>`).join('')}<a href="#guide" class="${k==='guide'?'on':''}" style="margin-left:auto">능력치 가이드</a><button id="helpBtn" class="ghost" aria-pressed="${document.body.classList.contains('showhelp')}">${document.body.classList.contains('showhelp')?'설명 숨기기':'설명 보기'}</button></nav>
   <div id="subnav" class="subnav2" role="navigation" aria-label="하위 메뉴" ${L.length<2?'hidden':''}>${L.length>1?L.map(([h,n])=>`<a href="#${h}" class="${h===k?'on':''}"${h===k?' aria-current="page"':''}>${n}</a>`).join(''):''}</div>
   ${S.toast?`<div class="toast">${esc(S.toast)}</div>`:''}`}
 function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}restoreLift();syncTeam();rebuildOwn();
@@ -797,7 +797,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='dexmore'){{const st=(S.dexK||'all')==='all'?60:24;S.dexLim=(S.dexLim||st)+st};render()}
   else if(a==='coupon')redeemCoupon();
   else if(a==='guest'){S.guest=1;save();render()}
-  else if(a==='rmphoto'){delete S.photos[S.modal];save();render()}
+  else if(a==='rmphoto'){delete S.photos[baseId(S.modal)];delete S.photos[S.modal];save();render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
   else if(a==='load'){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#sv').value.trim()))));if(o&&o.team&&o.season){S=o;ensureUI();save();render()}}catch(e){b.textContent='코드를 읽지 못했어요'}}
   else if(a==='reset'){if(b.dataset.c){fresh();packOut=null;G=null;render()}else{b.dataset.c=1;b.textContent='한 번 더 누르면 초기화'}}}
