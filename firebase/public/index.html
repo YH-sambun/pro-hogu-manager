@@ -518,6 +518,18 @@ body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 .numart.nopos b{font-size:clamp(16px,min(28cqw,40cqh),76px)}
 .numart small{position:absolute;z-index:2;top:6%;left:7%;font:700 clamp(8px,min(9cqw,11cqh),15px) "Noto Sans KR";color:rgba(255,255,255,.9);letter-spacing:.04em}
 .oart,.cv,.cart,.fig{container-type:size}
+
+.lg details.gl{border-top:1px solid rgba(255,255,255,.1);padding:2px 0}.lg details.gl:first-of-type{border-top:0}
+.lg details.gl>summary{cursor:pointer;padding:9px 4px;font-size:14px;list-style:none;display:flex;gap:8px;align-items:center}
+.lg details.gl>summary::-webkit-details-marker{display:none}.lg details.gl>summary::after{content:"▾";margin-left:auto;color:var(--mute)}.lg details.gl[open]>summary::after{content:"▴"}
+.lg details.gl>summary b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--clay2,#c55);color:#fff;font-size:12px}
+.lg details.gl[open]{background:rgba(0,0,0,.18);border-radius:10px;padding:2px 8px 10px}
+.lg details.gl .tbl{font-size:12.5px;margin-top:8px}.lg .tbl.ls td,.lg .tbl.ls th{padding:4px 6px;text-align:center}
+.lg details.gl .glog{max-height:220px;overflow:auto;font-size:13px;margin:8px 0 0;padding-left:20px}
+.lg .band h3 small{font:500 12px "Noto Sans KR";color:var(--mute);margin-left:6px}
+.lg .band>details>summary{cursor:pointer;padding:4px 0}
+.stars.sn{letter-spacing:0;font-weight:700;font-family:"Noto Sans KR"}
+.lg .warn a{color:var(--gold)}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1320,7 +1332,7 @@ function bars(c,keys,bonus){return keys.map(k=>{const v=c.r[k],p=k==='sta'?0:(bo
 const CONDN=['','최악','나쁨','보통','좋음','최상'],CONDA=[0,90,45,0,-45,-90];
 const condOf=c=>{if(!c)return 3;const v=(S.cond||{})[String(c.id).split('#')[0]]||3;return Math.max(condMin(String(c.id).split('#')[0]),v)};
 const condI=c=>{const v=condOf(c);return `<i class="cnd cd${v}" title="컨디션 ${CONDN[v]}" aria-label="컨디션 ${CONDN[v]}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h8M8 4.5 11.5 8 8 11.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="rotate(${CONDA[v]} 8 8)"/></svg></i>`};
-const stars=n=>`<i class="stars" title="코스트 ${n}" aria-label="코스트 ${n}">${'★'.repeat(n)}</i>`;
+const stars=n=>`<i class="stars${n>5?' sn':''}" title="코스트 ${n}" aria-label="코스트 ${n}">${n>5?'★'+n:'★'.repeat(n)}</i>`; // 6 이상은 ★7처럼 숫자로(카드 폭 넘침 방지)
 function card(c,o={}){if(!c)return '';const keys=c.type==='B'?BK:PKEY,d=o.full?deckFx():null,bn=d&&used().includes(c.id)?(c.type==='B'?d.bat:d.pit):o.full?0:null;
  return `<div class="card t-${c.tier}${c.v?' cv-'+c.v:''}${o.dim?' dim':''}${o.full?' big':o.stats?'':' slim'}" style="--tc:${c.col}" ${o.pick?`role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}" aria-label="${esc(c.name)} 카드 크게 보기"`:''}>
  <div class="art">${photo(c,o.full,o.full)}${c.v?`<span class="fxo fx-${c.v}" aria-hidden="true"></span>`:''}<span class="ovr">${condI(c)}${c.ovr}</span><span class="tag">${PFULL[c.pos]}${c.tw?' · 겸업':''}${HAND[c.h]?` · ${HAND[c.h]}`:''}</span>${c.v?`<span class="vb v-${c.v}">${VN[c.v]}</span>`:''}${planeB(c,'plb')}${o.inUse?'<span class="use">1군</span>':''}${abOf(c.id)?'<span class="use abu">유학 중</span>':''}${S.locks&&S.locks.includes(c.id)?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div>
