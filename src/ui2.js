@@ -25,7 +25,7 @@ const clean=T=>({...T,rot:T.rot.filter(Boolean),pen:T.pen.filter(Boolean),bench:
 // 덱 프리셋·모드별 덱: S.decks=[{id,name,t:{lineup,bench,rot,pen,mgr,tsel}}], S.modeDeck={lg,yl,on}=덱 id(없으면 현재 라인업)
 const MODEK=m=>typeof m==='string'?m:m&&m===S.yl?'yl':'lg',MODEN={lg:'주간 리그',yl:'연도별 리그',on:'친구 리그'};
 const deckIds=t=>[...(t.lineup||[]).map(x=>x.id),...(t.bench||[]),...(t.rot||[]),...(t.pen||[])].filter(Boolean);
-const deckOk=d=>d&&deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got));
+const deckOk=d=>d&&deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))&&!exErr(deckIds(d.t)).length; // EX 타자1·투수1 넘는 저장 덱은 모드에 쓰지 않음
 const modeDeck=m=>{const id=(S.modeDeck||{})[MODEK(m)],d=(S.decks||[]).find(x=>x.id===id);return deckOk(d)?d:null};
 const snapT=()=>{syncTeam();const T=S.team;return JSON.parse(JSON.stringify({lineup:T.lineup,bench:T.bench,rot:T.rot,pen:T.pen,mgr:T.mgr,tsel:T.tsel}))};
 const userT=m=>{syncTeam();const d=m!==undefined?modeDeck(m):null;return {...clean({...S.team,...(d?JSON.parse(JSON.stringify(d.t)):{})}),color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{}}};
@@ -40,6 +40,7 @@ function validate(){syncTeam();
   if(!T.pen.filter(Boolean).length)e.push('불펜에 최소 1명이 필요합니다');
   const nm={};for(const c of regCards(T))nm[pkt(c)]=(nm[pkt(c)]||0)+1;for(const k in nm)if(nm[k]>1)e.push(`${k.split('|')[0]} 선수가 중복 등록됐습니다`);
   for(const c of regCards(T))if((S.ab||[]).some(a=>a.id===c.id&&!a.got))e.push(`${c.name}은(는) 유학 중이에요`);
+  e.push(...exErr(regCards(T).map(c=>c.id)));
   const cost=regCards(T).reduce((s,c)=>s+c.cost,0);if(cost>COST_CAP)e.push(`1군 코스트 ${cost} / 상한 ${COST_CAP} 초과`);
   return e}
 // 화면용 라인업 사본(S.lu=[[포지션,id]], S.bench/rot/pen 고정 칸) ↔ S.team
@@ -437,7 +438,7 @@ const pick2=a=>a[Math.floor(Math.random()*a.length)];
 const bv=c=>c.r.con*.35+c.r.pow*.35+c.r.eye*.2+c.r.spd*.1;
 function recommend(mode){for(let cp=0;cp<=12;cp+=.5){const r=recommend1(mode,cp);if(recCost(r)<=COST_CAP||cp>=12)return r}}
 const RF0={year:'all',team:'all'},recMatch=c=>{const f=S.recF||RF0;return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'};
-function recommend1(mode,cp){const own=[...new Map(OWN.filter(c=>!c.dup&&!abOf(c.id)).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()];
+function recommend1(mode,cp){const own=exTrim([...new Map(OWN.filter(c=>!c.dup&&!abOf(c.id)).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
  const yc={};for(const c of own){const k=c.year+' '+c.team;yc[k]=(yc[k]||0)+1}const topY=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0][0];
  const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0);
  const B=own.filter(c=>c.type==='B'),P=own.filter(c=>c.type==='P'),used2=new Set(),lu=[];
@@ -507,7 +508,7 @@ function presetBar(){const D=S.decks||[],M=S.modeDeck||{},cur=S.deckSel&&D.find(
 function deckAct(a){const D=S.decks=S.decks||[],d=D.find(x=>x.id===S.deckSel);
  if(a==='decknew'){const n=(S.deckName||'').trim()||`덱 ${D.length+1}`;const id='d'+Date.now().toString(36);D.push({id,name:n,t:snapT()});S.deckSel=id;S.deckName='';S.msg=`'${n}' 저장했어요`}
  else if(a==='decksave'&&d){d.t=snapT();S.msg=`'${d.name}'에 덮어썼어요`}
- else if(a==='deckload'&&d){if(!deckOk(d)){S.msg='없는 카드가 있어서 불러올 수 없어요';return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}'을 불러왔어요`}
+ else if(a==='deckload'&&d){const xe=exErr(deckIds(d.t));if(!deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))){S.msg='없는 카드가 있어서 불러올 수 없어요';return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}'을 불러왔어요`+(xe.length?` · ${xe.join(' · ')}. EX를 바꾼 뒤 덮어쓰기해 주세요`:'')}
  else if(a==='deckdel'&&d){if(!S.deckDel){S.deckDel=1;render();return}S.decks=D.filter(x=>x!==d);for(const k in S.modeDeck||{})if(S.modeDeck[k]===d.id)S.modeDeck[k]='';S.deckSel='';S.deckDel=0}
  save();render()}
 function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','라인업'],['mgr','감독'],['tcard','작전 카드'],['sup','서포트 카드']].map(([k,n])=>`<button role="tab" aria-selected="${S.sub===k}" class="${S.sub===k?'on':''}" data-sub="${k}">${n}</button>`).join('')}</div>`;
