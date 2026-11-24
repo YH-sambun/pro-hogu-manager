@@ -1459,7 +1459,7 @@ const tcChip=x=>`<span class="tcc g-${x.g}${x.on?' on':''}"><i>${x.g}</i><b>${es
 function meter(t,v,max,sub,over){return `<div class="meter${over?' over':''}"><b>${t}</b><span class="v">${v}</span><div class="track"><i style="width:${Math.min(100,parseFloat(v)/max*100)}%"></i></div><small>${sub}</small></div>`}
 function deckBar(){const d=deckFx();return `<div class="deck">
  ${meter('코스트 (1군 25명 전체)',`${d.cost} / ${COST_CAP}`,COST_CAP,d.cost>COST_CAP?'상한 초과: 등록할 수 없어요':`남은 코스트 ${COST_CAP-d.cost}`,d.cost>COST_CAP)}
- ${meter('1군 등록',`${d.cnt} / 25`,25,'야수 9 · 벤치 5 · 선발 5 · 불펜 6')}
+ ${meter('1군 등록',`${d.cnt} / 25`,25,(()=>{const n=exCount(used());return `야수 9 · 벤치 5 · 선발 5 · 불펜 6 · EX 타자 ${n.B}/${EX_MAX.B} · 투수 ${n.P}/${EX_MAX.P}`})())}
  <div class="meter tcm"><b>팀컬러 · 야수 +${d.bat} · 투수 +${d.pit}</b><div class="tcl">${d.fx.map(tcChip).join('')||'<span class="note">아직 없음</span>'}<button class="ghost tcall" data-a="tcall" aria-pressed="${!!S.tcAll}">${S.tcAll?'접기':'전체 보기'}</button></div></div></div>
  ${S.tcAll?`<div class="tcgrid">${['Y','F','E'].map(cat=>`<div><div class="lbl">${TCOLC[cat]} 계열 <small>(1개 적용)</small></div>${d.L.filter(x=>x.cat===cat).map(tcChip).join('')}</div>`).join('')}</div>`:''}`}
 function field(){return `<div class="field"><svg viewBox="0 0 100 86" preserveAspectRatio="none" aria-hidden="true">
