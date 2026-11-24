@@ -1302,7 +1302,7 @@ function face(c){const k=c.type==='P'?'P':c.pos==='C'?'C':'B',sk='#f1d3b5',dk='#
  <path d="M22 120 Q26 98 56 94 L104 94 Q134 98 138 120Z" fill="#fff"/><path d="M68 94 L80 108 L92 94" fill="none" stroke="${c.col}" stroke-width="4"/><rect x="70" y="84" width="20" height="14" fill="${sk}"/>
  <ellipse cx="80" cy="64" rx="28" ry="31" fill="${sk}"/><circle cx="70" cy="64" r="3" fill="${dk}"/><circle cx="90" cy="64" r="3" fill="${dk}"/><path d="M72 80 Q80 85 88 80" stroke="${dk}" stroke-width="2.5" fill="none" stroke-linecap="round"/>${cap}${mask}</svg>`}
 function photo(c,credit,full){const up=(S.photos||{})[c.id],m=c.img;const im=src=>`<img src="${esc(src)}" alt="${esc(c.name)}" class="${full?'':'facecrop'}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%">`;
- if(up)return im(up);if(!m)return numArt(c,full);return im(m.f)}
+ if(up)return im(up);if(!m)return numArt(c,full);return numArt(c,full)+im(m.f).replace('<img ','<img loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" ')}
 // 사진 없는 선수: 구단 색 + 등번호(없으면 포지션). 실제 로고·엠블럼 없음
 const POSA={C:'C','1B':'1B','2B':'2B','3B':'3B',SS:'SS',LF:'LF',CF:'CF',RF:'RF',DH:'DH',SP:'SP',RP:'RP'};
 function numArt(c,full){const n=c.no!=null&&c.no!==''?String(c.no):'',t=n||POSA[c.pos]||(c.type==='P'?'P':'B');
