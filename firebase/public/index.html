@@ -1770,7 +1770,7 @@ function recHTML(c){const f3=v=>v.toFixed(3).replace(/^0/,''),rows=[['주간 리
  return `<div class="mrec"><b>이번 시즌 개인 기록</b>${rows?`<ul>${rows}</ul>`:'<p class="note" style="margin:4px 0 0">아직 출전 기록이 없어요.</p>'}</div>`}
 function modal(){if(S.dexView)return dexViewModal();const c=by[S.modal];if(!c)return '';if(S.cmpA&&S.cmpA!==c.id)return cmpView(by[S.cmpA],c);
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
- <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button><button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
+ <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button>${(S.owned[baseId(c.id)]|0)>1?`<button class="ghost" data-a="dism" data-id="${esc(baseId(c.id))}" title="${c.v==='EX'?'EX 조각 3개 = 구단 지정 EX 확정권 1장':'코스트 × 30P'}">중복 1장 분해 · ${c.v==='EX'?`EX 조각 ${(S.exShard|0)}/3`:'+'+(c.cost*ECON.DISMANTLE)+'P'}</button>`:''}<button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.un?`대학 <b>${esc(c.un)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',!c.rg&&!c.hs?'출신 정보 없음':'',`${esc(lname(c.line))} 계보`,c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null?(abAge(c)?'유학 가능':'유학 불가'):''].filter(Boolean).join(' · ')}</p>${recHTML(c)}${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  <p class="note" style="text-align:center"><a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
@@ -2249,7 +2249,7 @@ function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}r
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','coupon']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','coupon']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -2257,6 +2257,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='tk'){const k=b.dataset.k;tactic(G,k,k==='ph'?$('#phs').value:null);pa(G);render()}
   else if(a==='more'){flt.lim+=240;render()}
   else if(a==='luview'){S.luView=b.dataset.v;if(b.dataset.v==='card')S.luStat='';render()}
+  else if(a==='dism'){const r=ECON.dismantle(S,byId,b.dataset.id,1);S.toast=r.err||(r.shard?`EX 조각 +1 (${r.left}/3)${r.tix?` · 구단 지정 EX 확정권 ${r.tix}장 받았어요`:''}`:`분해 · +${r.pt}P`);rebuildOwn();if(!by[S.modal])S.modal=null;save();render()}
   else if(a==='lustat'){S.luStat=b.dataset.v;render()}
   else if(/^deck/.test(a))deckAct(a);
   else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=0;render()}
