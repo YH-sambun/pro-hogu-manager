@@ -118,30 +118,32 @@ function dexAll(KN,tix,sel,q){const F=S.dexF,lim=S.dexLim||60;DEXYS=DEXYS||[...n
 // 카드팩·확정권 (econ.js)
 const PACKS=ECON.PACKS.map(p=>[p.k,p.n,p.p,p.d.replace('최대 3개','3개')]);
 let LINES=[],YEARS=[];
+const YEARS_OF=l=>[...new Set(CARDS.filter(c=>c.line===l&&!c.v).map(c=>c.year))].sort((a,b)=>a-b);
 const TEAMS_OF=y=>[...new Set(CARDS.filter(c=>c.year===+y).map(c=>c.team))].sort();
 function pkOutHTML(){const o=S.pkOut;if(!o)return '';
   return `<div class="box" style="margin-top:14px"><h3 style="margin-top:0">개봉 결과</h3>${o.cards?`<div class="pool">${o.cards.map(c=>card(c,{pick:1})).join('')}</div>`:''}${o.text?`<p>${esc(o.text)}</p>`:''}${o.dex&&o.dex.length?`<p class="note" style="color:var(--gold)">도감 완성: ${o.dex.map(s=>esc(s.name)+' ('+esc(rwText(s.rw))+')').join(', ')}</p>`:''}</div>`}
-function vShop(){const pk=S.pk||'n',P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.pkSel||(S.pkSel={t:LINES.slice(0,3),y:YEARS.slice(0,3),ty:{year:YEARS[0],team:TEAMS_OF(YEARS[0])[0]}}),multi=pk==='t'||pk==='y',sel=multi?pick[pk]:[],ok=!multi||sel.length===3,afford=S.pt>=P[2];
+function vShop(){const pk=S.pk||'n',P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.pkSel||(S.pkSel={t:LINES.slice(0,3),y:YEARS.slice(0,3),tl:LINES[0],ty:{line:LINES[0],years:[]}}),_fix=((!pick.ty||!pick.ty.years)&&(pick.ty={line:LINES[0],years:[]}),pick.tl||(pick.tl=LINES[0])),multi=pk==='t'||pk==='y',sel=multi?pick[pk]:[],ok=(!multi||sel.length===3)&&(pk!=='ty'||pick.ty.years.length===3),afford=S.pt>=P[2];
   const tix=Object.entries(S.tix||{}).filter(([,n])=>n>0),legends=tix.some(([k])=>k==='pick')?CARDS.filter(c=>c.cost>=9).sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.year-b.year):[];
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">카드팩</h2><span class="pill">${S.pt.toLocaleString()} P</span></div>
   <div class="shop"><div class="pkl">${PACKS.map(([k,n,p,d])=>`<button class="pkb${k===pk?' on':''}" data-pk="${k}"><b>${n}</b><em>${p.toLocaleString()}P</em><small>${d}</small></button>`).join('')}</div>
   <div class="box"><h3 style="margin-top:0">${P[1]} <small style="color:var(--gold)">${P[2].toLocaleString()}P</small></h3><p class="note" style="margin-top:0">${P[3]}</p>
   ${multi?`<div class="lbl">${pk==='t'?'구단 계보':'연도'} 3개 고르기 <small>(${sel.length}/3)</small></div><div class="chips">${(pk==='t'?LINES:YEARS).map(v=>{const on=sel.includes(v),full=!on&&sel.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${pk==='t'?esc(lname(v)):v}</button>`}).join('')}</div>`:''}
-  ${pk==='ty'?`<div class="tools"><select id="tyy" aria-label="연도">${YEARS.map(y=>`<option ${+pick.ty.year===y?'selected':''}>${y}</option>`).join('')}</select><select id="tyt" aria-label="구단">${TEAMS_OF(pick.ty.year).map(t=>`<option ${pick.ty.team===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div>`:''}
+  ${pk==='tl'||pk==='ty'?`<div class="tools"><select id="${pk==='tl'?'tll':'tyl'}" aria-label="구단 계보">${LINES.map(l=>`<option value="${esc(l)}" ${(pk==='tl'?pick.tl:pick.ty.line)===l?'selected':''}>${esc(lname(l))}</option>`).join('')}</select></div>`:''}
+  ${pk==='ty'?(()=>{const ys=YEARS_OF(pick.ty.line),a=pick.ty.years;return `<div class="lbl">연도 3개 고르기 <small>(${a.length}/3)</small></div><div class="chips">${ys.map(v=>{const on=a.includes(v),full=!on&&a.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${v}</button>`}).join('')}</div>`})():''}
   <div class="tools" style="margin-top:12px"><button data-a="pkbuy" ${ok&&afford?'':'disabled'}>${P[2].toLocaleString()}P로 열기</button>${multi&&sel.length<3?`<span class="note">${3-sel.length}개 더 골라 주세요</span>`:''}${!afford?'<span class="note" style="color:var(--bad)">포인트가 모자라요</span>':''}${S.pkMsg?`<span class="note">${esc(S.pkMsg)}</span>`:''}</div>
   ${pkOutHTML()}<!-- 개봉 결과는 열기 버튼 바로 아래(오른쪽 상자)에: 목록 아래에 두면 화면 밖이라 안 보임 -->
   ${tix.length?`<div class="lbl" style="margin-top:16px">확정권</div><div class="tools">${tix.map(([k,n])=>`<button class="ghost" data-tix="${k}">${esc(TIXN[k]||k)} ×${n}</button>`).join('')}
    ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+VN[c.v]:''}</option>`).join('')}</select>`:''}</div>`:''}
   </div></div></section>`}
 function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
-  if(D.pkv){const k=S.pk,v=k==='y'?+D.pkv:D.pkv,a=S.pkSel[k],i=a.indexOf(v);if(i>=0)a.splice(i,1);else if(a.length<3)a.push(v);return 1}
+  if(D.pkv){const k=S.pk,v=k==='y'||k==='ty'?+D.pkv:D.pkv,a=k==='ty'?S.pkSel.ty.years:S.pkSel[k],i=a.indexOf(v);if(i>=0)a.splice(i,1);else if(a.length<3)a.push(v);return 1}
   if(D.tix){const k=D.tix;S.pkOut=null;
     if(k==='prem'){S.tix.prem--;S.pt+=1800;const r=ECON.buyCards(S,CARDS,'p');if(r.err){S.tix.prem++;S.pt-=1800;S.pkMsg=r.err}else S.pkOut={cards:r.cards,dex:r.dex}}
     else if(k==='block'){S.tix.block--;const g=ECON.blockGrades(3);if(!g.some(x=>x==='A'||x==='S'))g[2]='A';S.pkOut={text:'블록: '+g.map(x=>{const b=gainBlock(null,x);return `${x}급 ${bname(b)}`}).join(', ')}}
     else{const arg=k==='pick'?(document.getElementById('tixpick')||{}).value:undefined,r=ECON.useTicket(S,CARDS,k,arg);if(r.err)S.pkMsg=r.err;else S.pkOut={cards:r.cards,dex:r.dex}}
     return 1}
   if(D.a==='pkbuy'){const k=S.pk||'n',P=PACKS.find(x=>x[0]===k);S.pkMsg='';S.pkOut=null;
-    if(['n','p','t','y','ty','sx'].includes(k)){const r=ECON.buyCards(S,CARDS,k,{lines:S.pkSel.t,years:S.pkSel.y,year:S.pkSel.ty.year,team:S.pkSel.ty.team});if(r.err){S.pkMsg=r.err;return 1}S.pkOut={cards:r.cards,dex:r.dex}}
+    if(['n','p','t','y','tl','ty','sx'].includes(k)){const r=ECON.buyCards(S,CARDS,k,{lines:S.pkSel.t,years:S.pkSel.y,line:k==='tl'?S.pkSel.tl:S.pkSel.ty.line,tyYears:S.pkSel.ty.years});if(r.err){S.pkMsg=r.err;return 1}S.pkOut={cards:r.cards,dex:r.dex}}
     else{if(ECON.pay(S,P[2]).err){S.pkMsg='포인트가 모자라요';return 1}
       if(k==='b')S.pkOut={text:'블록: '+ECON.blockGrades(3).map(g=>{const b=gainBlock(null,g);return `${g}급 ${b.t==='B'?'타자':'투수'}용 ${bname(b)}`}).join(', ')};
       else if(k==='tc'||k==='t1'){const gs=k==='tc'?ECON.tcGrades(3):[(u=>u<.05?'황금':u<.25?'특수':'일반')(Math.random())];S.pkOut={text:'작전 카드: '+gs.map(g=>{const x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;return `${x[1]}(${g})`}).join(', ')}}
@@ -735,8 +737,8 @@ vw.addEventListener('change',e=>{const t=e.target;
     S.photos=S.photos||{};S.photos[id]=cv.toDataURL('image/jpeg',.82);try{save()}catch(e){};render()};img.src=URL.createObjectURL(t.files[0]);return}
   if(t.dataset.f){flt[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;flt.lim=120;render();return}
   if(t.id==='tn'){S.team.name=t.value.trim()||'내 구단';save();render();return}
-  if(t.id==='tyy'){S.pkSel.ty={year:+t.value,team:TEAMS_OF(t.value)[0]};render();return}
-  if(t.id==='tyt'){S.pkSel.ty.team=t.value;render();return}
+  if(t.id==='tll'){S.pkSel.tl=t.value;render();return}
+  if(t.id==='tyl'){S.pkSel.ty={line:t.value,years:[]};render();return}
   if(t.id==='dexq'){S.dexQ=t.value;S.dexLim=0;render();return}
   if(/^dex(y|t|st|h|p|v)$/.test(t.id)){S.dexF=S.dexF||{};S.dexF[t.id.slice(3)]=t.value;if(t.id==='dexy')S.dexF.t='';S.dexLim=0;render();return}
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});

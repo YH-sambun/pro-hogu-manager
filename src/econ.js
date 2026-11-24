@@ -61,7 +61,8 @@ const PACKS=[
  {k:'t', n:'구단 묶음 팩', p:800, cnt:5,d:'5장 · 고른 구단 계보 3개 · 1장은 3코스트 이상'},
  {k:'y', n:'연도 묶음 팩', p:800, cnt:5,d:'5장 · 고른 연도 3개 · 1장은 3코스트 이상'},
  {k:'sx',n:'스타 이벤트 팩',p:1500,cnt:5,d:'5장 · 4코스트 이상 · 장마다 골든글러브·올스타 25% · 1장은 골글·올스타 확정'},
- {k:'ty',n:'팀 팩',       p:1000,cnt:3,d:'3장 · 고른 연도·구단 한 팀 · 1장은 도감에 없는 그 팀 주전 확정'},
+ {k:'tl',n:'구단 팩',     p:600, cnt:5,d:'5장 · 고른 구단 계보 1개, 연도 상관없이 · 1장은 3코스트 이상'},
+ {k:'ty',n:'팀 팩',       p:1000,cnt:3,d:'3장 · 고른 구단의 연도 3개 · 1장은 도감에 없는 그 팀 주전 확정'},
  {k:'b', n:'블록 팩',     p:400, cnt:3,d:'스킬 블록 3개 (C50/B30/A15/S5) · 1개는 B급 이상'},
  {k:'tc',n:'작전 카드 팩',p:600, cnt:3,d:'작전 카드 3장 (일반75/특수20/황금5) · 1장은 특수 이상'},
  {k:'t1',n:'작전 카드 1장',p:100,cnt:1,d:'작전 카드 1장'},
@@ -69,7 +70,7 @@ const PACKS=[
 const PITY={p:20};
 // 작전 카드 팩 등급(일반75/특수20/황금5), 3장 중 1장은 특수 이상 보장. 반환 등급 배열 → 해당 등급 TCARDS에서 뽑기
 function tcGrades(n){n=n||3;const g=()=>{const u=rnd();return u<.05?'황금':u<.25?'특수':'일반'};const o=[];for(let i=0;i<n;i++)o.push(g());if(o.every(x=>x==='일반'))o[n-1]=rnd()<.2?'황금':'특수';return o}
-const FLOOR={n:3,t:3,y:3,p:6};
+const FLOOR={n:3,t:3,y:3,tl:3,p:6};
 // 블록 팩 등급(C50/B30/A15/S5), 3개 중 1개는 B 이상 보장. 반환 등급 배열 → mkBlock(t,g)에 넘김
 function blockGrades(n){n=n||3;const g=()=>{const u=rnd();return u<.05?'S':u<.2?'A':u<.5?'B':'C'};const o=[];for(let i=0;i<n;i++)o.push(g());if(o.every(x=>x==='C')){const u=rnd();o[n-1]=u<.1?'S':u<.4?'A':'B'}return o}  // 프리미엄 팩 연속 20팩 동안 레전드가 없으면 그 팩 마지막 장은 레전드
 // 확정권: 뽑기 한 번을 공짜로/확정으로
@@ -86,16 +87,18 @@ function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); 
   if(pk.k==='t'){const L=arr(opt.lines,opt.line);pool=pool.filter(c=>L.includes(c.line))}
   if(pk.k==='y'){const Y=arr(opt.years,opt.year).map(Number);pool=pool.filter(c=>Y.includes(c.year))}
   if(pk.k==='sx')pool=pool.filter(c=>c.cost>=4);
-  if(pk.k==='ty')pool=pool.filter(c=>c.year===+opt.year&&c.team===opt.team);
+  if(pk.k==='tl')pool=pool.filter(c=>c.line===opt.line);
+  if(pk.k==='ty'){const Y=(opt.tyYears||[]).map(Number);pool=pool.filter(c=>c.line===opt.line&&Y.includes(c.year))}
   return pool}
 // 카드 팩 뽑기: 포인트 차감 + 천장 + 도감 등록까지. 반환 {cards, dex(새로 완성된 세트), err}
-function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','ty','sx'].includes(k))return {err:'카드 팩이 아니에요'};
+function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩이 아니에요'};
   opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개를 골라 주세요'};
+  if(k==='tl'&&!opt.line)return {err:'구단을 골라 주세요'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개와 연도 3개를 골라 주세요'};
   if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드가 없어요'};
   S.pt-=pk.p;const out=[];const sp=k==='sx'?pool.filter(c=>c.v==='GG'||c.v==='AS'):null,nsp=sp&&pool.filter(c=>!c.v);
   for(let i=0;i<pk.cnt;i++)out.push(k==='ty'?pool[Math.floor(rnd()*pool.length)]:sp?wpick(rnd()<.25?sp:nsp):wpick(pool));
   if(sp&&!out.some(c=>c.v==='GG'||c.v==='AS'))out[out.length-1]=wpick(sp);
-  if(k==='ty'){const s=SET_BY['team:'+opt.year+'|'+opt.team],miss=s?s.ids.filter(id=>!dexHas(S,id)):[];if(miss.length){const id=miss[Math.floor(rnd()*miss.length)];out[0]=pool.find(c=>c.id===id)||out[0]}}
+  if(k==='ty'){const Y=opt.tyYears.map(Number),miss=SETS.filter(s=>s.kind==='team'&&s.line===opt.line&&Y.includes(s.year)).flatMap(s=>s.ids.filter(id=>!dexHas(S,id)));if(miss.length){const id=miss[Math.floor(rnd()*miss.length)];out[0]=pool.find(c=>c.id===id)||out[0]}}
   // 바닥 보장: 일반·구단·연도 팩은 3코스트 이상 1장, 프리미엄 팩은 스타(6+) 1장 (팩에 없으면 마지막 장을 바꿈)
   const fl=FLOOR[k];if(fl&&!out.some(c=>c.cost>=fl)){const fp=pool.filter(c=>c.cost>=fl);if(fp.length)out[out.length-1]=wpick(fp)}
   if(k==='p'){S.pity=S.pity||{};const n=(S.pity.p|0)+1;
@@ -121,7 +124,7 @@ let SETS=[],SET_BY={},IN_SETS={};
 function buildSets(CARDS){SETS=[];const by=(f)=>{const m={};for(const c of CARDS){const k=f(c);if(k!=null)(m[k]=m[k]||[]).push(c)}return m};
   const ty=by(c=>c.v?null:c.year+'|'+c.team);
   for(const k in ty){const L=ty[k],top=(t,n)=>L.filter(c=>c.type===t).sort((a,b)=>b.ovr-a.ovr).slice(0,n);const ids=[...top('B',8),...top('P',4)];
-    const [y,t]=k.split('|');SETS.push({id:'team:'+k,kind:'team',name:`${y} ${t} 주전`,year:+y,ids:ids.map(c=>c.id),rw:{pt:ids.reduce((s,c)=>s+c.cost,0)*DEX.team}})}
+    const [y,t]=k.split('|');SETS.push({id:'team:'+k,kind:'team',name:`${y} ${t} 주전`,year:+y,line:L[0].line,ids:ids.map(c=>c.id),rw:{pt:ids.reduce((s,c)=>s+c.cost,0)*DEX.team}})}
   const gg=by(c=>c.v==='GG'?c.year:null);
   for(const y in gg){const L=gg[y];SETS.push({id:'gg:'+y,kind:'gg',name:`${y} 골든글러브`,year:+y,ids:L.map(c=>c.id),rw:{pt:L.reduce((s,c)=>s+c.cost,0)*DEX.gg,tix:{star:1}}})}
   const ex=by(c=>c.v==='EX'?c.line:null);
