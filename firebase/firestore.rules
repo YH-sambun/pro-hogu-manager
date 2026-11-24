@@ -10,6 +10,12 @@ service cloud.firestore {
     // 내 구단 저장 데이터: 본인만 읽고 쓰기
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
+      // 직접 올린 선수 사진(기기 간 연동): 본인만, 사진 1장 200KB 미만
+      match /photos/{pid} {
+        allow read, delete: if signedIn() && request.auth.uid == uid;
+        allow create, update: if signedIn() && request.auth.uid == uid
+          && request.resource.data.d is string && request.resource.data.d.size() < 200000;
+      }
     }
 
     // 쿠폰: 코드(문서 id)를 정확히 알 때만 읽기. 목록 조회·쓰기는 막음(쿠폰은 Firebase 콘솔에서 직접 추가)

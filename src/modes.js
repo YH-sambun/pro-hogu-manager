@@ -37,7 +37,7 @@ function curPair(L){
 function lgPlay(L,g){let res=null;const out=[];
   for(const p of L.sched[L.round]){if(p[0]>=L.teams.length||p[1]>=L.teams.length)continue;
     const mine=p.includes(0),gg=mine&&g?g:simAll(mkGame(simT(L,p[0]),simT(L,p[1])));
-    if(mine){const me=p.indexOf(0);res=gg.res<0?'d':gg.res===me?'w':'l';L.hl=hlOf(gg,p);predDo(L,gg,me)}
+    if(mine){const me=p.indexOf(0);res=gg.res<0?'d':gg.res===me?'w':'l';L.hl=hlOf(gg,p);recGame(L,gg,p);predDo(L,gg,me)}
     lgRec(L,p[0],p[1],gg);accStats(L,p,gg);out.push({a:p[0],h:p[1],sc:gg.sc,me:mine})}
   L.last=out.sort((x,y)=>y.me-x.me);L.teams.forEach((t,i)=>{if(i)t.rotIdx=(t.rotIdx||0)+1});L.round++;return res}
 // 리그 경기(주간·연도)에서는 작전 카드 1장 소모, 서포트 카드 남은 경기 1 감소. 단판 도전은 이 함수를 부르지 않는다(서포트 미적용·작전 무소모).
@@ -148,6 +148,23 @@ const YL_GAMES=144,YL_FROM=8*60,YL_TO=23*60,YL_STEP=15,YL_PER=Math.floor((YL_TO-
 function ylSlots(t){const k=t+H9,d=Math.floor(k/864e5),m=Math.floor((k-d*864e5)/6e4);return d*YL_PER+Math.max(0,Math.min(YL_PER,Math.floor((m-YL_FROM)/YL_STEP)+1))}
 function ylNextAt(t){const k=t+H9,d=Math.floor(k/864e5),m=(k-d*864e5)/6e4;let nm=m<YL_FROM?YL_FROM:YL_FROM+(Math.floor((m-YL_FROM)/YL_STEP)+1)*YL_STEP,dd=d;if(nm>YL_TO){dd++;nm=YL_FROM}return dd*864e5+nm*6e4-H9}
 function schedYL(n){const m=n%2?n+1:n,base=rr(m),reps=Math.max(1,Math.round(YL_GAMES/(n-1))),out=[];for(let r=0;r<reps;r++)out.push(...(r%2?base.map(x=>x.map(p=>[p[1],p[0]])):base));return out}
+// 내 경기 기록 보관(최근 20경기): 라인스코어·박스스코어·하이라이트
+function recGame(L,g,pr,tag){const B=s=>Object.values(g.bx[s]).map(b=>[b.c.name,b.pos,b.ab,b.h,b.hr,b.rbi,b.r,b.bb,b.k,b.sb,b.a||0,b.e||0]),P=s=>g.px[s].map(p=>[p.c.name,p.outs,p.h,p.r,p.bb,p.k]);
+  L.gl=[...(L.gl||[]),{n:tag||L.round+1,a:pr[0],h:pr[1],sc:g.sc,ln:g.line,ht:g.hits,bx:[B(0),B(1)],px:[P(0),P(1)],hl:hlOf(g,pr).log}].slice(-20)}
+function gamesHTML(L){const G=(L.gl||[]).slice().reverse();if(!G.length)return '';const ip=o=>`${Math.floor(o/3)}.${o%3}`;
+  return `<section class="band"><h3>내 경기 기록 <small>최근 ${G.length}경기 · 눌러서 세부 기록</small></h3>${G.map(x=>{const me=x.a===0?0:1,w=x.sc[me]>x.sc[1-me]?'승':x.sc[me]<x.sc[1-me]?'패':'무',n=Math.max(9,x.ln[0].length);
+   return `<details class="gl"><summary><b>${w}</b> ${typeof x.n==='number'?x.n+'경기':esc(x.n)} · ${esc(tname(x.a,L))} ${x.sc[0]} : ${x.sc[1]} ${esc(tname(x.h,L))}</summary>
+   <div class="scroll"><table class="tbl ls"><thead><tr><th class="l"></th>${Array.from({length:n},(_,i)=>`<th>${i+1}</th>`).join('')}<th>R</th><th>H</th></tr></thead><tbody>${[0,1].map(s=>`<tr><td class="l">${esc(tname(s?x.h:x.a,L))}</td>${Array.from({length:n},(_,i)=>`<td>${x.ln[s][i]??''}</td>`).join('')}<td><b>${x.sc[s]}</b></td><td>${x.ht[s]}</td></tr>`).join('')}</tbody></table></div>
+   ${[0,1].map(s=>`<div class="scroll"><table class="tbl"><thead><tr><th class="l">${esc(tname(s?x.h:x.a,L))}</th><th>타수</th><th>안타</th><th>홈런</th><th>타점</th><th>득점</th><th>볼넷</th><th>삼진</th><th>도루</th><th>보살</th><th>실책</th></tr></thead><tbody>${x.bx[s].map(b=>`<tr><td class="l">${esc(b[0])} <small>${PK[b[1]]||b[1]}</small></td>${b.slice(2).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>
+   <table class="tbl"><thead><tr><th class="l">투수</th><th>이닝</th><th>피안타</th><th>실점</th><th>볼넷</th><th>삼진</th></tr></thead><tbody>${x.px[s].map(p=>`<tr><td class="l">${esc(p[0])}</td><td>${ip(p[1])}</td>${p.slice(2).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('')}
+   ${x.hl.length?`<ol class="glog">${x.hl.map(t=>`<li>${esc(t)}</li>`).join('')}</ol>`:''}</details>`}).join('')}</section>`}
+// 내 선수 시즌 누적 기록(정규시즌, L.ps)
+function statsHTML(L){const P=Object.values(L.ps||{}).filter(r=>r.t===0);if(!P.length)return '';const nm=r=>esc((byId[r.id]||{}).name||'?'),f3=v=>v.toFixed(3).replace(/^0/,'');
+  const Bt=P.filter(r=>r.ab+r.bb>0).sort((a,b)=>(b.ab+b.bb)-(a.ab+a.bb)),Pt=P.filter(r=>r.outs>0).sort((a,b)=>b.outs-a.outs);
+  return `<section class="band"><details><summary><b>내 선수 시즌 기록</b></summary><div class="scroll"><table class="tbl"><thead><tr><th class="l">타자</th><th>타율</th><th>출루율</th><th>타수</th><th>안타</th><th>홈런</th><th>타점</th><th>도루</th><th>볼넷</th><th>보살</th><th>실책</th></tr></thead><tbody>
+  ${Bt.map(r=>`<tr><td class="l">${nm(r)}</td><td>${r.ab?f3(r.h/r.ab):'-'}</td><td>${f3((r.h+r.bb)/Math.max(1,r.ab+r.bb))}</td><td>${r.ab}</td><td>${r.h}</td><td>${r.hr}</td><td>${r.rbi}</td><td>${r.sb}</td><td>${r.bb}</td><td>${r.a||0}</td><td>${r.e||0}</td></tr>`).join('')}</tbody></table>
+  <table class="tbl"><thead><tr><th class="l">투수</th><th>평균자책</th><th>이닝</th><th>승</th><th>세이브</th><th>탈삼진</th><th>실점</th></tr></thead><tbody>
+  ${Pt.map(r=>`<tr><td class="l">${nm(r)}</td><td>${(r.er*27/r.outs).toFixed(2)}</td><td>${Math.floor(r.outs/3)}.${r.outs%3}</td><td>${r.w}</td><td>${r.sv}</td><td>${r.so}</td><td>${r.er}</td></tr>`).join('')}</tbody></table></div></details></section>`}
 const hlOf=(g,pr)=>({a:pr[0],h:pr[1],sc:g.sc,log:g.log.filter(x=>HLK.includes(x.k)||/보살|실책|저지/.test(x.txt)).map(x=>`${x.inn}회${x.half?'말':'초'} ${x.txt}`).slice(-14)});
 function ylStep(L){let res=null,msg='';
   if(!L.post){res=lgPlay(L,null);msg+=midAS(L);if(L.round>=L.sched.length){const inP=ylStartPost(L);msg+=` · 정규시즌 ${L.rank}위${L.titleMsg||''}${inP?' · 포스트시즌 진출':' · 포스트시즌 진출 실패'}`+ylAdvance(L)}}
@@ -167,7 +184,7 @@ function ylStartPost(L){const R=lgStand(L).map(x=>x.i);L.rank=R.indexOf(0)+1;L.t
   return inP}
 function seriesGame(L,g){const c=L.post,s=c.cur,k=s.w[0]+s.w[1]+(s.d||0),pr=[0,1,4,5,6].includes(k)?[s.lo,s.hi]:[s.hi,s.lo];
   const gg=g||simAll(mkGame(simT(L,pr[0]),simT(L,pr[1])));L.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});
-  L.last=[{a:pr[0],h:pr[1],sc:gg.sc,me:pr.includes(0)}];if(pr.includes(0)){L.hl=hlOf(gg,pr);predDo(L,gg,pr.indexOf(0))}
+  L.last=[{a:pr[0],h:pr[1],sc:gg.sc,me:pr.includes(0)}];if(pr.includes(0)){L.hl=hlOf(gg,pr);recGame(L,gg,pr,L.post.cur.nm);predDo(L,gg,pr.indexOf(0))}
   if(gg.res<0){s.d=(s.d||0)+1;return pr.includes(0)?'d':null}const win=pr[gg.res];s.w[win===s.lo?0:1]++;return pr.includes(0)?(win===0?'w':'l'):null}
 function ylAdvance(L){let msg='';
   for(let guard=0;guard<60&&!L.done;guard++){const s=L.post.cur;
@@ -191,7 +208,8 @@ function tableHTML(L,title){L=L||S.season;const R=lgStand(L),top=R[0],me=R.findI
   if(!S.showStand)return `<div class="standbar"><button data-a="m-stand" aria-expanded="false">${title||'순위표'} 보기 · 현재 ${me}위</button></div>`;
   return `<section class="band"><div class="tools"><h3 style="margin:0;margin-right:auto">${title||'순위표'}</h3><button class="ghost" data-a="m-stand" aria-expanded="true">접기</button></div><div class="scroll"><table class="tbl"><thead><tr><th>순위</th><th class="l">구단</th><th>경기</th><th>승</th><th>패</th><th>무</th><th>승률</th><th>게임차</th><th>득점</th><th>실점</th></tr></thead><tbody>
   ${R.map((x,k)=>`<tr class="${x.i===0?'me':''}"><td>${k+1}</td><td class="l"><i class="dot" style="background:${x.i===0?'#e07a45':L.teams[x.i].color}"></i>${esc(tname(x.i,L))}</td><td>${x.g}</td><td>${x.w}</td><td>${x.l}</td><td>${x.d}</td><td>${x.pct.toFixed(3).replace(/^0/,'')}</td><td>${k?(((top.w-x.w)+(x.l-top.l))/2).toFixed(1):'-'}</td><td>${x.rs}</td><td>${x.ra}</td></tr>`).join('')}</tbody></table></div></section>`}
-function lastHTML(L){return L.last&&L.last.length?`<section class="band"><h3>지난 경기</h3><div class="res">${L.last.map(x=>`<div class="${x.me?'me':''}"><span>${esc(tname(x.a,L))}</span><b>${x.sc[0]} : ${x.sc[1]}</b><span>${esc(tname(x.h,L))}</span></div>`).join('')}</div></section>`:''}
+function lastHTML(L){return lastRes(L)+gamesHTML(L)+statsHTML(L)}
+function lastRes(L){return L.last&&L.last.length?`<section class="band"><h3>지난 경기</h3><div class="res">${L.last.map(x=>`<div class="${x.me?'me':''}"><span>${esc(tname(x.a,L))}</span><b>${x.sc[0]} : ${x.sc[1]}</b><span>${esc(tname(x.h,L))}</span></div>`).join('')}</div></section>`:''}
 function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),H=teamOf(pr[1],L);
   const sp=t=>byId[t.rot[(t.rotIdx||0)%t.rot.length]],cost=regCards(T).reduce((x,c)=>x+c.cost,0);
   return `<div class="mu"><div class="side"><small>원정 · 평균 ${teamOvr(A)}</small><h2>${esc(tname(pr[0],L))}</h2>${sp(A)?cardHTML(sp(A),{cond:pr[0]===0?S.cond[sp(A).id]:0}):''}</div>

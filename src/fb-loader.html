@@ -7,7 +7,7 @@ const {initializeApp}=await import(B+'firebase-app.js');
 const A=await import(B+'firebase-auth.js'),D=await import(B+'firebase-firestore.js');
 const app=initializeApp(firebaseConfig);
 window.FB={auth:A.getAuth(app),db:D.getFirestore(app),GoogleAuthProvider:A.GoogleAuthProvider,signInWithPopup:A.signInWithPopup,signOut:A.signOut,onAuthStateChanged:A.onAuthStateChanged,
-  doc:D.doc,getDoc:D.getDoc,setDoc:D.setDoc,updateDoc:D.updateDoc,collection:D.collection,getDocs:D.getDocs,addDoc:D.addDoc,arrayUnion:D.arrayUnion,serverTimestamp:D.serverTimestamp,
+  doc:D.doc,getDoc:D.getDoc,setDoc:D.setDoc,updateDoc:D.updateDoc,collection:D.collection,deleteDoc:D.deleteDoc,getDocs:D.getDocs,addDoc:D.addDoc,arrayUnion:D.arrayUnion,serverTimestamp:D.serverTimestamp,
   query:D.query,where:D.where,orderBy:D.orderBy,limit:D.limit};
 dispatchEvent(new Event('fb-ready'));
 </script>

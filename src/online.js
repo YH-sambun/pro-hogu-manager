@@ -2,15 +2,31 @@
 // window.FB 는 Firebase 배포본의 module 스크립트가 채워 넣는다. 없으면 안내만 보여 준다.
 const ON={user:null,leagues:[],cur:null,teams:{},games:[],msg:'',busy:false,sync:'',lastPush:0};
 const fb=()=>window.FB;
-const stripS=()=>{const o={...S};delete o.photos;return o};
+const stripS=()=>{const o={...S};delete o.photos;delete o.photoTs;delete o.phPull;return o}; // 사진·사진 동기화 상태는 기기별(사진은 photos 하위 문서로 따로 연동)
 let pushT=null;
 function cloudPush(now){const F=fb();if(!F||!ON.user)return;clearTimeout(pushT);
-  pushT=setTimeout(async()=>{try{S.uid=ON.user.uid;const j=JSON.stringify(stripS());await F.setDoc(F.doc(F.db,'users',ON.user.uid),{json:j,ts:S.ts||Date.now(),name:ON.user.displayName||''});ON.sync='클라우드 저장됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});if(view()==='online')render()}catch(e){ON.sync='클라우드 저장 실패: '+e.code}},now?0:2500)}
+  pushT=setTimeout(async()=>{try{S.uid=ON.user.uid;const j=JSON.stringify(stripS());await F.setDoc(F.doc(F.db,'users',ON.user.uid),{json:j,ts:S.ts||Date.now(),name:ON.user.displayName||''});try{await photoSync()}catch(e){ON.sync='사진 연동 실패: '+e.code}ON.sync=ON.sync&&ON.sync.startsWith('사진')?ON.sync:'클라우드 저장됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});if(view()==='online')render()}catch(e){ON.sync='클라우드 저장 실패: '+e.code}},now?0:2500)}
+// 직접 올린 사진(S.photos) 기기 간 연동: users/{uid}/photos/{cardId} = {d: dataURL, ts}. 본문 문서(1MB 한도)와 분리.
+// S.photoTs[id]=올린 시각, S.phPull=마지막으로 클라우드 사진을 받은 시각. ON.ph=클라우드에 있다고 아는 사진(id→dataURL)
+ON.ph=ON.ph||null;
+async function photoSync(){const F=fb();if(!F||!ON.user||!ON.ph||!F.deleteDoc)return;S.photos=S.photos||{};S.photoTs=S.photoTs||{};const col=['users',ON.user.uid,'photos'];
+  for(const id in S.photos){if(ON.ph[id]===S.photos[id])continue;const d=S.photos[id];if(d.length>190000){ON.sync='사진이 커서 기기 연동에서 빠졌어요';continue}
+    if(!S.photoTs[id])S.photoTs[id]=Date.now();
+    await F.setDoc(F.doc(F.db,...col,id),{d,ts:S.photoTs[id]});ON.ph[id]=d}
+  for(const id in ON.ph)if(!S.photos[id]){await F.deleteDoc(F.doc(F.db,...col,id));delete ON.ph[id];delete S.photoTs[id]}
+  S.phPull=Date.now()} // 여기까지 올린 사진은 클라우드와 맞춰짐
+async function photoPull(){const F=fb();S.photos=S.photos||{};S.photoTs=S.photoTs||{};const last=S.phPull||0,got={};
+  const qs=await F.getDocs(F.collection(F.db,'users',ON.user.uid,'photos'));qs.forEach(x=>{got[x.id]=x.data()});
+  for(const id in got){const c=got[id];if(!S.photos[id]||(S.photoTs[id]||0)<(c.ts||0)){S.photos[id]=c.d;S.photoTs[id]=c.ts||0}}
+  // 클라우드에 없는 로컬 사진: 마지막 동기화 뒤에 올린 것만 남기고(올라갈 예정), 그 전 것은 다른 기기에서 지운 것으로 봄
+  for(const id in S.photos)if(!got[id]&&last&&S.photoTs[id]&&S.photoTs[id]<=last){delete S.photos[id];delete S.photoTs[id]}
+  ON.ph={};for(const id in got)if(S.photos[id]===got[id].d)ON.ph[id]=got[id].d;S.phPull=Date.now()}
 async function cloudPull(){const F=fb(),u=ON.user;try{
   const d=await F.getDoc(F.doc(F.db,'users',u.uid));
-  if(d.exists()){const c=d.data();if(S.uid!==u.uid||(c.ts||0)>(S.ts||0)){const o=JSON.parse(c.json);const ph=S.photos;S=o;S.photos=ph;S.uid=u.uid;for(const id in S.owned)if(!byId[id])delete S.owned[id];
+  if(d.exists()){const c=d.data();if(S.uid!==u.uid||(c.ts||0)>(S.ts||0)){const o=JSON.parse(c.json);const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.photos=ph;S.photoTs=pt;S.phPull=pp;S.uid=u.uid;for(const id in S.owned)if(!byId[id])delete S.owned[id];
       try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};ON.sync='클라우드 저장 데이터를 불러왔어요';G=null;packOut=null}else cloudPush(true)}
-  else{S.uid=u.uid;cloudPush(true)}}catch(e){ON.sync='클라우드 불러오기 실패: '+e.code}}
+  else{S.uid=u.uid;cloudPush(true)}}catch(e){ON.sync='클라우드 불러오기 실패: '+e.code}
+  try{await photoPull();cloudPush(true)}catch(e){ON.sync='사진 불러오기 실패: '+e.code}}
 async function loadLeagues(){const F=fb();try{const q=F.query(F.collection(F.db,'leagues'),F.where('members','array-contains',ON.user.uid));
   ON.leagues=(await F.getDocs(q)).docs.map(d=>({id:d.id,...d.data()}));if(ON.cur&&!ON.leagues.find(l=>l.id===ON.cur))ON.cur=null;if(!ON.cur&&ON.leagues[0])ON.cur=ON.leagues[0].id;if(ON.cur)await loadLeague()}catch(e){ON.msg='리그 목록 오류: '+e.code}}
 async function loadLeague(){const F=fb(),lid=ON.cur;

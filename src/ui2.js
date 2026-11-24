@@ -288,8 +288,7 @@ function vMgr(){const m=MG.find(x=>x.id===S.mgr),fl=S.mf||'all',list=MG.filter(x
  <div class="box mdet"><div class="tools"><span class="mface big">${mface(m)}</span><div><h2 style="margin:0">${esc(m.n)} 감독</h2><p style="margin:0">${MSTY[m.st]} · ${{L:'레전드',S:'스타',N:'노멀'}[m.g]}</p></div></div>
  <div class="skill"><b>[${esc(m.sn)}]</b> ${esc(m.se)}</div>
  <div class="lbl">작전 경향 (감독이 정함)</div>${MT.map(([k,n,l,r])=>`<div class="tq"><span>${n}</span><span class="tl">${l}</span><span class="tbar" aria-label="${n}: ${l} ${m.tac[k]} / 4 ${r}"><i style="left:${m.tac[k]*25}%"></i></span><span class="tl">${r}</span></div>`).join('')}
- <label class="chk"><input type="checkbox" id="t-live" ${S.tacLive?'checked':''}> 직접 지휘 경기에서 작전 버튼 쓰기</label>
- <p class="note help">감독 이름은 KBO 역대 감독의 별명이고, 성향은 게임용 해석이에요. 자동 진행과 '결과만' 경기에서는 고른 감독의 경향대로 작전이 나오고, 직접 지휘할 때는 경기 화면의 작전 버튼이 우선합니다.</p></div></div>`}
+ <p class="note help">감독 이름은 KBO 역대 감독의 별명이고, 성향은 게임용 해석이에요. 모든 경기는 고른 감독의 경향대로 작전이 나와요.</p></div></div>`}
 function mface(m){const hue={small:'#2f7d6d',big:'#c22a2a',speed:'#e8691b',trust:'#23214f',pen:'#0a5fb4',data:'#7b1530'}[m.st];
  let h=0;for(const ch of m.id)h=h*7+ch.charCodeAt(0);const hair=['#1b1d1c','#4a3b30','#8a8a8a','#d0d0d0'][h%4],gl=h%3===0;
  return `<svg viewBox="0 0 80 80" aria-hidden="true"><rect width="80" height="80" rx="40" fill="${hue}"/><path d="M14 80 Q18 60 40 58 Q62 60 66 80Z" fill="#20242a"/><path d="M34 58 L40 70 L46 58" fill="#fff"/>
