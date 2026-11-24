@@ -224,10 +224,7 @@ function vSeason(){
   if(s.over)return `<section class="hero"><h1>${tierName(s.tier)} 종료 · ${esc(T.name)} ${s.rank}위</h1>${head}<p>다음 리그 <b>${md(nxt)}(월) 0시</b> · ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)} 승급`:'재도전'}</p></section>${lastHTML(s)}${tableHTML(s)}${titleHTML(s)}`;
   const pr=curPair(s);
   return `<section class="hero">${head}${pr?muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto'):''}</section>
-  ${lastHTML(s)}${tableHTML(s)}
-  <section class="band"><h3>구단 설정</h3><label class="row">구단 이름 <input id="tn" value="${esc(T.name)}" maxlength="12"></label>
-  <details><summary>저장 데이터 백업 / 복원</summary>
-  <textarea id="sv" rows="3"></textarea><div class="btns"><button data-a="copy">코드 복사</button><button data-a="load">붙여 넣은 코드 불러오기</button><button data-a="reset" class="ghost">처음부터 다시</button></div></details></section>`}
+  ${lastHTML(s)}${tableHTML(s)}`} // 구단 설정·백업·초기화는 홈 화면 아래로 옮김(ui2 vHome)
 function vYears(){const L=S.yl,won=S.ylWon||{};ranked();
   if(L&&!L.done){const pr=curPair(L),c=L.post&&L.post.cur,nx=ylNextAt(Date.now()),hm=t=>{const d=new Date(t+H9);return `${md(t)} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
     const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`;

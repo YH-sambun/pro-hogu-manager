@@ -174,7 +174,11 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   ${e.length?`<p class="note" style="color:var(--bad)">라인업을 먼저 채워 주세요: ${esc(e[0])}</p>`:''}
   <div class="lbl">감독</div><p style="margin:0">${m?`${esc(m.n)} · ${MSTY[m.st]} · [${esc(m.sn)}]`:'없음'}</p><div class="lbl">내 덱 효과</div><p style="margin:0">${d.fx.map(x=>`${esc(x.n)} ${x.g}`).join(' · ')||'팀컬러 없음'} · 야수 +${d.bat} · 투수 +${d.pit} · 코스트 ${d.cost}/${COST_CAP}</p></div>
   <div class="box"><h3>오늘</h3>${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 8px">로그인 없이 하는 중이에요. 이 기기에만 저장돼요. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
-  <div class="lbl">쿠폰</div><div class="tools" style="flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}</div></section>`}
+  <div class="lbl">쿠폰</div><div class="tools" style="flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}</div></section>
+  <section class="band setb"><details><summary><b>구단 설정 · 저장 데이터</b></summary>
+  <div class="tools" style="margin-top:10px"><label>구단 이름 <input id="tn" value="${esc(S.team.name)}" maxlength="12"></label></div>
+  <p class="note">이 브라우저에 자동 저장돼요${FBMODE()&&ON.user?' · 로그인 계정에도 동기화돼요':''}. 다른 기기로 옮길 때는 코드를 복사해 붙여 넣으세요.</p>
+  <textarea id="sv" rows="3" style="width:100%"></textarea><div class="tools"><button class="ghost" data-a="copy">코드 복사</button><button class="ghost" data-a="load">붙여 넣은 코드 불러오기</button><button class="ghost danger" data-a="reset" style="margin-left:auto">처음부터 다시</button></div></details></section>`}
 async function redeemCoupon(){const el=document.getElementById('cpn'),code=((el&&el.value)||'').trim().toUpperCase();if(!code){S.cpMsg='코드를 넣어 주세요';render();return}
   const F=window.FB;if(!F){S.cpMsg='쿠폰은 온라인(배포판)에서만 쓸 수 있어요';render();return}
   if((S.coupons||{})[code]){S.cpMsg='이미 받은 쿠폰이에요';render();return}
