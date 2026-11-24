@@ -48,7 +48,8 @@ function predList(L){const E=EC();if(!E||!E.PRED)return null;const m=L.year?1:E.
 function predGet(L){const A=predList(L);if(!A)return null;const o=A.find(x=>x[0]===(L.pk||'r'))||A[0];return [o]}
 function predDo(L,gg,me){const E=EC();if(!E||!E.predSettle||L.noPred)return;const o=predGet(L);if(!o)return;
   const bx=Object.values(gg.bx[me]),box={r:gg.sc[me],ra:gg.sc[1-me],h:gg.hits[me],hr:bx.reduce((s,b)=>s+b.hr,0),sb:bx.reduce((s,b)=>s+b.sb,0),k:gg.px[me].reduce((s,p)=>s+p.k,0)};
-  const r=E.predSettle(o,box,gg.res===me);L.predLast={o,hit:r.hit};if(r.pt){const t=give({pt:r.pt},0,!!L.year);PM+=` · 예측 달성 ${r.hit.join('·')}${t?' '+t:''}`}}
+  const r=E.predSettle(o,box,gg.res===me);L.predLast={o,hit:r.hit};if(r.pt){let rw={pt:r.pt};if(L.year&&E.predCapped)rw=E.predCapped(S,rw); // 연도 리그 예측은 경기 보상과 별도인 예측 전용 하루 상한
+  if(rw.capped&&!rw.pt){PM+=` · 예측 달성 ${r.hit.join('·')} (오늘 예측 보상 상한)`;return}const t=give(rw,0,false)+(rw.capped?' (예측 상한 도달)':'');PM+=` · 예측 달성 ${r.hit.join('·')}${t?' '+t:''}`}}
 const predHTML=L=>{const A=predList(L);if(!A)return '';const k=(predGet(L)[0]||[])[0];return `<div class="btns pred" aria-label="경기 예측 고르기"><small>경기 예측</small>${A.map(x=>`<button data-a="m-pred" data-k="${x[0]}" class="${x[0]===k?'big':'ghost'}" aria-pressed="${x[0]===k}" >${esc(x[1].replace(' 이상','+'))} ${x[2]}P</button>`).join('')}</div>`};
 function userReward(res,mode,tier){if(!res)return '';const E=EC(),r=E?(mode==='yl'&&E.yearGame?E.yearGame(res):E.leagueGame(mode==='yl'?1:tier,res)):null,pay=give(r,{w:400,d:200,l:150}[res],mode==='yl');
   if(E){E.mission(S,'g3');if(mode==='lg'&&res==='w')E.mission(S,'w1')}
@@ -82,13 +83,13 @@ function titleClose(L,mode,tier){const T=L.titles=titles(L),mine=Object.keys(TIT
     gg=T.gg.filter(x=>x.r.t===0).length,df=(T.df||[]).filter(x=>x.r.t===0).length,as=L.asSel?0:T.as.filter(x=>x.r.t===0).length;
   if(!mine.length&&!mvp&&!gg&&!as&&!df)return '';const E=EC(),md=mode==='yl'?'year':'league',m=mode==='yl'?1:1+.25*(tier-1);
   const aw=E&&E.seasonAwards?E.seasonAwards(md,tier,{titles:mine,mvp,gg,as,df},mode==='yl'&&!!(S.ylWon||{})[L.year]):{pt:0,lines:[...mine.map(k=>[TITLE_N[k]+' 1위',300*m]),...(mvp?[['MVP',1000*m]]:[]),...(gg?[[`골든글러브 ${gg}명`,gg*200*m]]:[]),...(as?[[`올스타 ${as}명`,as*80*m]]:[]),...(df?[[`수비상 ${df}명`,df*150*m]]:[])]};
-  L.awLines=aw.lines;const g=give({pt:aw.pt},E?0:Math.round(aw.lines.reduce((s,x)=>s+x[1],0)),mode==='yl');
+  L.awLines=aw.lines;const g=give({pt:aw.pt},E?0:Math.round(aw.lines.reduce((s,x)=>s+x[1],0)),false);
   return ` · 시즌 시상 ${aw.lines.map(x=>x[0]).join('·')}${g?' '+g:''}`}
 // 연도별 리그 전반기 종료(정규시즌 절반) 때 올스타 선정: 포지션별 상위 2명(외야 6명). 내 선수 수만큼 보너스
 function midAS(L){if(!L.year||L.asSel||L.round<Math.floor(L.sched.length/2))return '';const A=titles(L).as;L.asSel=A.map(x=>({ps:x.ps,id:x.r.id,t:x.r.t}));
   const n=A.filter(x=>x.r.t===0).length;if(!n)return ' · 올스타 선정 발표(내 선수 없음)';const E=EC(),rewin=!!(S.ylWon||{})[L.year];
   const aw=E&&E.seasonAwards?E.seasonAwards('year',0,{as:n},rewin):{pt:n*80,lines:[[`올스타 ${n}명`,n*80]]};L.asLines=aw.lines;
-  const g=give({pt:aw.pt},E?0:aw.pt,true);return ` · 올스타 ${n}명 선정${g?' '+g:''}`}
+  const g=give({pt:aw.pt},E?0:aw.pt,false);return ` · 올스타 ${n}명 선정${g?' '+g:''}`}
 function asHTML(L){if(!L.asSel)return '';return `<section class="band"><h3>올스타 <small>전반기 성적으로 선정 · 포지션별 2명</small></h3><p class="mini">${L.asSel.map(x=>`<span style="${x.t===0?'color:#e07a45;font-weight:700':''}">${x.ps} ${esc((byId[x.id]||{}).name||'?')} <small>${esc(tname(x.t,L))}</small></span>`).join(' · ')}</p>${L.asLines?`<p><b>내 구단 올스타 보너스</b> ${L.asLines.map(x=>`${esc(x[0])} +${Math.round(x[1]).toLocaleString()}`).join(' · ')}</p>`:''}</section>`}
 function titleHTML(L){const T=L.titles;if(!T)return '';const fmt=(k,v)=>k==='avg'?v.toFixed(3).replace(/^0/,''):k==='era'?v.toFixed(2):v;
   const nm=r=>`${esc((byId[r.id]||{}).name||'?')} <small>${esc(tname(r.t,L))}</small>`;

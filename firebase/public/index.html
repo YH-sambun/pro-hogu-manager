@@ -1069,6 +1069,10 @@ function redeem(S,code,data){code=String(code||'').trim().toUpperCase();S.coupon
   if(!data)return {err:'없는 쿠폰이에요'};if(S.coupons[code])return {err:'이미 쓴 쿠폰이에요'};
   const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(exp&&Date.now()>exp)return {err:'기간이 지난 쿠폰이에요'};
   const rw={pt:+data.pt||0,tix:data.tix||{}};S.coupons[code]=Date.now();grant(S,rw);return {rw,text:rwText(rw)}}
+// 연도 리그 경기 예측 전용 상한: 하루 1,500P (자동 진행 하루 약 60경기 × 평균 60P = 3,600P라 상한 없으면 과함). 주간 리그 예측은 상한 없음
+const PRED_CAP=1500;
+function predCapped(S,rw){const d=today();S.prc=S.prc&&S.prc.day===d?S.prc:{day:d,pt:0};const left=Math.max(0,PRED_CAP-S.prc.pt),pt=Math.min(left,rw.pt|0);
+  S.prc.pt+=pt;return {...rw,pt,capped:pt<(rw.pt|0),left:left-pt}}
 // ── 4. 공통 ──────────────────────────────────────────────────
 function grant(S,rw){if(!rw)return S;S.pt=(S.pt||0)+(rw.pt||0);S.tix=S.tix||{};for(const k in rw.tix||{})S.tix[k]=(S.tix[k]|0)+rw.tix[k];return S}
 const rwText=rw=>[rw.pt?rw.pt.toLocaleString()+'P':'',...Object.entries(rw.tix||{}).filter(([,n])=>n).map(([k,n])=>TIX[k]+(n>1?' ×'+n:''))].filter(Boolean).join(' · ');
@@ -1080,7 +1084,7 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
   S.dexDone=S.dexDone||{};return S}
 
 const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
-  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,redeem,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
+  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);
 
@@ -1417,13 +1421,18 @@ function synPool(k){if(k==='p'){const u=new Set(used());return OWN.filter(c=>!u.
  if(k==='b')return S.blocks.filter(b=>!b.on).map(b=>({key:'b'+b.u,b,html:`<span class="blk"><span class="mini" style="grid-template-columns:repeat(4,12px)">${cells(b).map(()=>`<i class="cell g-${b.g}"></i>`).join('')}</span><small><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))} · ${b.t==='B'?'타자용':'투수용'}</small><small>${Object.entries(b.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')}</small></span>`}));
  if(k==='s')return SUPS.flatMap(x=>Array.from({length:S.sq[x[0]]||0},(_,i)=>({key:x[0]+'#'+i,x,html:scard(x,{})})));
  return TCARDS.flatMap(x=>Array.from({length:S.tq[x[0]]||0},(_,i)=>({key:x[0]+'#'+i,x,html:tcard(x,{})})))}
-const SF0={ty:'all',team:'all',year:'all',cost:'all',dup:0};
-function synPoolF(k){const p=synPool(k);if(k!=='p')return p;const f=S.sf||SF0;return p.filter(({c})=>!abOf(c.id)&&(f.ty==='all'||c.type===f.ty)&&(f.team==='all'||lname(c.line)===f.team)&&(f.year==='all'||String(c.year)===f.year)&&(f.cost==='all'||c.cost<=+f.cost)&&(!f.dup||c.dup))}
+const SF0={ty:'all',team:'all',year:'all',cost:'all',pos:'all',sort:'cost',dup:0};
+function synPoolF(k){const p=synPool(k);if(k!=='p')return p;const f=S.sf||SF0;return p.filter(({c})=>!abOf(c.id)&&(f.ty==='all'||c.type===f.ty)&&(f.team==='all'||lname(c.line)===f.team)&&(f.year==='all'||String(c.year)===f.year)&&(f.cost==='all'||(String(f.cost)[0]==='='?c.cost===+String(f.cost).slice(1):c.cost<=+f.cost))&&(!f.pos||f.pos==='all'||c.pos===f.pos)&&(!f.dup||c.dup)).sort(SYNSORT[f.sort||'cost']||SYNSORT.cost)}
+const dupN=c=>OWN.filter(x=>x.pk===c.pk&&x.type===c.type).length;
+const SYNSORT={cost:(a,b)=>a.c.cost-b.c.cost||a.c.ovr-b.c.ovr,costd:(a,b)=>b.c.cost-a.c.cost||b.c.ovr-a.c.ovr,ovr:(a,b)=>a.c.ovr-b.c.ovr,ovrd:(a,b)=>b.c.ovr-a.c.ovr,year:(a,b)=>b.c.year-a.c.year,yeara:(a,b)=>a.c.year-b.c.year,team:(a,b)=>lname(a.c.line).localeCompare(lname(b.c.line))||a.c.year-b.c.year,pos:(a,b)=>POSO.indexOf(a.c.pos)-POSO.indexOf(b.c.pos)||a.c.cost-b.c.cost,dup:(a,b)=>dupN(b.c)-dupN(a.c)||a.c.cost-b.c.cost};
+const POSO=['SP','RP','C','1B','2B','3B','SS','LF','CF','RF','DH'];
 function synFilt(){const f=S.sf||SF0,base=synPool('p').map(x=>x.c),teams=[...new Set(base.map(c=>lname(c.line)))].sort(),years=[...new Set(base.map(c=>c.year))].sort((a,b)=>b-a),o=(v,n,cur)=>`<option value="${esc(v)}" ${String(cur)===String(v)?'selected':''}>${esc(n)}</option>`;
  return `<div class="tools sfil"><div class="tabs">${[['all','전체'],['B','야수'],['P','투수']].map(([k,n])=>`<button class="${f.ty===k?'on':''}" data-sft="${k}">${n}</button>`).join('')}</div>
  <select data-sf="team" aria-label="구단 필터">${o('all','전체 구단',f.team)}${teams.map(t=>o(t,t,f.team)).join('')}</select>
  <select data-sf="year" aria-label="연도 필터">${o('all','전체 연도',f.year)}${years.map(y=>o(y,y,f.year)).join('')}</select>
- <select data-sf="cost" aria-label="코스트 필터">${o('all','전체 코스트',f.cost)}${[3,5,7].map(n=>o(n,'★'+n+' 이하',f.cost)).join('')}</select>
+ <select data-sf="cost" aria-label="코스트 필터">${o('all','전체 코스트',f.cost)}${[3,5,7].map(n=>o(n,'★'+n+' 이하',f.cost)).join('')}${[1,2,3,4,5,6,7,8,9,10].map(n=>o('='+n,'코스트 '+n+'만',f.cost)).join('')}</select>
+ <select data-sf="pos" aria-label="포지션 필터">${o('all','전체 포지션',f.pos||'all')}${POSO.map(p=>o(p,PFULL[p],f.pos)).join('')}</select>
+ <select data-sf="sort" aria-label="정렬">${[['cost','코스트 낮은 순'],['costd','코스트 높은 순'],['ovr','능력 낮은 순'],['ovrd','능력 높은 순'],['year','최신 연도 순'],['yeara','오래된 연도 순'],['team','구단 순'],['pos','포지션 순'],['dup','중복 많은 순']].map(([v,n])=>o(v,n,f.sort||'cost')).join('')}</select>
  <button class="${f.dup?'':'ghost'}" data-sfd="1" aria-pressed="${!!f.dup}">중복만</button></div>`}
 const hasBlk=id=>S.blocks.some(b=>b.on===id)?1:0;
 // 자동 추천: 잠금·유학 중 제외, 가치 낮은 재료부터
@@ -1822,7 +1831,8 @@ function predList(L){const E=EC();if(!E||!E.PRED)return null;const m=L.year?1:E.
 function predGet(L){const A=predList(L);if(!A)return null;const o=A.find(x=>x[0]===(L.pk||'r'))||A[0];return [o]}
 function predDo(L,gg,me){const E=EC();if(!E||!E.predSettle||L.noPred)return;const o=predGet(L);if(!o)return;
   const bx=Object.values(gg.bx[me]),box={r:gg.sc[me],ra:gg.sc[1-me],h:gg.hits[me],hr:bx.reduce((s,b)=>s+b.hr,0),sb:bx.reduce((s,b)=>s+b.sb,0),k:gg.px[me].reduce((s,p)=>s+p.k,0)};
-  const r=E.predSettle(o,box,gg.res===me);L.predLast={o,hit:r.hit};if(r.pt){const t=give({pt:r.pt},0,!!L.year);PM+=` · 예측 달성 ${r.hit.join('·')}${t?' '+t:''}`}}
+  const r=E.predSettle(o,box,gg.res===me);L.predLast={o,hit:r.hit};if(r.pt){let rw={pt:r.pt};if(L.year&&E.predCapped)rw=E.predCapped(S,rw); // 연도 리그 예측은 경기 보상과 별도인 예측 전용 하루 상한
+  if(rw.capped&&!rw.pt){PM+=` · 예측 달성 ${r.hit.join('·')} (오늘 예측 보상 상한)`;return}const t=give(rw,0,false)+(rw.capped?' (예측 상한 도달)':'');PM+=` · 예측 달성 ${r.hit.join('·')}${t?' '+t:''}`}}
 const predHTML=L=>{const A=predList(L);if(!A)return '';const k=(predGet(L)[0]||[])[0];return `<div class="btns pred" aria-label="경기 예측 고르기"><small>경기 예측</small>${A.map(x=>`<button data-a="m-pred" data-k="${x[0]}" class="${x[0]===k?'big':'ghost'}" aria-pressed="${x[0]===k}" >${esc(x[1].replace(' 이상','+'))} ${x[2]}P</button>`).join('')}</div>`};
 function userReward(res,mode,tier){if(!res)return '';const E=EC(),r=E?(mode==='yl'&&E.yearGame?E.yearGame(res):E.leagueGame(mode==='yl'?1:tier,res)):null,pay=give(r,{w:400,d:200,l:150}[res],mode==='yl');
   if(E){E.mission(S,'g3');if(mode==='lg'&&res==='w')E.mission(S,'w1')}
@@ -1856,13 +1866,13 @@ function titleClose(L,mode,tier){const T=L.titles=titles(L),mine=Object.keys(TIT
     gg=T.gg.filter(x=>x.r.t===0).length,df=(T.df||[]).filter(x=>x.r.t===0).length,as=L.asSel?0:T.as.filter(x=>x.r.t===0).length;
   if(!mine.length&&!mvp&&!gg&&!as&&!df)return '';const E=EC(),md=mode==='yl'?'year':'league',m=mode==='yl'?1:1+.25*(tier-1);
   const aw=E&&E.seasonAwards?E.seasonAwards(md,tier,{titles:mine,mvp,gg,as,df},mode==='yl'&&!!(S.ylWon||{})[L.year]):{pt:0,lines:[...mine.map(k=>[TITLE_N[k]+' 1위',300*m]),...(mvp?[['MVP',1000*m]]:[]),...(gg?[[`골든글러브 ${gg}명`,gg*200*m]]:[]),...(as?[[`올스타 ${as}명`,as*80*m]]:[]),...(df?[[`수비상 ${df}명`,df*150*m]]:[])]};
-  L.awLines=aw.lines;const g=give({pt:aw.pt},E?0:Math.round(aw.lines.reduce((s,x)=>s+x[1],0)),mode==='yl');
+  L.awLines=aw.lines;const g=give({pt:aw.pt},E?0:Math.round(aw.lines.reduce((s,x)=>s+x[1],0)),false);
   return ` · 시즌 시상 ${aw.lines.map(x=>x[0]).join('·')}${g?' '+g:''}`}
 // 연도별 리그 전반기 종료(정규시즌 절반) 때 올스타 선정: 포지션별 상위 2명(외야 6명). 내 선수 수만큼 보너스
 function midAS(L){if(!L.year||L.asSel||L.round<Math.floor(L.sched.length/2))return '';const A=titles(L).as;L.asSel=A.map(x=>({ps:x.ps,id:x.r.id,t:x.r.t}));
   const n=A.filter(x=>x.r.t===0).length;if(!n)return ' · 올스타 선정 발표(내 선수 없음)';const E=EC(),rewin=!!(S.ylWon||{})[L.year];
   const aw=E&&E.seasonAwards?E.seasonAwards('year',0,{as:n},rewin):{pt:n*80,lines:[[`올스타 ${n}명`,n*80]]};L.asLines=aw.lines;
-  const g=give({pt:aw.pt},E?0:aw.pt,true);return ` · 올스타 ${n}명 선정${g?' '+g:''}`}
+  const g=give({pt:aw.pt},E?0:aw.pt,false);return ` · 올스타 ${n}명 선정${g?' '+g:''}`}
 function asHTML(L){if(!L.asSel)return '';return `<section class="band"><h3>올스타 <small>전반기 성적으로 선정 · 포지션별 2명</small></h3><p class="mini">${L.asSel.map(x=>`<span style="${x.t===0?'color:#e07a45;font-weight:700':''}">${x.ps} ${esc((byId[x.id]||{}).name||'?')} <small>${esc(tname(x.t,L))}</small></span>`).join(' · ')}</p>${L.asLines?`<p><b>내 구단 올스타 보너스</b> ${L.asLines.map(x=>`${esc(x[0])} +${Math.round(x[1]).toLocaleString()}`).join(' · ')}</p>`:''}</section>`}
 function titleHTML(L){const T=L.titles;if(!T)return '';const fmt=(k,v)=>k==='avg'?v.toFixed(3).replace(/^0/,''):k==='era'?v.toFixed(2):v;
   const nm=r=>`${esc((byId[r.id]||{}).name||'?')} <small>${esc(tname(r.t,L))}</small>`;
