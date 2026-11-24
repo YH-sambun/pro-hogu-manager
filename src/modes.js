@@ -42,13 +42,14 @@ function lgPlay(L,g){let res=null;const out=[];
   L.last=out.sort((x,y)=>y.me-x.me);L.teams.forEach((t,i)=>{if(i)t.rotIdx=(t.rotIdx||0)+1});L.round++;return res}
 // 리그 경기(주간·연도)에서는 작전 카드 1장 소모, 서포트 카드 남은 경기 1 감소. 단판 도전은 이 함수를 부르지 않는다(서포트 미적용·작전 무소모).
 function useCards(){const T=S.team,ts=T.tsel;if(ts&&(S.tq||{})[ts]>0){S.tq[ts]--;if(!S.tq[ts])T.tsel=null}T.sup=(T.sup||[]).map(x=>({...x,left:x.left-1})).filter(x=>x.left>0)}
-// --- 경기 예측(ECON.predOffer/predSettle): 내 다음 경기마다 목표 3개, 달성하면 보너스. 연도 리그는 하루 상한 적용 ---
+// --- 경기 예측: 목표 7개 중 1개를 직접 고름(L.pk, 다음 경기에도 유지). 달성하면 보너스(ECON.predSettle). 연도 리그는 하루 상한 적용 ---
 let PM='';
-function predGet(L){const E=EC();if(!E||!E.predOffer)return null;if(!L.pred){L.pred=E.predOffer(L.year?'year':'league',L.tier||1);save()}return L.pred}
-function predDo(L,gg,me){const E=EC();if(!E||!E.predSettle||L.noPred)return;const o=L.pred||predGet(L);L.pred=null;if(!o)return;
+function predList(L){const E=EC();if(!E||!E.PRED)return null;const m=L.year?1:E.tierMul(L.tier||1);return E.PRED.map(x=>[x[0],x[1],Math.round(x[3]*m/10)*10])}
+function predGet(L){const A=predList(L);if(!A)return null;const o=A.find(x=>x[0]===(L.pk||'r'))||A[0];return [o]}
+function predDo(L,gg,me){const E=EC();if(!E||!E.predSettle||L.noPred)return;const o=predGet(L);if(!o)return;
   const bx=Object.values(gg.bx[me]),box={r:gg.sc[me],ra:gg.sc[1-me],h:gg.hits[me],hr:bx.reduce((s,b)=>s+b.hr,0),sb:bx.reduce((s,b)=>s+b.sb,0),k:gg.px[me].reduce((s,p)=>s+p.k,0)};
   const r=E.predSettle(o,box,gg.res===me);L.predLast={o,hit:r.hit};if(r.pt){const t=give({pt:r.pt},0,!!L.year);PM+=` · 예측 달성 ${r.hit.join('·')}${t?' '+t:''}`}}
-const predHTML=L=>{const o=predGet(L);return o?`<p class="mini">경기 예측 · ${o.map(x=>`${esc(x[1])} <b>+${x[2]}P</b>`).join(' · ')}</p>`:''};
+const predHTML=L=>{const A=predList(L);if(!A)return '';const k=(predGet(L)[0]||[])[0];return `<div class="btns pred" aria-label="경기 예측 고르기"><small>경기 예측</small>${A.map(x=>`<button data-a="m-pred" data-k="${x[0]}" class="${x[0]===k?'big':'ghost'}" aria-pressed="${x[0]===k}" >${esc(x[1].replace(' 이상','+'))} ${x[2]}P</button>`).join('')}</div>`};
 function userReward(res,mode,tier){if(!res)return '';const E=EC(),r=E?(mode==='yl'&&E.yearGame?E.yearGame(res):E.leagueGame(mode==='yl'?1:tier,res)):null,pay=give(r,{w:400,d:200,l:150}[res],mode==='yl');
   if(E){E.mission(S,'g3');if(mode==='lg'&&res==='w')E.mission(S,'w1')}
   for(const c of regCards(S.team))S.gp[c.id]=(S.gp[c.id]||0)+1;S.team.rotIdx++;
@@ -186,42 +187,43 @@ function ylFinish(){const L=S.yl;let res,msg;L.man=(L.man||0)+1;L.steps=(L.steps
   else{res=lgPlay(L,G);msg=userReward(res,'yl')+midAS(L);if(L.round>=L.sched.length){const inP=ylStartPost(L);msg+=` · 정규시즌 ${L.rank}위${L.titleMsg||''}${inP?' · 포스트시즌 진출':' · 포스트시즌 진출 실패'}`+ylAdvance(L)}}
   S.toast=msg;rollCond();G=null;save();go('years')}
 // --- 화면 ---
-function tableHTML(L,title){L=L||S.season;const R=lgStand(L),top=R[0];
-  return `<section class="band"><h3>${title||'순위표'}</h3><div class="scroll"><table class="tbl"><thead><tr><th>순위</th><th class="l">구단</th><th>경기</th><th>승</th><th>패</th><th>무</th><th>승률</th><th>게임차</th><th>득점</th><th>실점</th></tr></thead><tbody>
+function tableHTML(L,title){L=L||S.season;const R=lgStand(L),top=R[0],me=R.findIndex(x=>x.i===0)+1;
+  if(!S.showStand)return `<div class="standbar"><button data-a="m-stand" aria-expanded="false">${title||'순위표'} 보기 · 현재 ${me}위</button></div>`;
+  return `<section class="band"><div class="tools"><h3 style="margin:0;margin-right:auto">${title||'순위표'}</h3><button class="ghost" data-a="m-stand" aria-expanded="true">접기</button></div><div class="scroll"><table class="tbl"><thead><tr><th>순위</th><th class="l">구단</th><th>경기</th><th>승</th><th>패</th><th>무</th><th>승률</th><th>게임차</th><th>득점</th><th>실점</th></tr></thead><tbody>
   ${R.map((x,k)=>`<tr class="${x.i===0?'me':''}"><td>${k+1}</td><td class="l"><i class="dot" style="background:${x.i===0?'#e07a45':L.teams[x.i].color}"></i>${esc(tname(x.i,L))}</td><td>${x.g}</td><td>${x.w}</td><td>${x.l}</td><td>${x.d}</td><td>${x.pct.toFixed(3).replace(/^0/,'')}</td><td>${k?(((top.w-x.w)+(x.l-top.l))/2).toFixed(1):'-'}</td><td>${x.rs}</td><td>${x.ra}</td></tr>`).join('')}</tbody></table></div></section>`}
 function lastHTML(L){return L.last&&L.last.length?`<section class="band"><h3>지난 경기</h3><div class="res">${L.last.map(x=>`<div class="${x.me?'me':''}"><span>${esc(tname(x.a,L))}</span><b>${x.sc[0]} : ${x.sc[1]}</b><span>${esc(tname(x.h,L))}</span></div>`).join('')}</div></section>`:''}
 function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),H=teamOf(pr[1],L);
   const sp=t=>byId[t.rot[(t.rotIdx||0)%t.rot.length]],cost=regCards(T).reduce((x,c)=>x+c.cost,0);
   return `<div class="mu"><div class="side"><small>원정 · 평균 ${teamOvr(A)}</small><h2>${esc(tname(pr[0],L))}</h2>${sp(A)?cardHTML(sp(A),{cond:pr[0]===0?S.cond[sp(A).id]:0}):''}</div>
-   <div class="vs">${label}<b>VS</b>${predHTML(L)}<div class="btns"><button class="big" data-a="${aS}" ${e.length?'disabled':''}>하이라이트 보기</button><button data-a="${aA}" ${e.length?'disabled':''}>결과만 보기</button></div>
-   ${e.length?`<p class="warn">${esc(e[0])} · <a href="#lineup">라인업 수정</a></p>`:`<p class="mini">1군 코스트 ${cost}/${COST_CAP}<br>${fxHTML(T)}</p>`}</div>
+   <div class="vs"><small class="mlab">${label}</small><b>VS</b>${predHTML(L)}<div class="btns"><button class="big" data-a="${aS}" ${e.length?'disabled':''}>하이라이트 보기</button><button data-a="${aA}" ${e.length?'disabled':''}>결과만 보기</button></div>
+   ${e.length?`<p class="warn">${esc(e[0])} · <a href="#lineup">라인업 수정</a></p>`:''}</div>
    <div class="side"><small>홈 · 평균 ${teamOvr(H)}</small><h2>${esc(tname(pr[1],L))}</h2>${sp(H)?cardHTML(sp(H),{cond:pr[1]===0?S.cond[sp(H).id]:0}):''}</div></div>`}
 function ladderHTML(s){return `<div class="btns" style="flex-wrap:wrap;margin-top:8px" aria-label="리그 단계">${TIERS.map((t,i)=>`<span class="chip" style="padding:3px 8px;border-radius:10px;border:1px solid ${i+1===s.tier?'#e07a45':'#555'};${i+1===s.tier?'background:#e07a45;color:#111;font-weight:700':i+1<=(S.lgBest||1)?'':'opacity:.5'}">${i+1}. ${t.n}</span>`).join('')}</div>`}
 function vSeason(){
   weekTick();const s=S.season,T=S.team,nxt=s.wk+7*864e5;
   const head=`<p class="mini" title="${esc(TIER_DESC[s.tier-1])} · 주가 끝나면 남은 경기는 결과만 처리(보상 없음)">${wkLabel(s.wk)} · ${s.tier<10?`1위면 <b>${tierName(s.tier+1)}</b> 승급`:'최고 단계'}</p>${ladderHTML(s)}`;
-  if(s.over)return `<section class="hero"><h1>${tierName(s.tier)} 종료 · ${esc(T.name)} ${s.rank}위</h1>${head}<p>다음 리그는 <b>${md(nxt)}(월) 0시</b>에 열려요. ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)}로 승급해요.`:'같은 단계에 다시 도전해요.'} 기다리는 동안 <a href="#years">연도별 리그</a>에 도전해 보세요.</p></section>${lastHTML(s)}${tableHTML(s)}${titleHTML(s)}`;
+  if(s.over)return `<section class="hero"><h1>${tierName(s.tier)} 종료 · ${esc(T.name)} ${s.rank}위</h1>${head}<p>다음 리그 <b>${md(nxt)}(월) 0시</b> · ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)} 승급`:'재도전'}</p></section>${lastHTML(s)}${tableHTML(s)}${titleHTML(s)}`;
   const pr=curPair(s);
   return `<section class="hero">${head}${pr?muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto'):''}</section>
   ${lastHTML(s)}${tableHTML(s)}
   <section class="band"><h3>구단 설정</h3><label class="row">구단 이름 <input id="tn" value="${esc(T.name)}" maxlength="12"></label>
-  <details><summary>저장 데이터 백업 / 복원</summary><p class="mini">이 브라우저에 자동 저장돼요. 다른 기기로 옮길 때는 코드를 복사해 붙여 넣으세요.</p>
+  <details><summary>저장 데이터 백업 / 복원</summary>
   <textarea id="sv" rows="3"></textarea><div class="btns"><button data-a="copy">코드 복사</button><button data-a="load">붙여 넣은 코드 불러오기</button><button data-a="reset" class="ghost">처음부터 다시</button></div></details></section>`}
 function vYears(){const L=S.yl,won=S.ylWon||{};ranked();
   if(L&&!L.done){const pr=curPair(L),c=L.post&&L.post.cur,nx=ylNextAt(Date.now()),hm=t=>{const d=new Date(t+H9);return `${md(t)} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
     const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`;
-    return `<section class="hero"><h1>${L.year} 리그 참가 중</h1><p class="mini">${stage} · ${L.teams.length}개 구단 · 정규시즌 뒤 ${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}</p>
-     <p>매일 08:00~23:00에 15분마다 1경기씩 자동으로 진행돼요(정규시즌 팀당 약 ${Math.round(L.sched.length*(L.teams.length%2?(L.teams.length-1)/L.teams.length:1))}경기, 포스트시즌은 1경기씩). 다음 진행: <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p>
-     ${pr?predHTML(L):''}<div class="btns">${pr?`<button class="big" data-a="m-start">지금 한 경기 · 하이라이트</button><button data-a="m-auto">지금 한 경기 · 결과만</button>`:`<button class="big" data-a="m-bye">지금 다음 ${L.post?'경기':'라운드'} 진행</button>`}</div>
-     <p class="mini">기다리지 않고 직접 눌러 한 경기씩 앞당길 수도 있어요. 자동 진행은 그와 별개로 15분마다 계속돼요. 라인업·작전 카드는 다음 진행 전까지 바꿔 두면 그대로 적용돼요. 접속하지 않아도 시간은 흘러서, 다시 들어오면 밀린 라운드를 한꺼번에 처리해요.</p>
-     ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
+    return `<section class="hero"><h1>${L.year} 리그 참가 중</h1><p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p>
+     <p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p>
+     ${pr?predHTML(L):''}<div class="btns">${pr?`<button class="big" data-a="m-start">하이라이트 보기</button><button data-a="m-auto">결과만 보기</button>`:`<button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button>`}</div>
+          ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
      <div class="btns" style="margin-top:10px"><button data-a="m-quit" class="ghost">이 리그 포기</button></div></section>
      ${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${lastHTML(L)}${tableHTML(L,L.post?'정규시즌 최종 순위':'순위표')}${titleHTML(L)}${asHTML(L)}`}
   const Y=YL_YEARS(),res=L&&L.done?`<section class="band"><h3>${L.year} 리그 결과</h3><p>정규시즌 ${L.rank}위 · 우승 <b>${esc(tname(L.champ,L))}</b>${L.champ===0?' 🏆':''}</p>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>${tableHTML(L,'정규시즌 최종 순위')}${titleHTML(L)}${asHTML(L)}`:'';
-  return `<section class="hero"><h1>연도별 리그</h1><p>팀당 약 144경기 시즌이 매일 08:00~23:00에 15분마다 1경기씩 자동 진행돼요(약 2~3일). 고른 해의 실제 구단들 사이에 내 구단이 들어가 정규시즌과 포스트시즌을 치러요. 한국시리즈 우승이 목표예요. 상대는 그해 선수 전원으로 짠 팀이라 단일연도 덱 효과가 붙어 강해요.</p>
-   <p class="mini">우승한 해 ${Object.keys(won).length}/${Y.length} · 숫자는 그해 구단 평균 전력(높을수록 어려움)</p>
+  return `<section class="hero"><h1>연도별 리그</h1><p class="mini" title="그해 실제 구단들과 팀당 144경기 + 포스트시즌. 08~23시 15분마다 자동 진행(약 2~3일). 숫자는 구단 수·평균 전력">144경기 · 15분마다 자동 · 🏆 ${Object.keys(won).length}/${Y.length}</p>
    <div class="btns" style="flex-wrap:wrap">${Y.map(y=>{const ks=yearKeys(y),o=Math.round(ks.reduce((s,k)=>s+YOVR[k],0)/ks.length);return `<button data-a="m-join" data-y="${y}" class="${won[y]?'big':''}" title="${ks.length}개 구단">${y}${won[y]?' 🏆':''} <small>${ks.length}팀·${o}</small></button>`}).join('')}</div></section>${res}`}
 function mAct(a,b){
+  if(a==='m-stand'){S.showStand=!S.showStand;render();return}
+  if(a==='m-pred'){const L=location.hash==='#years'?S.yl:S.season;if(L){L.pk=b.dataset.k;save();render()}return}
   if(a==='m-start')startGame(false,'yl');else if(a==='m-auto')startGame(true,'yl');else if(a==='m-bye'){if(S.yl&&!S.yl.done)ylBye(S.yl)}
   else if(a==='m-join'){ylNew(+b.dataset.y);render()}
   else if(a==='m-quit'){if(b.dataset.c){S.yl=null;save();render()}else{b.dataset.c=1;b.textContent='한 번 더 누르면 포기'}}}

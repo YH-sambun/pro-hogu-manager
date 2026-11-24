@@ -17,10 +17,13 @@ if(ap){const TM={kt:'KT'},AL={유지현:'류지현',나종덕:'나균안',한동
     if(!L.length){am.push(y+' '+n+' '+t);continue}const c=L.sort((a,b)=>b.o-a.o)[0];const key=c.y+c.t+c.n;if(seen.has(key))continue;seen.add(key);
     add.push({...c,v:'AS',r:c.r.map(v=>Math.min(120,v+3)),o:c.o+2})}}miss=miss.concat(am)}
 const years=[...new Set(base.map(c=>c.y))];
-for(const y of years){const Y=base.filter(c=>c.y===y),ex=new Set();
-  for(const c of Y)if(MVP.has(nm(c)+y))ex.add(c);const mv=new Set([...ex].map(nm));
-  for(const k of ['P','B']){const c=Y.filter(c=>c.k===k&&!mv.has(nm(c))).sort((a,b)=>b.o-a.o)[0];if(c)ex.add(c)}
-  for(const c of ex)add.push({...c,v:'EX',r:c.r.map(v=>Math.min(120,v+5)),o:c.o+4,c:Math.min(10,c.c+1)})}
+// EX(구단 균형안): MVP는 항상 EX. 그 외는 구단(계보)마다 역대 최고 OVR 시즌을 골라 계보당 20장(시즌 수 45 기준 비례, 최소 6)까지. 한 계보에서 한 시즌은 1장, 같은 선수 여러 시즌 가능.
+const EXQ=20,ex=new Set();const lines=[...new Set(base.map(c=>c.l))];
+for(const c of base)if(MVP.has(nm(c)+c.y))ex.add(c);
+for(const l of lines){const L=base.filter(c=>c.l===l),seasons=new Set(L.map(c=>c.y)).size,q=Math.max(6,Math.round(EXQ*seasons/45));
+  const used=new Set([...ex].filter(c=>c.l===l).map(c=>c.y)),who=new Set([...ex].filter(c=>c.l===l).map(nm));let n=used.size;
+  for(const c of L.slice().sort((a,b)=>b.o-a.o)){if(n>=q)break;if(used.has(c.y))continue;ex.add(c);used.add(c.y);who.add(nm(c));n++}}
+for(const c of ex)add.push({...c,v:'EX',r:c.r.map(v=>Math.min(120,v+5)),o:c.o+4,c:Math.min(10,c.c+1)})
 // 신인왕(RY): KBO 역대 신인상(data/ry_raw.txt, 1983~). 능력치 +3(상한 120), OVR +2. 컨디션 하한 보통(엔진 condMin)
 {const rp=__dirname+'/../data/ry_raw.txt';if(fs.existsSync(rp))for(const l of fs.readFileSync(rp,'utf8').trim().split('\n')){const [y,r]=l.split(':'),[n,t]=r.split('@');
   let L=base.filter(c=>c.y==+y&&nm(c)===n);if(L.length>1)L=L.filter(c=>c.t===t);if(L.length!==1){miss.push('RY '+l);continue}const c=L[0];

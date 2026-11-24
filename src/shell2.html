@@ -299,7 +299,7 @@ i.r-win{background:#d8f0df;color:#14532d}i.r-lose{background:#fbe1dd;color:#8a1c
 .dexl{display:grid;gap:12px;margin-top:12px}.dexs{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}.dexs.done{border-color:var(--gold)}
 .dexh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}.dexh b{font:400 18px "Black Han Sans";margin-right:auto}.dexok{border-color:var(--gold);color:var(--gold)}.dexrw{font-size:13px;color:var(--gold);font-weight:700}
 .dexg{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px}.dexc{display:grid;gap:2px;text-align:center;cursor:pointer}.dexc .oart{border-radius:8px;overflow:hidden}.dexc small{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dexc.no{cursor:default;opacity:.55}.dexc .q{position:absolute;inset:0;display:grid;place-items:center;font:400 28px "Black Han Sans";color:#777}
+.dexc.no{cursor:default}.dexc.no .oart{filter:grayscale(.9) brightness(.55)}.dexc.no .oart img{filter:blur(1.5px)}.dexc.no small{opacity:.55}.dexc .q{position:absolute;inset:0;display:grid;place-items:center;font:400 28px "Black Han Sans";color:#777}
 .plate i.age{font-style:normal}.plate i.age.ab{color:#7fd4ff;font-weight:700}
 .plb,.oplb{position:absolute;z-index:3;background:#2f6fb0;color:#fff;border-radius:50%;display:grid;place-items:center;font-style:normal;cursor:help}.plb{right:6px;bottom:6px;width:20px;height:20px}.oplb{right:3px;bottom:3px;width:16px;height:16px}
 .plb svg{width:12px;height:12px;display:block}.oplb svg{width:10px;height:10px;display:block}.mmeta.abh{display:flex;gap:6px;align-items:center;color:#7fd4ff}.mmeta.abh svg{width:16px;height:16px;flex:0 0 auto}
@@ -368,7 +368,7 @@ input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10
 .lg .mu{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center;justify-items:center;text-align:center}
 .lg .side small{color:var(--mute);font-weight:700}
 .lg .vs{font-family:"Black Han Sans";font-size:20px;color:var(--mute)}
-.lg .vs b{display:block;font-size:clamp(56px,9vw,96px);color:#fff;line-height:1;text-shadow:4px 4px 0 var(--clay2);font-weight:400}
+.lg .vs>b{display:block;font-size:clamp(44px,6.5vw,72px);margin:4px 0 6px;color:#fff;line-height:1;text-shadow:4px 4px 0 var(--clay2);font-weight:400}
 .lg .vs .btns{justify-content:center;margin:14px 0 8px;font-family:"Noto Sans KR"}
 .lg .btns{display:flex;flex-wrap:wrap;gap:8px}
 .lg .mini{font-size:14px;color:var(--mute)}
@@ -485,6 +485,31 @@ body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 #view>.band.hub{background:none;backdrop-filter:none;padding:0}
 .login{max-width:440px;margin:12vh auto 0;display:grid;gap:16px;text-align:center;background:rgba(6,25,15,.7);border:1px solid var(--line);border-radius:18px;padding:32px 24px}.login .logo.big{font-size:40px}.login .gbtn{min-height:52px;font-size:18px;background:#fff;color:#1b1d1c;border-color:#fff}
 
+
+.lg .vs .mini,.lg .vs p{font-family:"Noto Sans KR";font-size:13px;color:var(--ink,#eee)}
+.lg .vs p b,.lg .vs .mini b{display:inline;font-size:inherit;text-shadow:none;color:var(--gold)}
+.lg .pred{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;margin:4px 0 0;font-family:"Noto Sans KR"}
+.lg .pred small{width:100%;font-size:11px;color:var(--mute);letter-spacing:.04em}
+.lg .pred button{padding:3px 9px!important;font:500 12px "Noto Sans KR"!important;border-radius:999px;min-height:0;line-height:1.4}
+.lg .pred button.big{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700!important}
+.lg .vs .mlab{display:block;font:600 12px "Noto Sans KR";color:var(--mute)}
+.standbar{display:flex;justify-content:center;margin-top:14px}
+.standbar button{background:rgba(6,14,10,.72);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:8px 18px;font:600 14px "Noto Sans KR";cursor:pointer}
+
+.abmw{overflow-x:auto;margin-top:12px;border-radius:14px}.abmap{position:relative;aspect-ratio:960/416;min-width:620px;border-radius:14px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#13407a,#0a1f45 75%);border:1px solid rgba(140,190,255,.25)}
+.abmap svg{position:absolute;inset:0;width:100%;height:100%}.abmap path{stroke:#6fa3e0;stroke-width:5.2;stroke-linecap:round;opacity:.55}
+.abpin{position:absolute;transform:translate(-10px,-50%);display:flex;align-items:center;gap:5px;background:none;border:0;padding:0;color:#fff;cursor:pointer;font:600 12px "Noto Sans KR";white-space:nowrap}
+.abpin.t{flex-direction:column-reverse;gap:2px;transform:translate(-50%,calc(-100% + 10px))}.abpin.l{flex-direction:row-reverse;transform:translate(calc(-100% + 10px),-50%)}
+.abpin i{width:20px;height:20px;border-radius:50%;background:#e8eefb;border:3px solid #7d5bd6;box-shadow:0 0 0 2px rgba(0,0,0,.35);display:grid;place-items:center;flex:none}
+.abpin i .lki{width:10px;height:10px}
+.abpin span{background:rgba(8,20,45,.85);border:1px solid rgba(160,200,255,.5);padding:2px 7px;border-radius:6px}
+.abpin.lk i{background:#3a4660;border-color:#8a93a6}.abpin.lk span{color:#aab3c4}
+.abpin.on i{background:var(--gold);border-color:#fff;box-shadow:0 0 0 4px rgba(240,190,60,.45)}.abpin.on span{background:var(--gold);color:#111;border-color:var(--gold)}
+.abpin:hover span{border-color:#fff}
+.abl{grid-template-columns:minmax(0,1fr)!important;margin-bottom:14px}.abmw{max-width:1000px;margin-left:auto;margin-right:auto}
+@media(max-width:600px){.abpin{font-size:11px}}
+
+.dexf{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}.dexf select,.dexf input{max-width:170px}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
