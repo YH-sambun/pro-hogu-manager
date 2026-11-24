@@ -228,7 +228,11 @@ function face(c){const k=c.type==='P'?'P':c.pos==='C'?'C':'B',sk='#f1d3b5',dk='#
  <path d="M22 120 Q26 98 56 94 L104 94 Q134 98 138 120Z" fill="#fff"/><path d="M68 94 L80 108 L92 94" fill="none" stroke="${c.col}" stroke-width="4"/><rect x="70" y="84" width="20" height="14" fill="${sk}"/>
  <ellipse cx="80" cy="64" rx="28" ry="31" fill="${sk}"/><circle cx="70" cy="64" r="3" fill="${dk}"/><circle cx="90" cy="64" r="3" fill="${dk}"/><path d="M72 80 Q80 85 88 80" stroke="${dk}" stroke-width="2.5" fill="none" stroke-linecap="round"/>${cap}${mask}</svg>`}
 function photo(c,credit,full){const up=(S.photos||{})[c.id],m=c.img;const im=src=>`<img src="${esc(src)}" alt="${esc(c.name)}" class="${full?'':'facecrop'}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%">`;
- if(up)return im(up);if(!m)return full?fig(c):face(c);return im(m.f)}
+ if(up)return im(up);if(!m)return numArt(c,full);return im(m.f)}
+// 사진 없는 선수: 구단 색 + 등번호(없으면 포지션). 실제 로고·엠블럼 없음
+const POSA={C:'C','1B':'1B','2B':'2B','3B':'3B',SS:'SS',LF:'LF',CF:'CF',RF:'RF',DH:'DH',SP:'SP',RP:'RP'};
+function numArt(c,full){const n=c.no!=null&&c.no!==''?String(c.no):'',t=n||POSA[c.pos]||(c.type==='P'?'P':'B');
+ return `<span class="numart${full?' big':''}${n?'':' nopos'}" style="--tc:${c.col||'#555'}" aria-hidden="true"><i class="na-st"></i><b>${esc(t)}</b><small>${esc(c.team)}</small></span>`}
 // 사진 출처(CC 라이선스 표시 의무): 카드 위가 아니라 팝업 아래 한 줄로
 const credLine=c=>c.img&&!(S.photos||{})[c.id]?`<span class="pcr">사진 <a href="${esc(c.img.u)}" target="_blank" rel="noopener">${esc(c.img.a)}</a> · ${esc(c.img.l)}</span>`:'';
 function bars(c,keys,bonus){return keys.map(k=>{const v=c.r[k],p=k==='sta'?0:(bonus||0),sk=(skillOf(c.id)[k]||0),t=Math.min(120,v+p+sk);
@@ -736,7 +740,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});
 // ===== 시작 =====
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
-fetch('cards.json').then(r=>r.json()).then(j=>{loadCards(j);
+fetch('cards.json').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
   for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.rg==null&&c.reg)c.rg=c.reg}
   LINES=[...new Set(CARDS.map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}

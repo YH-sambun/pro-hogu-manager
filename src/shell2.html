@@ -510,6 +510,14 @@ body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 @media(max-width:600px){.abpin{font-size:11px}}
 
 .dexf{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}.dexf select,.dexf input{max-width:170px}
+
+.numart{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,color-mix(in srgb,var(--tc) 88%,#fff) 0%,var(--tc) 45%,color-mix(in srgb,var(--tc) 55%,#000) 100%)}
+.numart .na-st{position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 14px,rgba(255,255,255,.09) 14px 22px)}
+.numart::after{content:"";position:absolute;left:0;right:0;bottom:12%;height:5%;background:rgba(255,255,255,.7);box-shadow:0 6px 0 color-mix(in srgb,var(--tc) 60%,#000)}
+.numart b{position:relative;z-index:1;font:400 clamp(20px,min(40cqw,52cqh),110px) "Black Han Sans";line-height:1;color:#fff;-webkit-text-stroke:2px color-mix(in srgb,var(--tc) 45%,#000);text-shadow:3px 3px 0 rgba(0,0,0,.35);margin-bottom:6%}
+.numart.nopos b{font-size:clamp(16px,min(28cqw,40cqh),76px)}
+.numart small{position:absolute;z-index:2;top:6%;left:7%;font:700 clamp(8px,min(9cqw,11cqh),15px) "Noto Sans KR";color:rgba(255,255,255,.9);letter-spacing:.04em}
+.oart,.cv,.cart,.fig{container-type:size}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
