@@ -1,0 +1,13 @@
+<script type="module">
+// Firebase 웹 설정값은 공개용 식별자예요(비밀키 아님). 접근 통제는 Firestore 보안 규칙이 맡아요.
+const V='10.14.1',B=`https://www.gstatic.com/firebasejs/${V}/`;
+const firebaseConfig={apiKey:"AIzaSyDcV2hMVNHnvxtPx811vZQxRfHE_KPL_Gc",authDomain:"baseball-manager-1aaeb.firebaseapp.com",projectId:"baseball-manager-1aaeb",
+  storageBucket:"baseball-manager-1aaeb.firebasestorage.app",messagingSenderId:"575460623348",appId:"1:575460623348:web:d63b7c4c6e8f5ca70eafa1"};
+const {initializeApp}=await import(B+'firebase-app.js');
+const A=await import(B+'firebase-auth.js'),D=await import(B+'firebase-firestore.js');
+const app=initializeApp(firebaseConfig);
+window.FB={auth:A.getAuth(app),db:D.getFirestore(app),GoogleAuthProvider:A.GoogleAuthProvider,signInWithPopup:A.signInWithPopup,signOut:A.signOut,onAuthStateChanged:A.onAuthStateChanged,
+  doc:D.doc,getDoc:D.getDoc,setDoc:D.setDoc,updateDoc:D.updateDoc,collection:D.collection,getDocs:D.getDocs,addDoc:D.addDoc,arrayUnion:D.arrayUnion,serverTimestamp:D.serverTimestamp,
+  query:D.query,where:D.where,orderBy:D.orderBy,limit:D.limit};
+dispatchEvent(new Event('fb-ready'));
+</script>

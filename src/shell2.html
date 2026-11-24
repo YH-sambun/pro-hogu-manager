@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>프로호구 매니저</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 덕아웃 옆 카드 테이블. 수집의 설렘과 전광판의 긴장감
+IDEA: 잔디 위에 펼친 연도별 선수카드 바인더 + 수동식 외야 전광판
+PICTURE: 카드 앞면(구단색 사진 영역, 연도, 코스트 별), 다이아몬드 주자판
+COLOUR and TYPE: 잔디 초록 바탕, 흙색 클레이 포인트, 분필 흰색 / Black Han Sans + Noto Sans KR
+LAYOUT: 상단 탭, 시즌 화면에 매치업 카드 두 장, 아래 순위표 */
+:root{color-scheme:light dark;--bg:light-dark(#1f6b45,#0b2b1d);--bg2:light-dark(#195a3a,#0f3626);--board:light-dark(#0d3a27,#06190f);
+--ink:#f3f7f1;--mute:light-dark(#d2e7d9,#a3c1af);--clay:#e07a45;--clay2:#c4602d;--line:rgba(255,255,255,.18);--paper:#fbfaf6;--pink:#1b1d1c}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans KR",system-ui,sans-serif;overflow-x:clip;
+ background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 60px,transparent 60px 120px)}
+#app{max-width:1240px;margin:0 auto;padding:0 max(3vw,12px) 60px}
+h1,h2,h3,.logo{font-family:"Black Han Sans","Noto Sans KR",sans-serif;font-weight:400;line-height:1.1;margin:0 0 12px;text-wrap:balance}
+h1{font-size:clamp(28px,4vw,40px)}h2{font-size:22px}h3{font-size:20px;color:var(--mute)}
+a{color:#ffd7bf}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:18px 0 12px;border-bottom:2px dashed var(--line)}
+.logo{font-size:30px;margin:0;color:#fff;text-shadow:3px 3px 0 var(--clay2)}.logo small{display:block;font:500 13px "Noto Sans KR";color:var(--mute);text-shadow:none;margin-top:4px}
+.wallet{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}.wallet span{background:var(--board);border:1px solid var(--line);padding:6px 12px;border-radius:999px;font-weight:700;white-space:nowrap}
+.wallet span:first-child{color:#ffd27a}
+nav{display:flex;gap:6px;flex-wrap:wrap;width:100%}
+nav a{color:var(--ink);text-decoration:none;padding:10px 16px;border-radius:10px;font-weight:700;background:rgba(0,0,0,.18);min-height:44px;display:flex;align-items:center}
+nav a.on{background:var(--clay);color:#fff}
+.toast{margin:12px 0;background:#ffd27a;color:#3a2405;padding:10px 14px;border-radius:10px;font-weight:700}
+.band{padding:22px 0;border-bottom:2px dashed var(--line)}
+.hero{padding:26px 0;border-bottom:2px dashed var(--line)}
+.mu{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center;justify-items:center;text-align:center}
+.side small{color:var(--mute);font-weight:700}.side h2{margin:2px 0 10px}
+.vs{font-family:"Black Han Sans";font-size:20px;color:var(--mute)}.vs b{display:block;font-size:clamp(56px,9vw,96px);color:#fff;line-height:1;text-shadow:4px 4px 0 var(--clay2);font-weight:400}
+.vs .btns{justify-content:center;margin:14px 0 8px;font-family:"Noto Sans KR"}
+button,select,input,textarea{font:inherit;font-size:16px;color:inherit}
+button{min-height:44px;padding:8px 16px;border-radius:10px;border:2px solid var(--line);background:rgba(0,0,0,.22);color:var(--ink);font-weight:700;cursor:pointer}
+button:hover{border-color:#fff}button:disabled{opacity:.45;cursor:not-allowed}
+button.big{background:var(--clay);border-color:var(--clay);color:#fff;font-size:17px;padding:10px 22px;box-shadow:0 4px 0 var(--clay2)}
+button.big:active{transform:translateY(2px);box-shadow:0 2px 0 var(--clay2)}
+button.ghost{background:none}
+:focus-visible{outline:3px solid #ffd27a;outline-offset:2px}
+select,input,textarea{background:var(--board);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:44px}
+textarea{width:100%;font-size:13px;font-family:monospace}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.mini{font-size:14px;color:var(--mute)}.warn{color:#ffd27a;font-size:14px;font-family:"Noto Sans KR"}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.res{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.res div{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;background:var(--board);padding:8px 12px;border-radius:8px;font-size:14px}
+.res div span:last-child{text-align:right}.res .me{outline:2px solid var(--clay)}.res b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:15px}
+.tbl th,.tbl td{padding:8px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th{color:var(--mute);font-weight:500;font-size:13px}.tbl .l{text-align:left}.tbl tr.me td{background:rgba(224,122,69,.25);font-weight:700}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+details summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
+/* 카드 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:16px}
+.card{--fr:linear-gradient(160deg,#eef1f0,#c9d0cd);width:100%;max-width:200px;margin:0 auto;background:var(--fr);border-radius:12px;padding:7px;color:var(--pink);
+ box-shadow:0 6px 0 rgba(0,0,0,.25),0 10px 24px rgba(0,0,0,.25);position:relative;text-align:left}
+.card.t-S{--fr:linear-gradient(160deg,#d9ecff,#7fa6cf 55%,#c7dcf2)}
+.card.t-L{--fr:linear-gradient(160deg,#fff1b8,#d59a1d 45%,#fbe08a 70%,#b9780f)}
+.card.dim{filter:grayscale(1) brightness(.6);opacity:.55}
+.ph{position:relative;aspect-ratio:1/0.92;border-radius:8px;overflow:hidden;background:linear-gradient(170deg,color-mix(in srgb,var(--tc) 70%,#fff),var(--tc) 60%,color-mix(in srgb,var(--tc) 60%,#000));
+ background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.08) 0 6px,transparent 6px 14px),linear-gradient(170deg,color-mix(in srgb,var(--tc) 65%,#fff),var(--tc) 55%,color-mix(in srgb,var(--tc) 55%,#000))}
+.ph svg{position:absolute;left:12%;bottom:-4%;width:80%;fill:rgba(0,0,0,.38)}
+.yr{position:absolute;left:8px;top:2px;font:400 34px/1 "Black Han Sans";color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.35)}
+.cs{position:absolute;right:6px;top:6px;width:30px;height:30px;border-radius:50%;background:#fff;color:var(--pink);display:grid;place-items:center;font:900 16px "Noto Sans KR";box-shadow:0 2px 0 rgba(0,0,0,.3)}
+.mv{position:absolute;right:6px;top:42px;background:#ffd27a;color:#3a2405;font:900 11px/1 "Noto Sans KR";font-style:normal;padding:4px 6px;border-radius:4px}
+.cd,.cdt{font:700 12px/1 "Noto Sans KR";font-style:normal;padding:4px 6px;border-radius:4px;color:#fff}
+.cd{position:absolute;left:6px;top:42px}.cdt{display:inline-block;margin-left:6px;vertical-align:middle}
+.c5{background:#e0302a}.c4{background:#ef8a1f}.c3{background:#a08a1a}.c2{background:#2f6fd0}.c1{background:#6a3fb5}
+.tm{position:absolute;left:0;right:0;bottom:0;padding:3px 8px;background:rgba(0,0,0,.45);color:#fff;font-size:12px;font-weight:700}
+.nm{display:flex;justify-content:space-between;align-items:baseline;padding:6px 4px 4px}.nm strong{font:400 21px/1.1 "Black Han Sans"}.nm span{font:900 20px "Noto Sans KR";color:var(--clay2)}
+.st{background:#1d2421;border-radius:6px;padding:6px 8px;display:grid;gap:3px}
+.st div{display:grid;grid-template-columns:30px 1fr 22px;gap:6px;align-items:center;font-size:12px;color:#e9efe9}
+.st em{font-style:normal;color:#b8c7bf}.st i{height:6px;border-radius:3px;background:linear-gradient(90deg,#fff,#ffd27a)}.st b{text-align:right;font-variant-numeric:tabular-nums}
+.ft{display:flex;justify-content:space-between;align-items:center;padding:5px 3px 0;font-size:11px;font-weight:900}
+.ft span{white-space:nowrap}.stars{color:var(--clay2);letter-spacing:-1px;font-size:10px}.stars u{text-decoration:none;color:rgba(0,0,0,.18)}
+.nt{margin:6px 2px 0;font-size:12px;line-height:1.35;color:#3d4440}
+.bd{position:absolute;top:-10px;left:50%;transform:translateX(-50%);margin:0;background:var(--clay);color:#fff;font-size:12px;font-weight:900;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.mu .card{width:180px}
+.flip{animation:flip .6s both;animation-delay:var(--d)}
+@keyframes flip{from{transform:perspective(700px) rotateY(90deg);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.flip{animation:none}}
+/* 라인업 */
+.lhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.lhead small{font:500 18px "Noto Sans KR";color:var(--mute)}
+.meter{background:var(--board);border-radius:12px;padding:14px 16px;margin:8px 0 14px}.meter>div:first-child{display:flex;justify-content:space-between;font-weight:700}
+.bar{height:10px;background:rgba(255,255,255,.12);border-radius:5px;margin:8px 0;overflow:hidden}.bar i{display:block;height:100%;background:var(--clay)}
+.bad{color:#ff8b7a}.bar i.bad{background:#ff5a45}
+.errs{background:rgba(255,90,69,.2);border-radius:10px;padding:10px 10px 10px 30px;margin:0 0 14px;color:#ffe1db}
+.cols{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:24px}
+.ln td{padding:5px 4px}.pc{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}.pc .cdt{margin:0}.ln select{width:100%;max-width:340px}.ln td:first-child{color:var(--mute);width:56px}
+.mv2 button{min-height:36px;padding:2px 10px;margin-left:2px}
+/* 팩 */
+.packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:12px}
+.pack{background:var(--board);border-radius:14px;padding:16px;display:grid;gap:10px;align-content:start}
+.pk-art{height:150px;border-radius:10px;display:grid;place-items:center;align-content:center;color:#fff;position:relative;overflow:hidden;
+ background:repeating-linear-gradient(135deg,rgba(255,255,255,.1) 0 10px,transparent 10px 22px),linear-gradient(160deg,#5f8f78,#24473a)}
+.p-p .pk-art{background:repeating-linear-gradient(135deg,rgba(255,255,255,.18) 0 10px,transparent 10px 22px),linear-gradient(160deg,#fbe08a,#b9780f)}
+.p-t .pk-art{background:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0 10px,transparent 10px 22px),linear-gradient(160deg,#f09a6a,#a8471c)}
+.pk-art b{font:400 30px "Black Han Sans";text-shadow:2px 2px 0 rgba(0,0,0,.3)}.pk-art span{font-weight:700}
+.pack p{margin:0;font-size:14px;color:var(--mute)}
+.reveal{padding-top:12px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px;align-items:center}.chk{display:flex;gap:6px;align-items:center;min-height:44px}
+.chk input{min-height:auto;width:20px;height:20px}
+/* 경기장 */
+.board{background:var(--board);border-radius:16px;padding:16px;margin-top:18px;box-shadow:inset 0 0 0 4px rgba(255,255,255,.06)}
+.ls{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-family:"Black Han Sans";font-size:22px}
+.ls th{font:500 13px "Noto Sans KR";color:var(--mute);padding:4px}.ls td{text-align:center;padding:6px 4px;border:1px solid rgba(255,255,255,.08);min-width:34px;color:#fff}
+.ls .l{text-align:left;font:700 15px "Noto Sans KR";white-space:nowrap;padding-right:12px}.ls .rr{color:#ffd27a}.ls tr.up td.l{color:#ffd27a}
+.field{display:grid;grid-template-columns:200px auto minmax(0,1fr);gap:20px;align-items:center;margin-top:12px}
+.dia{width:200px}.turf{fill:#2c7a4f;stroke:#c9a27c;stroke-width:6}.mound{fill:#c9a27c}.base{fill:#fff;opacity:.35}.base.on{fill:#ffd27a;opacity:1}.plate{fill:#fff}
+.outs{display:flex;gap:6px;align-items:center;font-weight:700}.outs i{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.15)}.outs i.on{background:#ff5a45}
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:10px}.duel div{background:rgba(255,255,255,.06);border-radius:10px;padding:10px}
+.duel small{display:block;color:var(--mute)}.duel b{font:400 24px "Black Han Sans"}.duel span{display:block;font-size:13px;color:var(--mute)}.final{color:#ffd27a}
+.gb{margin-top:14px}
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px}
+.log{list-style:none;margin:0;padding:0;max-height:560px;overflow:auto;font-size:15px}
+.log li{padding:6px 10px;border-bottom:1px solid var(--line)}.log li.i{font-family:"Black Han Sans";color:var(--mute);background:rgba(0,0,0,.15)}
+.log li.r{color:#ffd7bf;font-weight:700}.log li.hr{color:#ffd27a;font-weight:900}.log li.e{background:var(--clay);color:#fff;font-weight:700}.log li.c{color:#9fd3ff}.log li.h{color:var(--mute);font-size:13px}
+.cols2 .tbl{margin-bottom:14px;font-size:14px}.tbl small{color:var(--mute)}
+@media(max-width:860px){.cols,.cols2{grid-template-columns:minmax(0,1fr)}.field{grid-template-columns:150px minmax(0,1fr)}.dia{width:150px}.duel{grid-column:1/-1}}
+@media(max-width:600px){.mu{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.vs{grid-column:1/-1;order:-1}.mu .card{width:150px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.nm strong{font-size:17px}.yr{font-size:28px}.tbl{font-size:13px}.logo{font-size:24px}nav a{padding:8px 12px}}
+
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;z-index:50;overflow:auto}
+.mdl{background:var(--bg2);border:2px solid var(--line);border-radius:16px;padding:20px;max-width:880px;width:100%;max-height:92vh;overflow:auto;position:relative}
+.mdl .x{position:absolute;right:12px;top:12px}.mcols{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px}
+.fxchips{display:inline-flex;flex-wrap:wrap;gap:6px}.fxc{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border-radius:999px;border:1px solid #555;background:var(--board)}.fxc i{font-style:normal;font-weight:800;width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;color:#111}.fx-S i{background:#ffd27a}.fx-S{border-color:#ffd27a}.fx-A i{background:#9cc8ff}.fx-A{border-color:#9cc8ff}.fx-B i{background:#d9a46c}.fx-B{border-color:#d9a46c}.fxc b{color:#ffd27a;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips span{background:var(--board);padding:4px 10px;border-radius:999px;font-size:14px}.chips b{color:#ffd27a}
+.grid4{display:grid;grid-template-columns:repeat(4,52px);gap:4px;margin:8px 0}
+.gc{width:52px;height:52px;min-height:0;padding:0;border-radius:6px;background:#111a15;border:1px solid rgba(255,255,255,.08)}
+.gc.op{background:#e9efe9;border-color:#fff}.gc:disabled{opacity:1;cursor:default}.gc.no{outline:3px solid #ff5a45}
+.gC{background:#9aa59f!important;color:#111}.gB{background:#4f9be0!important;color:#fff}.gA{background:#b45be0!important;color:#fff}.gS{background:#ffb627!important;color:#111}
+.inv{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.blk{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:var(--board);border:2px solid var(--line);border-radius:10px;padding:8px 10px;min-width:120px}
+.blk.on{border-color:#ffd27a}.blk small{font-size:12px;color:var(--mute);font-weight:500}
+.shape{display:grid;gap:2px}.shape i{width:12px;height:12px;border-radius:2px}
+.st sup{color:#7fe07f;font-size:10px;margin-left:1px}
+.tk{margin-top:12px;align-items:center}.tk select{max-width:220px}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+.cred{font-size:12px;color:var(--mute)}.up{display:inline-flex;gap:6px;align-items:center;margin-top:6px;cursor:pointer;text-decoration:underline}.up input{font-size:12px;min-height:0;max-width:200px}
+@media(max-width:700px){.mcols{grid-template-columns:minmax(0,1fr)}.mcols .card{max-width:200px}}
+</style></head><body>
+<main id="app"></main>
+<script>
+/*CORE*/
+</script>
+<script>
+/*UI*/
+</script>
+</body></html>

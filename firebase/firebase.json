@@ -1,0 +1,11 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*"],
+    "headers": [
+      { "source": "**/*.@(jpg|png)", "headers": [{ "key": "Cache-Control", "value": "max-age=604800" }] },
+      { "source": "cards.json", "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }] }
+    ]
+  },
+  "firestore": { "rules": "firestore.rules" }
+}
