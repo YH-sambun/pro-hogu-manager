@@ -23,7 +23,7 @@ async function photoPull(){const F=fb();S.photos=S.photos||{};S.photoTs=S.photoT
   ON.ph={};for(const id in got)if(S.photos[id]===got[id].d)ON.ph[id]=got[id].d;S.phPull=Date.now()}
 async function cloudPull(){const F=fb(),u=ON.user;try{
   const d=await F.getDoc(F.doc(F.db,'users',u.uid));
-  if(d.exists()){const c=d.data();if(S.uid!==u.uid||(c.ts||0)>(S.ts||0)){const o=JSON.parse(c.json);const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.photos=ph;S.photoTs=pt;S.phPull=pp;S.uid=u.uid;for(const id in S.owned)if(!byId[id])delete S.owned[id];
+  if(d.exists()){const c=d.data();if(S.uid!==u.uid||(c.ts||0)>(S.ts||0)){const o=JSON.parse(c.json);const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.photos=ph;S.photoTs=pt;S.phPull=pp;S.uid=u.uid;if(typeof migSpecial==='function')migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];
       try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};ON.sync='클라우드 저장 데이터를 불러왔어요';G=null;packOut=null}else cloudPush(true)}
   else{S.uid=u.uid;cloudPush(true)}}catch(e){ON.sync='클라우드 불러오기 실패: '+e.code}
   try{await photoPull();cloudPush(true)}catch(e){ON.sync='사진 불러오기 실패: '+e.code}}

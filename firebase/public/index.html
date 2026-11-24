@@ -1225,14 +1225,16 @@ function pullTeam(){const T=S.team,pad=(a,n)=>{a=[...(a||[])];while(a.length<n)a
   Object.defineProperty(S,'lu',{value:L.slice(0,9),writable:true,configurable:true,enumerable:false});
   for(const [k,n] of [['bench',5],['rot',5],['pen',6]])Object.defineProperty(S,k,{value:pad(T[k],n),writable:true,configurable:true,enumerable:false})}
 function syncTeam(){if(!S||!S.__ui)return;const T=S.team;T.lineup=S.lu.map(([pos,id])=>({id,pos}));T.bench=S.bench.slice();T.rot=S.rot.slice();T.pen=S.pen.slice()}
+// EX 축소·철인 5~6코 한정(2026-11-24)으로 빠진 특별 카드는 같은 시즌 기본 카드로 돌려줌(라인업·잠금·스킬 블록도 옮김)
+function migSpecial(S){if(!S||!S.owned)return;const R={};for(const id in S.owned)if(!byId[id]&&/·(EX|IR)$/.test(id)){const b=id.replace(/·(EX|IR)$/,'');if(byId[b]){S.owned[b]=(S.owned[b]|0)+S.owned[id];R[id]=b}delete S.owned[id]}
+  if(!Object.keys(R).length)return;const T=S.team||{},f=x=>x&&R[x]?R[x]:x;T.lineup=(T.lineup||[]).map(e=>e&&typeof e==='object'?{...e,id:f(e.id)}:f(e));for(const k of ['bench','rot','pen'])T[k]=(T[k]||[]).map(f);S.locks=(S.locks||[]).map(f);(S.blocks||[]).forEach(b=>{if(b.on&&R[b.on])b.on=R[b.on]})}
 function ensureUI(){if(S.__ui)return;Object.defineProperty(S,'__ui',{value:1,enumerable:false,configurable:true});
   for(const k of ['mgr','tsel'])Object.defineProperty(S,k,{get(){return this.team[k]},set(v){this.team[k]=v},enumerable:false,configurable:true});
   Object.defineProperty(S,'sup',{get(){return this.team.sup=(this.team.sup||[]).filter(x=>x.left>0)},set(v){this.team.sup=v},enumerable:false,configurable:true});
   if(typeof ECON!=='undefined')ECON.migrate(S);
   const D={locks:[],tq:{},sq:{},blocks:[],gp:{},cond:{},ab:[],abHist:{},abSt:{},abSum:{},photos:{},mat:[],sub:'order',tb:'B',pf:'all',side:'line',sort:'ovr',fteam:'all',fyear:'all',sk:'p',dexK:'all',back:false,pt:0};
   for(const k in D)if(S[k]==null)S[k]=D[k];
-  {const R={};for(const id in S.owned)if(!byId[id]&&/·(EX|IR)$/.test(id)){const b=id.replace(/·(EX|IR)$/,'');if(byId[b]){S.owned[b]=(S.owned[b]|0)+S.owned[id];R[id]=b}delete S.owned[id]} // EX 축소·철인 5~6코 한정(2026-11-24)으로 빠진 카드는 같은 시즌 기본 카드로 돌려줌
-   const T=S.team||{},f=x=>x&&R[x]?R[x]:x;if(Object.keys(R).length){T.lineup=(T.lineup||[]).map(e=>e&&typeof e==='object'?{...e,id:f(e.id)}:f(e));for(const k of ['bench','rot','pen'])T[k]=(T[k]||[]).map(f);S.locks=S.locks.map(f);S.blocks.forEach(b=>{if(b.on&&R[b.on])b.on=R[b.on]})}}
+  migSpecial(S);
   S.locks=S.locks.map(x=>{const m=/^(.*)#(\d+)$/.exec(x);return m&&!byId[x]&&byId[m[1]]?m[1]+'~'+m[2]:x}); // 예전 저장의 중복 카드 잠금('#k')을 '~k'로
   if(!MG.some(m=>m.id===S.team.mgr))S.team.mgr=MG[0].id;
   pullTeam();if(!byId[S.cardId])S.cardId=used()[0]||Object.keys(S.owned)[0]}
@@ -1520,7 +1522,7 @@ function synPool(k){if(k==='p'){const u=new Set(used());return OWN.filter(c=>!u.
  if(k==='s')return SUPS.flatMap(x=>Array.from({length:S.sq[x[0]]||0},(_,i)=>({key:x[0]+'#'+i,x,html:scard(x,{})})));
  return TCARDS.flatMap(x=>Array.from({length:S.tq[x[0]]||0},(_,i)=>({key:x[0]+'#'+i,x,html:tcard(x,{})})))}
 const SF0={ty:'all',team:'all',year:'all',cost:'all',pos:'all',sort:'cost',dup:0};
-function synPoolF(k){const p=synPool(k);if(k!=='p')return p;const f=S.sf||SF0;return p.filter(({c})=>!abOf(c.id)&&(f.ty==='all'||c.type===f.ty)&&(f.team==='all'||lname(c.line)===f.team)&&(f.year==='all'||String(c.year)===f.year)&&(f.cost==='all'||(String(f.cost)[0]==='='?c.cost===+String(f.cost).slice(1):c.cost<=+f.cost))&&(!f.pos||f.pos==='all'||c.pos===f.pos)&&(!f.dup||c.dup)).sort(SYNSORT[f.sort||'cost']||SYNSORT.cost)}
+function synPoolF(k){const p=synPool(k);if(k!=='p')return p;const f=S.sf||SF0,EX=new Set(S.synEx||[]);return p.filter(({c})=>!abOf(c.id)&&!EX.has(c.line)&&(f.ty==='all'||c.type===f.ty)&&(f.team==='all'||lname(c.line)===f.team)&&(f.year==='all'||String(c.year)===f.year)&&(f.cost==='all'||(String(f.cost)[0]==='='?c.cost===+String(f.cost).slice(1):c.cost<=+f.cost))&&(!f.pos||f.pos==='all'||c.pos===f.pos)&&(!f.dup||c.dup)).sort(SYNSORT[f.sort||'cost']||SYNSORT.cost)}
 const dupN=c=>OWN.filter(x=>x.pk===c.pk&&x.type===c.type).length;
 const SYNSORT={cost:(a,b)=>a.c.cost-b.c.cost||a.c.ovr-b.c.ovr,costd:(a,b)=>b.c.cost-a.c.cost||b.c.ovr-a.c.ovr,ovr:(a,b)=>a.c.ovr-b.c.ovr,ovrd:(a,b)=>b.c.ovr-a.c.ovr,year:(a,b)=>b.c.year-a.c.year,yeara:(a,b)=>a.c.year-b.c.year,team:(a,b)=>lname(a.c.line).localeCompare(lname(b.c.line))||a.c.year-b.c.year,pos:(a,b)=>POSO.indexOf(a.c.pos)-POSO.indexOf(b.c.pos)||a.c.cost-b.c.cost,dup:(a,b)=>dupN(b.c)-dupN(a.c)||a.c.cost-b.c.cost};
 const POSO=['SP','RP','C','1B','2B','3B','SS','LF','CF','RF','DH'];
@@ -1603,7 +1605,7 @@ function vSynth(){const k=S.sk||'p',pool=synPoolF(k),mk=new Set(S.mat),m=pool.fi
  <div class="syn${k==='p'?' sticky':''}"><div class="sslots">${[...Array(NEED(k)).keys()].map(i=>m[i]?`<div class="ss${k==='p'?' sm':''}" data-mat="${esc(m[i].key)}" title="빼기">${k==='p'?`<span class="oart" style="--tc:${m[i].c.col}">${photo(m[i].c,0,0)}</span><b>${esc(m[i].c.name)}</b><small>${String(m[i].c.year).slice(2)}' ${esc(m[i].c.team)} · 코스트 ${m[i].c.cost}</small>`:m[i].html}</div>`:'<div class="ss empty">재료</div>').join('<span class="plus">+</span>')}<span class="plus">→</span>
  <div class="ss res">${S.synRes?`<div class="got">${S.synRes}</div>`:`<b>${m.length===NEED(k)&&!err?esc(synPreview(k,m)):'?'}</b><small>${err?esc(err):'예상 결과'}${k==='p'&&m.some(x=>hasBlk(x.c.id))?' · 끼운 스킬 블록도 사라져요':''}</small>`}</div></div>
  <div class="tools" style="justify-content:center;margin-top:12px"><button data-a="synth" ${err?'disabled':''}>합성하기</button><button class="ghost" data-a="synauto">자동 추천</button><button class="ghost" data-a="synclr">재료 비우기</button><button class="ghost qbtn${S.synHelp?' on':''}" data-a="synhelp" aria-label="합성 방식 설명" aria-pressed="${!!S.synHelp}">?</button></div>
- ${k==='p'?`<div class="tools synex" style="justify-content:center;margin-top:8px;flex-wrap:wrap;gap:4px" title="결과로 안 나왔으면 하는 구단(최대 ${SYN_EX_MAX}개)"><small style="align-self:center">제외 구단</small>${SYN_LINES.map(l=>{const on=(S.synEx||[]).includes(l);return `<button class="ghost${on?' on':''}" data-synex="${esc(l)}" aria-pressed="${on}" title="${esc(SYN_LN[l]||l)} 계열 전부 제외" style="padding:2px 8px;font-size:12px${on?';text-decoration:line-through':''}">${esc(SYN_LN[l]||l)}</button>`}).join('')}</div>`:''}
+ ${k==='p'?`<div class="tools synex" style="justify-content:center;margin-top:8px;flex-wrap:wrap;gap:4px" title="결과로 안 나왔으면 하는 구단(최대 ${SYN_EX_MAX}개)"><small style="align-self:center">제외 구단(재료·결과 모두)</small>${SYN_LINES.map(l=>{const on=(S.synEx||[]).includes(l);return `<button class="ghost${on?' on':''}" data-synex="${esc(l)}" aria-pressed="${on}" title="${esc(SYN_LN[l]||l)} 계열 전부 제외" style="padding:2px 8px;font-size:12px${on?';text-decoration:line-through':''}">${esc(SYN_LN[l]||l)}</button>`}).join('')}</div>`:''}
  ${S.msg?`<p class="note" style="text-align:center" aria-live="polite">${esc(S.msg)}</p>`:''}${S.synHelp?`<p class="note synrule">${esc(SYN[k].rule)}</p>`:''}</div>
  <h3 style="margin-top:18px">재료로 쓸 수 있는 ${SYN[k].n} <span class="pill">${pool.length}</span></h3>${k==='p'?synFilt()+`<div class="tabs" role="tablist" aria-label="보기 방식" style="margin:6px 0">${[['card','카드'],['list','일람']].map(([v,n])=>`<button role="tab" aria-selected="${(S.synView||'card')===v}" class="${(S.synView||'card')===v?'on':''}" data-a="synview" data-v="${v}">${n}</button>`).join('')}</div>`:''}${k==='p'&&S.synView==='list'?synList(pool,mk):`<div class="mpool">${pool.map(x=>{const lk=isLocked(lkey(k,x));return `<div class="mpw"><div class="mp${mk.has(x.key)?' on':''}${lk?' locked':''}" ${lk?'aria-disabled="true"':`data-mat="${esc(x.key)}" role="button" tabindex="0"`}>${x.html}${lk?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div><button class="ghost lockt" data-lock="${esc(lkey(k,x))}" aria-pressed="${lk}" aria-label="${lk?'잠금 해제':'잠그기'}" title="${lk?'잠금 해제':'잠그기'}">${LOCKI(lk)}</button></div>`}).join('')||'<p class="note">재료가 없어요.</p>'}</div>`}
  <p class="note help">카드 아래 자물쇠로 잠그면 재료·자동 추천에서 빠져요. 재료 선수에 끼운 스킬 블록은 같이 사라져요.</p></section>`}
@@ -1844,7 +1846,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[d
  else if(D.skc){S.skc=D.skc;S.blkSel=null}
  else if(D.sft){S.sf={...(S.sf||SF0),ty:D.sft};S.mat=[]}else if(D.sfd){S.sf={...(S.sf||SF0),dup:(S.sf||SF0).dup?0:1};S.mat=[]}else if(D.sk2){S.sk=D.sk2;S.mat=[];S.synRes=null;location.hash='synth';render();return}
  else if(D.sk){S.sk=D.sk;S.mat=[];S.synRes=null}
- else if(D.synex){const E=S.synEx=S.synEx||[],i=E.indexOf(D.synex);if(i>=0)E.splice(i,1);else if(E.length>=SYN_EX_MAX)S.msg=`제외 구단은 ${SYN_EX_MAX}개까지 고를 수 있어요.`;else E.push(D.synex);S.synRes=null}
+ else if(D.synex){const E=S.synEx=S.synEx||[],i=E.indexOf(D.synex);if(i>=0)E.splice(i,1);else if(E.length>=SYN_EX_MAX)S.msg=`제외 구단은 ${SYN_EX_MAX}개까지 고를 수 있어요.`;else E.push(D.synex);S.synRes=null;S.mat=(S.mat||[]).filter(id=>{const c=byId[baseId(id)];return !c||!E.includes(c.line)})}
  else if(D.mat){const i=S.mat.indexOf(D.mat);S.synRes=null;if(i>=0)S.mat.splice(i,1);else if(S.mat.length<NEED(S.sk||'p'))S.mat.push(D.mat)}
  else if(D.ssel)S.ssel=S.ssel===D.ssel?null:D.ssel;
  else if(D.sgive){if(S.sup.length<2&&S.ssel){S.sup.push({id:S.ssel,cid:D.sgive,left:SUP_BY[S.ssel][4]});S.sq[S.ssel]--;S.ssel=null}}
@@ -2195,7 +2197,7 @@ async function photoPull(){const F=fb();S.photos=S.photos||{};S.photoTs=S.photoT
   ON.ph={};for(const id in got)if(S.photos[id]===got[id].d)ON.ph[id]=got[id].d;S.phPull=Date.now()}
 async function cloudPull(){const F=fb(),u=ON.user;try{
   const d=await F.getDoc(F.doc(F.db,'users',u.uid));
-  if(d.exists()){const c=d.data();if(S.uid!==u.uid||(c.ts||0)>(S.ts||0)){const o=JSON.parse(c.json);const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.photos=ph;S.photoTs=pt;S.phPull=pp;S.uid=u.uid;for(const id in S.owned)if(!byId[id])delete S.owned[id];
+  if(d.exists()){const c=d.data();if(S.uid!==u.uid||(c.ts||0)>(S.ts||0)){const o=JSON.parse(c.json);const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.photos=ph;S.photoTs=pt;S.phPull=pp;S.uid=u.uid;if(typeof migSpecial==='function')migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];
       try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};ON.sync='클라우드 저장 데이터를 불러왔어요';G=null;packOut=null}else cloudPush(true)}
   else{S.uid=u.uid;cloudPush(true)}}catch(e){ON.sync='클라우드 불러오기 실패: '+e.code}
   try{await photoPull();cloudPush(true)}catch(e){ON.sync='사진 불러오기 실패: '+e.code}}
@@ -2336,7 +2338,7 @@ fetch('cards.json').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i
   for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.rg==null&&c.reg)c.rg=c.reg}
   LINES=[...new Set(CARDS.map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}
-  if(!S)fresh();else{for(const id in S.owned)if(!byId[id])delete S.owned[id];S.blocks=S.blocks||[];S.gp=S.gp||{};S.tq=S.tq||{};S.sq=S.sq||{};S.team.bench=S.team.bench||[]}
+  if(!S)fresh();else{migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];S.blocks=S.blocks||[];S.gp=S.gp||{};S.tq=S.tq||{};S.sq=S.sq||{};S.team.bench=S.team.bench||[]}
   ensureUI();const lg=ECON.login(S);if(lg)S.toast=`출석 ${lg.streak}일째 · ${rwText(lg)} 받았어요`;
   render();fbBoot()}).catch(e=>{console.error(e);vw.innerHTML=`<section class="band"><h1>카드 데이터를 불러오지 못했어요</h1><p>${esc(e.message)}</p></section>`});
 })();
