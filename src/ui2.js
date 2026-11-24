@@ -54,12 +54,13 @@ function ensureUI(){if(S.__ui)return;Object.defineProperty(S,'__ui',{value:1,enu
   if(typeof ECON!=='undefined')ECON.migrate(S);
   const D={locks:[],tq:{},sq:{},blocks:[],gp:{},cond:{},ab:[],abHist:{},abSt:{},abSum:{},photos:{},mat:[],sub:'order',tb:'B',pf:'all',side:'line',sort:'ovr',fteam:'all',fyear:'all',sk:'p',dexK:'all',back:false,pt:0};
   for(const k in D)if(S[k]==null)S[k]=D[k];
+  S.locks=S.locks.map(x=>{const m=/^(.*)#(\d+)$/.exec(x);return m&&!byId[x]&&byId[m[1]]?m[1]+'~'+m[2]:x}); // 예전 저장의 중복 카드 잠금('#k')을 '~k'로
   if(!MG.some(m=>m.id===S.team.mgr))S.team.mgr=MG[0].id;
   pullTeam();if(!byId[S.cardId])S.cardId=used()[0]||Object.keys(S.owned)[0]}
 const statLine=c=>c.type==='B'?`타율 ${c.s[0].toFixed(3).replace(/^0/,'')} · ${c.s[1]}홈런 · ${c.s[2]}타점 · ${c.s[3]}도루 · ${c.s[4]}경기`:`평균자책 ${c.s[0].toFixed(2)} · ${c.s[1]}승 ${c.s[2]}패 · ${c.s[3]}세이브 · ${c.s[4]}홀드 · ${c.s[5]}탈삼진 · ${c.s[6]}이닝`;
 // 보유 카드 목록: 같은 카드 2장 이상이면 중복분을 id#2, id#3…으로 펼침 (합성·유학 재료)
 let OWN=[],OWNU=[],DUP={};
-function rebuildOwn(){OWN=[];OWNU=[];DUP={};for(const id in S.owned){const c=byId[id];if(!c)continue;OWN.push(c);OWNU.push(c);for(let k=2;k<=(S.owned[id]|0);k++){const d={...c,id:id+'#'+k,dup:1};DUP[d.id]=d;OWN.push(d)}}}
+function rebuildOwn(){OWN=[];OWNU=[];DUP={};for(const id in S.owned){const c=byId[id];if(!c)continue;OWN.push(c);OWNU.push(c);for(let k=2;k<=(S.owned[id]|0);k++){const d={...c,id:id+'~'+k,dup:1};DUP[d.id]=d;OWN.push(d)}}}
 const by=new Proxy({},{get:(_,k)=>typeof k==='string'?(DUP[k]||byId[k]):undefined,has:(_,k)=>!!(DUP[k]||byId[k])});
 // 경기 화면용 (엔진 G)
 function diamond(g){const on=i=>g.bases[i]?'on':'';return `<svg viewBox="0 -12 200 182" class="gdia" role="img" aria-label="주자 상황">
@@ -86,7 +87,7 @@ const dexDone=()=>Object.keys(S.dexDone||{}).filter(k=>!k.startsWith('meta')).le
 const ABU={ai5:[()=>lgTop()>=2,'주간 리그 2단계 도달'],ai3:[()=>lgTop()>=3,'주간 리그 3단계 도달'],dex5:[()=>dexDone()>=5,'도감 세트 5개 완성'],aiW:[()=>lgWins()>=1,'주간 리그 1위 1번'],
   hr:[()=>lgTop()>=4,'주간 리그 4단계 도달'],era:[()=>lgTop()>=5,'주간 리그 5단계 도달'],aiW2:[()=>lgWins()>=3,'주간 리그 1위 3번'],aiW3:[()=>lgTop()>=8,'주간 리그 8단계 도달']};
 const abWhy=c=>c.v?'특수 카드는 유학 불가':'유학 불가 (25세 이하·35세 이상만)';
-const dupsOf=c=>OWN.filter(x=>x.dup&&x.id.split('#')[0]===c.id&&!isLocked(x.id));
+const dupsOf=c=>OWN.filter(x=>x.dup&&baseId(x.id)===c.id&&!isLocked(x.id));
 function abRoll(a){const d=abd(a.d),c=byId[a.id],r=ECON.studyRoll(a.d),keys=Object.keys(c.r).filter(k=>d[5].includes(k));
   let pts=Math.min(r.gain,AB_CAP-abUsed(c));const st={};while(pts>0&&keys.length){const k=keys[Math.floor(Math.random()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:r.name,st}}
 function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAge(c)||ECON.canStudy(c).err)return;const m=dupsOf(c).slice(0,d[4]);if(m.length<d[4])return;
@@ -158,9 +159,9 @@ function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
   return 0}
 // 합성 (엔진 synth)
 function doSynth(){const k=S.sk||'p',pool=synPool(k),m=pool.filter(x=>S.mat.includes(x.key));if(synCheck(k,m))return;let out='';
-  const mats=k==='p'?m.map(x=>x.c.id):k==='b'?m.map(x=>x.b):m.map(x=>x.x[0]);const r=synth(k,mats,S.locks.filter(x=>!x.includes('#')));if(r.err){S.msg=r.err;return}
+  const mats=k==='p'?m.map(x=>x.c.id):k==='b'?m.map(x=>x.b):m.map(x=>x.x[0]);const r=synth(k,mats,S.locks.filter(x=>!/~\d+$/.test(x)));if(r.err){S.msg=r.err;return}
   if(k==='p'){const ids=new Set(m.map(x=>x.c.id)),back=S.blocks.filter(b=>ids.has(b.on)).length;S.blocks=S.blocks.filter(b=>!ids.has(b.on));
-    for(const x of m){const id=x.c.id.split('#')[0];S.owned[id]=(S.owned[id]|0)-1;if(S.owned[id]<=0){delete S.owned[id];S.blocks=S.blocks.filter(b=>b.on!==id)}}
+    for(const x of m){const id=baseId(x.c.id);S.owned[id]=(S.owned[id]|0)-1;if(S.owned[id]<=0){delete S.owned[id];S.blocks=S.blocks.filter(b=>b.on!==id)}}
     S.locks=S.locks.filter(x=>!ids.has(x));const got=r.out;ECON.gain(S,[got]);const c=byId[got];out=card(c,{})+`<small>코스트 ${r.cost} 선수 획득${r.rules&&r.rules.length?' · '+esc(r.rules.join(' · ')):''}${back?` · 끼워 둔 스킬 블록 ${back}개도 사라짐`:''}</small>`}
   else if(k==='b'){const us=new Set(m.map(x=>x.b.u));S.blocks=S.blocks.filter(b=>!us.has(b.u));S.blocks.push(r.out);out=`<b>${r.out.g}등급 · ${esc(bname(r.out))}</b><small>${Object.entries(r.out.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')}</small>`}
   else if(k==='s'){const id=m[0].x[0];S.sq[id]-=3;S.sq[r.out]=(S.sq[r.out]||0)+1;const x=SUP_BY[r.out];out=`<b>${esc(x[1])}</b><small>${esc(x[3])} · ${x[4]}경기</small>`}
@@ -191,7 +192,7 @@ const TC={SSG:'#ce0e2d',SK:'#e1251b',해태:'#c8102e',KIA:'#c8102e',삼성:'#0a5
 const SKN={con:'교타',pow:'장타',eye:'선구',bun:'번트',spd:'주력',def:'수비',men:'정신',vel:'구속',stu:'구위',brk:'변화',ctl:'제구',sta:'체력'};
 const PN={C:'포',['1B']:'1루',['2B']:'2루',['3B']:'3루',SS:'유격',LF:'좌',CF:'중',RF:'우',DH:'지명'};
 const PFULL={C:'포수','1B':'1루수','2B':'2루수','3B':'3루수',SS:'유격수',LF:'좌익수',CF:'중견수',RF:'우익수',DH:'지명타자',SP:'선발',RP:'불펜'};
-const LNAME={키움:'현대·키움',SK:'SK·SSG'},lname=l=>LNAME[l]||l;
+const LNAME={키움:'삼미~현대·키움',SK:'쌍방울·SK·SSG',KIA:'해태·KIA',LG:'MBC·LG',두산:'OB·두산',한화:'빙그레·한화'},lname=l=>LNAME[l]||l;
 // 철인(IR): 그해 전 경기 출장 야수 · 최다 등판 3위 안 투수. 능력치는 기본과 같고 스킬 블록 효과 ×1.5
 // 투타: 좌우 던지기·치기 (KBO 선수 조회)
 const HAND={a:'우투우타',b:'우투좌타',c:'우투양타',d:'좌투우타',e:'좌투좌타',f:'좌투양타'};
@@ -252,7 +253,7 @@ function bars(c,keys,bonus){return keys.map(k=>{const v=c.r[k],p=k==='sta'?0:(bo
  return `<div class="sr"><span>${SKN[k]}</span><span class="bar"><i class="${t>=90?'e':t>=80?'h':''}" style="width:${t/120*100}%"></i></span><em>${t}</em>${bonus!=null?`<small>${p+sk?'+'+(p+sk):''}</small>`:''}</div>`}).join('')}
 // 컨디션 1~5 (엔진 COND: 최악·나쁨·보통·좋음·최상) → OVR 앞 화살표. 시안은 선수별 고정 예시값
 const CONDN=['','최악','나쁨','보통','좋음','최상'],CONDA=[0,90,45,0,-45,-90];
-const condOf=c=>{if(!c)return 3;const v=(S.cond||{})[String(c.id).split('#')[0]]||3;return Math.max(condMin(String(c.id).split('#')[0]),v)};
+const condOf=c=>{if(!c)return 3;const v=(S.cond||{})[baseId(c.id)]||3;return Math.max(condMin(baseId(c.id)),v)};
 const condI=c=>{const v=condOf(c);return `<i class="cnd cd${v}" title="컨디션 ${CONDN[v]}" aria-label="컨디션 ${CONDN[v]}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h8M8 4.5 11.5 8 8 11.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="rotate(${CONDA[v]} 8 8)"/></svg></i>`};
 const stars=n=>`<i class="stars${n>5?' sn':''}" title="코스트 ${n}" aria-label="코스트 ${n}">${n>5?'★'+n:'★'.repeat(n)}</i>`; // 6 이상은 ★7처럼 숫자로(카드 폭 넘침 방지)
 function card(c,o={}){if(!c)return '';const keys=c.type==='B'?BK:PKEY,d=o.full?deckFx():null,bn=d&&used().includes(c.id)?(c.type==='B'?d.bat:d.pit):o.full?0:null;
@@ -371,7 +372,7 @@ function synCheck(k,m){if(m.length<NEED(k))return `재료를 ${NEED(k)}개 골�
  if(k==='b'&&new Set(m.map(x=>x.b.t)).size>1)return '타자용과 투수용 블록은 섞을 수 없어요.';
  if(k==='s'&&new Set(m.map(x=>x.x[0])).size>1)return '같은 서포트 카드 3장이 필요해요.';
  if(k==='t'&&new Set(m.map(x=>x.x[3])).size>1)return '같은 등급 작전 카드 3장이 필요해요.';return ''}
-function synPreview(k,m){if(k==='p'){const a=m.reduce((s,x)=>s+x.c.cost,0)/m.length,R=synthRules(m.map(x=>byId[x.c.id.split('#')[0]]));return `코스트 ${Math.min(10,Math.round(a)+1)}~${Math.min(10,Math.round(a)+3)} 선수`+(R.list.length?' · '+R.list.map(x=>x.n).join(' · '):'')}
+function synPreview(k,m){if(k==='p'){const a=m.reduce((s,x)=>s+x.c.cost,0)/m.length,R=synthRules(m.map(x=>byId[baseId(x.c.id)]));return `코스트 ${Math.min(10,Math.round(a)+1)}~${Math.min(10,Math.round(a)+3)} 선수`+(R.list.length?' · '+R.list.map(x=>x.n).join(' · '):'')}
  if(k==='b'){const g=['C','B','A','S'][Math.max(...m.map(x=>'CBAS'.indexOf(x.b.g)))];return m[0].b.g===m[1].b.g?`${GUP[g]}등급 60% · ${g}등급 40%`:`${g}등급 블록`}
  if(k==='s')return `${m[0].x[1]}+ (효과 1.5배, 3경기)`;return `${TUP[m[0].x[3]]} 작전 카드`}
 
@@ -512,7 +513,7 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  if(!ord[S.sort])S.sort='ovr';
  const pf=F[S.pf]?S.pf:'all',base=OWN.filter(F[pf]),teams=[...new Set(base.map(c=>c.team))].sort(),years=[...new Set(base.map(c=>c.year))].sort((a,b)=>b-a);
  if(S.fteam!=='all'&&!teams.includes(S.fteam))S.fteam='all';if(S.fyear!=='all'&&!years.includes(+S.fyear))S.fyear='all';
- const dupC={};for(const c of OWN)if(c.dup){const b=c.id.split('#')[0];dupC[b]=(dupC[b]||0)+1}
+ const dupC={};for(const c of OWN)if(c.dup){const b=baseId(c.id);dupC[b]=(dupC[b]||0)+1}
  const lq=(LF.q||'').trim(),pool=base.filter(c=>!c.dup).filter(c=>(S.fteam==='all'||c.team===S.fteam)&&(S.fyear==='all'||c.year===+S.fyear)&&(!LF.cost||LF.cost==='all'||(LF.cost[0]==='='?c.cost===+LF.cost.slice(1):c.cost<=+LF.cost))&&(!LF.v||LF.v==='all'||(LF.v==='n'?!c.v:c.v===LF.v))&&(!LF.hand||LF.hand==='all'||(B?c.bh===LF.hand:c.ph===LF.hand))&&(!LF.reg||LF.reg==='all'||(LF.reg==='in')===ids.has(c.id))&&(!lq||c.name.includes(lq))).sort(ord[S.sort]);
  const FN=B?[['all','전체 야수'],['C','포수'],['IF','내야수'],['OF','외야·지명']]:[['all','전체 투수'],['SP','선발'],['RP','불펜']];
  const SIDE=B?[['line','타선 분석'],['field','수비 위치']]:[['bat','배터리 분석']],side=SIDE.some(x=>x[0]===S.side)?S.side:SIDE[0][0];
@@ -582,7 +583,7 @@ function vCard(){const c=by[S.cardId],op=open(c);
   <p class="help" style="margin:0">능력치 막대의 숫자는 덱 효과와 스킬 블록을 더한 값이고, 오른쪽 작은 숫자가 더해진 양이에요. 육성으로 120까지 오르며 100을 넘는 등급은 S+, SS, SS+로 표시합니다.</p>
   <div class="lbl">덱 효과</div><p style="margin:0">${inUse?`1군 등록 중: ${d.fx.map(x=>`${x.n} ${x.g}`).join(' · ')||'팀컬러 없음'} (${c.type==='B'?'야수 +'+d.bat:'투수 +'+d.pit})`:'1군에 등록하면 현재 덱 효과가 붙어요.'}</p>
   ${c.type==='P'?`<div class="lbl">구종</div><div class="apt">${Object.entries(c.pt).map(([n,g])=>`<span>${esc(n)}<b>${esc(g)}</b></span>`).join('')}</div>`:''}
-  <div class="lbl">이번 시즌</div><p style="margin:0">${S.gp[String(S.cardId).split('#')[0]]||0}경기 출전 · 컨디션 <b>${CONDN[condOf(by[S.cardId])]}</b></p>`}</div></div></section>`}
+  <div class="lbl">이번 시즌</div><p style="margin:0">${S.gp[baseId(S.cardId)]||0}경기 출전 · 컨디션 <b>${CONDN[condOf(by[S.cardId])]}</b></p>`}</div></div></section>`}
 let grab=null;
 function tapBlk(i,cid){const c=by[cid],r=Math.floor(i/4),q=i%4;const hit=S.blocks.find(b=>b.on===cid&&cells(b).some(([a,d])=>a+b.at[0]===r&&d+b.at[1]===q));
  if(hit){hit.home={cid,at:hit.at,rot:hit.rot};hit.on=null;hit.at=null;S.blkSel=hit.u;return}const b=S.blocks.find(x=>x.u===S.blkSel);if(!b||b.t!==c.type||(b.home&&b.home.cid!==cid))return;const os=openSet(c);

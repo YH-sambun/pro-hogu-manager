@@ -74,7 +74,7 @@ function titles(L){const P=Object.values(L.ps||{}),gp=L.st.map(x=>x.w+x.l+x.d),o
   const bv=r=>r.h+r.bb+r.hr*2+r.rbi*.5+r.sb*.5-r.ab*.3,pv=r=>r.outs/3*.6+r.so*.2-r.er+r.w*2+r.sv*1.5;
   const mainPos=r=>{let b=null;for(const k in r.pos||{})if(!b||r.pos[k]>r.pos[b])b=k;return b&&['LF','CF','RF'].includes(b)?'OF':b};
   const G=[],A=[],D=[];for(const [ps,n] of [['C',1],['1B',1],['2B',1],['3B',1],['SS',1],['OF',3],['DH',1]]){
-    const dv=r=>{const c=byId[r.id];if(!c||ps==='DH')return 90;const k=ps==='OF'?['LF','CF','RF']:[ps];return Math.max(...k.map(p=>c.ps&&c.ps[p]!=null?c.ps[p]:c.r.def))},gv=r=>(r.h+r.bb)*.1+(dv(r)-90)*gp[r.t]/10+(r.a||0)*3-(r.e||0)*3;
+    const dv=r=>{const c=byId[baseId(r.id)];if(!c||ps==='DH')return 90;const k=ps==='OF'?['LF','CF','RF']:[ps];return Math.max(...k.map(p=>c.ps&&c.ps[p]!=null?c.ps[p]:c.r.def))},gv=r=>(r.h+r.bb)*.1+(dv(r)-90)*gp[r.t]/10+(r.a||0)*3-(r.e||0)*3;
     const Q2=P.filter(r=>r.ab&&mainPos(r)===ps&&Object.entries(r.pos||{}).filter(([k])=>(ps==='OF'?['LF','CF','RF'].includes(k):k===ps)).reduce((s,[,v])=>s+v,0)>=gp[r.t]*.5);const Qb=[...Q2].sort((a,b)=>bv(b)-bv(a));Q2.sort((a,b)=>gv(b)-gv(a));
     G.push(...Qb.slice(0,n).map(r=>({r,ps})));if(ps!=='DH')D.push(...Q2.slice(0,n).map(r=>({r,ps})));A.push(...Qb.slice(0,n*2).map(r=>({r,ps})))}
   const QP=P.filter(r=>r.outs>=gp[r.t]*3).sort((a,b)=>pv(b)-pv(a));G.push(...QP.slice(0,1).map(r=>({r,ps:'P'})));A.push(...QP.slice(0,2).map(r=>({r,ps:'P'})));
@@ -90,10 +90,10 @@ function midAS(L){if(!L.year||L.asSel||L.round<Math.floor(L.sched.length/2))retu
   const n=A.filter(x=>x.r.t===0).length;if(!n)return ' · 올스타 선정 발표(내 선수 없음)';const E=EC(),rewin=!!(S.ylWon||{})[L.year];
   const aw=E&&E.seasonAwards?E.seasonAwards('year',0,{as:n},rewin):{pt:n*80,lines:[[`올스타 ${n}명`,n*80]]};L.asLines=aw.lines;
   const g=give({pt:aw.pt},E?0:aw.pt,false);return ` · 올스타 ${n}명 선정${g?' '+g:''}`}
-function asHTML(L){if(!L.asSel)return '';return `<section class="band"><h3>올스타 <small>전반기 성적으로 선정 · 포지션별 2명</small></h3><p class="mini">${L.asSel.map(x=>`<span style="${x.t===0?'color:#e07a45;font-weight:700':''}">${x.ps} ${esc((byId[x.id]||{}).name||'?')} <small>${esc(tname(x.t,L))}</small></span>`).join(' · ')}</p>${L.asLines?`<p><b>내 구단 올스타 보너스</b> ${L.asLines.map(x=>`${esc(x[0])} +${Math.round(x[1]).toLocaleString()}`).join(' · ')}</p>`:''}</section>`}
+function asHTML(L){if(!L.asSel)return '';return `<section class="band"><h3>올스타 <small>전반기 성적으로 선정 · 포지션별 2명</small></h3><p class="mini">${L.asSel.map(x=>`<span style="${x.t===0?'color:#e07a45;font-weight:700':''}">${x.ps} ${esc((byId[baseId(x.id)]||{}).name||'?')} <small>${esc(tname(x.t,L))}</small></span>`).join(' · ')}</p>${L.asLines?`<p><b>내 구단 올스타 보너스</b> ${L.asLines.map(x=>`${esc(x[0])} +${Math.round(x[1]).toLocaleString()}`).join(' · ')}</p>`:''}</section>`}
 function titleHTML(L){const T=L.titles;if(!T)return '';const fmt=(k,v)=>k==='avg'?v.toFixed(3).replace(/^0/,''):k==='era'?v.toFixed(2):v;
-  const nm=r=>`${esc((byId[r.id]||{}).name||'?')} <small>${esc(tname(r.t,L))}</small>`;
-  const aw=k=>T[k].map(x=>`<span class="${x.r.t===0?'me':''}" style="${x.r.t===0?'color:#e07a45;font-weight:700':''}">${x.ps} ${esc((byId[x.r.id]||{}).name||'?')}</span>`).join(' · ');
+  const nm=r=>`${esc((byId[baseId(r.id)]||{}).name||'?')} <small>${esc(tname(r.t,L))}</small>`;
+  const aw=k=>T[k].map(x=>`<span class="${x.r.t===0?'me':''}" style="${x.r.t===0?'color:#e07a45;font-weight:700':''}">${x.ps} ${esc((byId[baseId(x.r.id)]||{}).name||'?')}</span>`).join(' · ');
   return `<section class="band"><h3>개인 타이틀 <small>정규시즌 · 타율 규정타석 경기수×3.1 · 평균자책 규정이닝 경기수×1</small></h3><div class="scroll"><table class="tbl"><tbody>
   ${[...Object.keys(TITLE_N),'mvp'].filter(k=>T[k]).map(k=>`<tr class="${T[k].who.some(r=>r.t===0)?'me':''}"><td class="l">${k==='mvp'?'MVP':TITLE_N[k]}</td><td class="l">${(w=>{const me=w.filter(r=>r.t===0),ot=w.filter(r=>r.t!==0),sh=[...me,...ot].slice(0,Math.max(3,me.length));return sh.map(nm).join(', ')+(w.length>sh.length?` 외 ${w.length-sh.length}명`:'')})(T[k].who)}</td><td>${k==='mvp'?'':fmt(k,T[k].v)}</td></tr>`).join('')}</tbody></table></div>
   ${T.gg?`<p class="mini"><b>골든글러브</b> ${aw('gg')}</p>${T.df?`<p class="mini"><b>수비상</b> ${aw('df')}</p>`:''}${L.asSel?'':`<p class="mini"><b>올스타</b> ${aw('as')}</p>`}`:''}
@@ -160,7 +160,7 @@ function gamesHTML(L){const G=(L.gl||[]).slice().reverse();if(!G.length)return '
    <table class="tbl"><thead><tr><th class="l">투수</th><th>이닝</th><th>피안타</th><th>실점</th><th>볼넷</th><th>삼진</th></tr></thead><tbody>${x.px[s].map(p=>`<tr><td class="l">${esc(p[0])}</td><td>${ip(p[1])}</td>${p.slice(2).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('')}
    ${x.hl.length?`<ol class="glog">${x.hl.map(t=>`<li>${esc(t)}</li>`).join('')}</ol>`:''}</details>`}).join('')}</section>`}
 // 내 선수 시즌 누적 기록(정규시즌, L.ps)
-function statsHTML(L){const P=Object.values(L.ps||{}).filter(r=>r.t===0);if(!P.length)return '';const nm=r=>esc((byId[r.id]||{}).name||'?'),f3=v=>v.toFixed(3).replace(/^0/,'');
+function statsHTML(L){const P=Object.values(L.ps||{}).filter(r=>r.t===0);if(!P.length)return '';const nm=r=>esc((byId[baseId(r.id)]||{}).name||'?'),f3=v=>v.toFixed(3).replace(/^0/,'');
   const Bt=P.filter(r=>r.ab+r.bb>0).sort((a,b)=>(b.ab+b.bb)-(a.ab+a.bb)),Pt=P.filter(r=>r.outs>0).sort((a,b)=>b.outs-a.outs);
   return `<section class="band"><details><summary><b>내 선수 시즌 기록</b></summary><div class="scroll"><table class="tbl"><thead><tr><th class="l">타자</th><th>타율</th><th>출루율</th><th>타수</th><th>안타</th><th>홈런</th><th>타점</th><th>도루</th><th>볼넷</th><th>보살</th><th>실책</th></tr></thead><tbody>
   ${Bt.map(r=>`<tr><td class="l">${nm(r)}</td><td>${r.ab?f3(r.h/r.ab):'-'}</td><td>${f3((r.h+r.bb)/Math.max(1,r.ab+r.bb))}</td><td>${r.ab}</td><td>${r.h}</td><td>${r.hr}</td><td>${r.rbi}</td><td>${r.sb}</td><td>${r.bb}</td><td>${r.a||0}</td><td>${r.e||0}</td></tr>`).join('')}</tbody></table>

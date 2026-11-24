@@ -12,6 +12,7 @@ let CARDS=[],byId={},TEAMYEARS={};
 const TIER={N:'노멀',S:'스타',L:'레전드'};
 const GRADE=v=>v>=115?'SS+':v>=110?'SS':v>=100?'S+':v>=90?'S':v>=80?'A':v>=70?'B':v>=60?'C':'D';
 const COND=[null,{n:'최악',m:-.2},{n:'나쁨',m:-.1},{n:'보통',m:0},{n:'좋음',m:.04},{n:'최상',m:.08}];
+const baseId=id=>String(id).replace(/~\d+$/,''); // 보유 중복 카드 id는 '기본id~k'('#k'는 동명이인 접미사라 따로 씀)
 const COST_CAP=150,ROSTER={bat:9,bench:5,sp:5,rp:6} // 불펜: [마무리, 셋업, 중계1~4];
 function loadCards(json){
   CARDS=json.cards.map(c=>{
@@ -195,14 +196,28 @@ function synthRules(cs){const all=f=>cs.length===3&&cs.every(f),same=k=>all(c=>c
     if(same('hs'))L.push({n:`같은 고교(${cs[0].hs}) → 그 고교 출신`,f:c=>c.hs===cs[0].hs});
     if(same('pos'))L.push({n:`같은 포지션(${PK[cs[0].pos]||cs[0].pos}) → 같은 포지션`,f:c=>c.pos===cs[0].pos});
     else if(same('type'))L.push({n:cs[0].type==='B'?'타자 3장 → 타자':'투수 3장 → 투수',f:c=>c.type===cs[0].type})}
-  if(same('cost')){up=[.55,.35,.10];L.push({n:'같은 코스트 3장 → +2 이상 확률 45%'})}
+  const TY=same('year')&&same('team');
+  if(TY&&same('cost')){up=[.40,.40,.20];L.push({n:'같은 팀·같은 코스트 3장 → +2 이상 확률 60%'})}
+  else if(TY){up=[.55,.35,.10];L.push({n:'같은 연도·같은 팀 3장 → +2 이상 확률 45%'})}
+  else if(same('cost')){up=[.55,.35,.10];L.push({n:'같은 코스트 3장 → +2 이상 확률 45%'})}
+  {const n=cs.filter(c=>c.v==='EX').length,s=cs.filter(c=>c.v==='GG'||c.v==='AS').length;if(n===3)L.unshift({n:'EX 3장 → EX 1장 확정 (평균 코스트 이상'+(cs.every(c=>c.line===cs[0].line)?', 같은 구단':'')+')'});else if(n===2)L.unshift({n:'EX 2장 → EX 50%'});else if(n===1&&s===2)L.unshift({n:'EX 1장 + 특별 2장 → EX 25%, 실패해도 골든글러브판'})}
   if(all(c=>c.v==='GG'||c.v==='EX'||c.v==='AS')){gg=true;L.push({n:'특별 카드 3장 → 골든글러브판 25%'})}
   const player=L.some(x=>x.player)?c=>c.pk===cs[0].pk&&!cs.some(m=>m.year===c.year):null;return {list:L,up,gg,player}}
+const L3same=cs=>cs.every(c=>c.line===cs[0].line);
 function synth(kind,mats,locks){
-  if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):String(m).split('#')[0];if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 합성 재료로 쓸 수 없어요'}}
+  if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 합성 재료로 쓸 수 없어요'}}
   if(kind!=='b'&&mats.length!==3)return {err:'재료 3개가 필요해요'};
-  if(kind==='p'){const cs=mats.map(id=>byId[String(id).split('#')[0]]);if(cs.some(c=>!c))return {err:'없는 카드'};
+  if(kind==='p'){const cs=mats.map(id=>byId[baseId(id)]);if(cs.some(c=>!c))return {err:'없는 카드'};
     const R=synthRules(cs),a=Math.round(cs.reduce((s,c)=>s+c.cost,0)/3),u=rnd(),up=R.up;
+    // EX 합성(사용자 확정): EX 3장 → 평균 코스트 이상 EX 확정(같은 구단 3장이면 그 구단) · EX 2장+아무 1장 → EX 50% · EX 1장+골글/올스타 2장 → EX 25%, 실패 시 골글판 이상 확정
+    {const nEX=cs.filter(c=>c.v==='EX').length,nSP=cs.filter(c=>c.v==='GG'||c.v==='AS').length,EXS=CARDS.filter(c=>c.v==='EX');
+     const exOut=(lineOnly)=>{let P=EXS.filter(c=>c.cost>=Math.min(a,10));const L=cs.filter(c=>c.v==='EX').map(c=>c.line);
+       if(lineOnly){const Q=P.filter(c=>c.line===L[0]);if(Q.length)P=Q}if(!P.length)P=EXS;return pick(P)};
+     const done=(c,n)=>({kind,out:c.id,cost:c.cost,rules:[n]});
+     if(nEX===3)return done(exOut(L3same(cs)),'EX 3장 → EX 확정'+(L3same(cs)?` (${cs[0].line})`:''));
+     if(nEX===2&&u<.5)return done(exOut(cs.filter(c=>c.v==='EX').every((c,i,A)=>c.line===A[0].line)),'EX 2장 → EX 50% 성공');
+     if(nEX===1&&nSP===2){if(u<.25)return done(exOut(false),'EX+특별 2장 → EX 25% 성공');
+       const G=CARDS.filter(c=>c.v==='GG'&&c.cost>=a).sort((x,y)=>x.cost-y.cost);if(G.length){const lo=G[0].cost;return done(pick(G.filter(c=>c.cost<=Math.max(lo,a+1))),'EX+특별 2장 → 실패, 골든글러브판 확정')}}}
     const t=Math.min(10,a+(u<up[2]?3:u<up[2]+up[1]?2:1));
     // 규칙의 조건(f)을 모두 만족하는 카드 중 목표 코스트. 없으면 조건을 뒤에서부터 하나씩 풀고, 그래도 없으면 가장 가까운 코스트
     let fs=R.list.filter(x=>x.f).map(x=>x.f),out=null;const base=c=>c.v!=='EX'&&c.v!=='AS';
@@ -369,4 +384,4 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
