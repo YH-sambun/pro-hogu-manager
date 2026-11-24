@@ -538,6 +538,18 @@ body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 .lul td.mute{color:var(--mute)}
 .setb summary{cursor:pointer;padding:4px 0}.setb textarea{background:rgba(0,0,0,.25);color:var(--ink,#eee);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px;font-size:12px}
 button.danger{color:#ff9a8a;border-color:rgba(255,120,100,.5)}
+.syn.sticky{position:sticky;top:0;z-index:6;padding:10px 12px;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.syn.sticky .sslots{gap:6px}.syn.sticky .plus{font-size:16px}
+.ss.sm{width:120px;min-height:0;display:grid;grid-template-columns:40px 1fr;grid-template-rows:auto auto;gap:0 8px;place-items:center start;padding:6px;background:rgba(0,0,0,.2);text-align:left}
+.ss.sm .oart{grid-row:1/3;width:40px;height:40px;border-radius:8px;overflow:hidden;position:relative}.ss.sm b{font-size:13px}.ss.sm small{font-size:10.5px;color:var(--mute)}
+.syn.sticky .ss.empty{width:120px;min-height:52px}.syn.sticky .ss.res{width:150px;min-height:52px;padding:6px}.syn.sticky .ss.res .got .card{max-width:130px}
+.syn.sticky .tools{margin-top:8px!important}.syn.sticky .tools button{padding:6px 12px}
+.synl tr.on{background:rgba(240,190,60,.18)}.synl .lockt{padding:2px 6px;min-height:0}
+@media(max-width:600px){.ss.sm,.syn.sticky .ss.empty{width:96px}.ss.sm{grid-template-columns:1fr}.ss.sm .oart{display:none}}
+.syn.sticky{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 14px}.syn.sticky>.tools{margin-top:0!important}
+.syn.sticky .ss.res b{font:700 12.5px/1.35 "Noto Sans KR"}.syn.sticky .ss.res small{font-size:11px}
+.syn.sticky [data-synex]{padding:3px 8px;font-size:12px;min-height:0}.syn.sticky>p{width:100%;margin:0}
+.tbl.synl,.tbl.lul{width:100%}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -749,30 +761,33 @@ function synthRules(cs){const all=f=>cs.length===3&&cs.every(f),same=k=>all(c=>c
   if(all(c=>c.v==='GG'||c.v==='EX'||c.v==='AS')){gg=true;L.push({n:'특별 카드 3장 → 골든글러브판 25%'})}
   const player=L.some(x=>x.player)?c=>c.pk===cs[0].pk&&!cs.some(m=>m.year===c.year):null;return {list:L,up,gg,player}}
 const L3same=cs=>cs.every(c=>c.line===cs[0].line);
-function synth(kind,mats,locks){
+// opt.ex: 결과에서 뺄 구단 계보(line) 목록, 최대 SYN_EX_MAX개. 걸러서 후보가 없으면 제외를 무시
+const SYN_EX_MAX=3;
+function synth(kind,mats,locks,opt){
   if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 합성 재료로 쓸 수 없어요'}}
   if(kind!=='b'&&mats.length!==3)return {err:'재료 3개가 필요해요'};
   if(kind==='p'){const cs=mats.map(id=>byId[baseId(id)]);if(cs.some(c=>!c))return {err:'없는 카드'};
+    const EXL=new Set(((opt&&opt.ex)||[]).slice(0,SYN_EX_MAX)),okL=c=>!EXL.has(c.line),exf=P=>{const Q=P.filter(okL);return Q.length?Q:P},exN=EXL.size?`제외: ${[...EXL].join(', ')}`:'';
     const R=synthRules(cs),a=Math.round(cs.reduce((s,c)=>s+c.cost,0)/3),u=rnd(),up=R.up;
     // EX 합성(사용자 확정): EX 3장 → 평균 코스트 이상 EX 확정(같은 구단 3장이면 그 구단) · EX 2장+아무 1장 → EX 50% · EX 1장+골글/올스타 2장 → EX 25%, 실패 시 골글판 이상 확정
-    {const nEX=cs.filter(c=>c.v==='EX').length,nSP=cs.filter(c=>c.v==='GG'||c.v==='AS').length,EXS=CARDS.filter(c=>c.v==='EX');
+    {const nEX=cs.filter(c=>c.v==='EX').length,nSP=cs.filter(c=>c.v==='GG'||c.v==='AS').length,EXS=exf(CARDS.filter(c=>c.v==='EX'));
      const exOut=(lineOnly)=>{let P=EXS.filter(c=>c.cost>=Math.min(a,10));const L=cs.filter(c=>c.v==='EX').map(c=>c.line);
        if(lineOnly){const Q=P.filter(c=>c.line===L[0]);if(Q.length)P=Q}if(!P.length)P=EXS;return pick(P)};
-     const done=(c,n)=>({kind,out:c.id,cost:c.cost,rules:[n]});
+     const done=(c,n)=>({kind,out:c.id,cost:c.cost,rules:exN?[n,exN]:[n]});
      if(nEX===3)return done(exOut(L3same(cs)),'EX 3장 → EX 확정'+(L3same(cs)?` (${cs[0].line})`:''));
      if(nEX===2&&u<.5)return done(exOut(cs.filter(c=>c.v==='EX').every((c,i,A)=>c.line===A[0].line)),'EX 2장 → EX 50% 성공');
      if(nEX===1&&nSP===2){if(u<.25)return done(exOut(false),'EX+특별 2장 → EX 25% 성공');
-       const G=CARDS.filter(c=>c.v==='GG'&&c.cost>=a).sort((x,y)=>x.cost-y.cost);if(G.length){const lo=G[0].cost;return done(pick(G.filter(c=>c.cost<=Math.max(lo,a+1))),'EX+특별 2장 → 실패, 골든글러브판 확정')}}}
+       const G=exf(CARDS.filter(c=>c.v==='GG'&&c.cost>=a)).sort((x,y)=>x.cost-y.cost);if(G.length){const lo=G[0].cost;return done(pick(G.filter(c=>c.cost<=Math.max(lo,a+1))),'EX+특별 2장 → 실패, 골든글러브판 확정')}}}
     const t=Math.min(10,a+(u<up[2]?3:u<up[2]+up[1]?2:1));
     // 규칙의 조건(f)을 모두 만족하는 카드 중 목표 코스트. 없으면 조건을 뒤에서부터 하나씩 풀고, 그래도 없으면 가장 가까운 코스트
-    let fs=R.list.filter(x=>x.f).map(x=>x.f),out=null;const base=c=>c.v!=='EX'&&c.v!=='AS';
+    let fs=R.list.filter(x=>x.f).map(x=>x.f),out=null;const base=c=>c.v!=='EX'&&c.v!=='AS'&&okL(c);
     // 같은 선수 3장: 그 선수 다른 시즌 중 목표 코스트(평균+1~3) 이하에서 가장 높은 카드. 없으면 일반 규칙으로(예전엔 코스트 무시하고 최고 카드라 1코 3장→8~9코가 나왔음)
     if(R.player){const P=CARDS.filter(c=>base(c)&&R.player(c)&&c.cost>a&&c.cost<=t).sort((x,y)=>y.cost-x.cost);if(P.length){out=P[0];fs=[]}}
     if(!out)for(;;){const P=CARDS.filter(c=>base(c)&&fs.every(f=>f(c)));if(P.length){const T=P.filter(c=>c.cost===t);if(T.length){out=pick(T);break}
         const hi=P.filter(c=>c.cost>a&&c.cost<=t).sort((x,y)=>Math.abs(x.cost-t)-Math.abs(y.cost-t));if(hi.length){out=pick(hi.filter(c=>c.cost===hi[0].cost));break}}
-      if(!fs.length){out=pick(CARDS.filter(c=>base(c)&&c.cost===t));break}fs=fs.slice(0,-1)}
+      if(!fs.length){const Z=CARDS.filter(c=>base(c)&&c.cost===t);out=pick(Z.length?Z:CARDS.filter(c=>c.v!=='EX'&&c.v!=='AS'&&c.cost===t));break}fs=fs.slice(0,-1)}
     if(R.gg&&rnd()<.25){const g=CARDS.find(c=>c.v==='GG'&&c.pk===out.pk&&c.year===out.year);if(g)out=g}
-    return {kind,out:out.id,cost:out.cost,rules:R.list.filter(x=>R.player?x.player&&out.pk===cs[0].pk:(!x.f||fs.includes(x.f))).map(x=>x.n)}}
+    return {kind,out:out.id,cost:out.cost,rules:R.list.filter(x=>R.player?x.player&&out.pk===cs[0].pk:(!x.f||fs.includes(x.f))).map(x=>x.n).concat(exN?[exN]:[])}}
   if(kind==='b'){if(mats.length!==2)return {err:'블록 2개가 필요해요'};const t=mats[0].t;if(mats.some(b=>b.t!==t))return {err:'같은 종류(타자용/투수용) 블록만 합성할 수 있어요'};
     const order='CBAS',a=order.indexOf(mats[0].g),b=order.indexOf(mats[1].g);const g=a===b?(rnd()<.6?order[Math.min(3,a+1)]:order[a]):order[Math.max(a,b)];return {kind,out:mkBlock(t,g)}}
   if(kind==='s'){if(mats.some(x=>x!==mats[0]))return {err:'같은 서포트 카드 3장이 필요해요'};if(mats[0].endsWith('+'))return {err:'강화판은 더 합성할 수 없어요'};return {kind,out:mats[0]+'+'}}
@@ -834,10 +849,31 @@ function aiOff(g,bat){const T=g.t[bat],tac=T.tac||TAC_DEF,B=g.bases,b=T.lu[g.idx
 function aiDef(g,f){const T=g.t[f],tac=T.tac||TAC_DEF,B=g.bases,b=g.t[1-f].lu[g.idx[1-f]].c,close=Math.abs(g.sc[0]-g.sc[1])<=2;
   if(B[2]&&g.outs<2&&close&&g.inn>=[99,9,7,5,1][tac.shift])g.inf=true;
   if(!B[0]&&(B[1]||B[2])&&g.inn>=7&&close&&b.r.pow>=[999,100,92,85,78][tac.ibb])return {kind:'ibb'};return null}
+// 선수 교체: 대주자(공격)·대수비(수비). 바뀐 선수는 박스에 새 줄로 기록하고 팀 수비력을 다시 계산
+const reDef=T=>{const w=p=>p==='C'||p==='SS'||p==='CF'?1.3:1,fl=T.lu.filter(x=>x.pos!=='DH');if(fl.length)T.def=fl.reduce((s,x)=>s+effDef(x.c,x.pos)*w(x.pos),0)/fl.reduce((s,x)=>s+w(x.pos),0)+((T.fx||{}).def||0)};
+function subIn(g,s,i,nb,pos){const T=g.t[s],k=T.bench.findIndex(x=>x.id===nb.id);if(k<0)return;T.bench.splice(k,1);T.lu[i]={c:nb,pos};g.bx[s][nb.id]={c:nb,pos,ab:0,h:0,hr:0,rbi:0,bb:0,k:0,sb:0,r:0,e:0,a:0};reDef(T)}
+// 대주자: 7회 이후 2점 차 이내(지고 있거나 동점·1점 리드), 느린 주자를 벤치의 빠른 선수로. 감독 대타(ph) 성향이 높을수록 적극적
+function aiPR(g,bat){const T=g.t[bat],tac=T.tac||TAC_DEF,B=g.bases,d=g.sc[bat]-g.sc[1-bat];
+  if(g.inn<7||d<-2||d>1||!T.bench.length||tac.ph===0||(T.bench.length<2&&g.inn<9))return;
+  const thr=[999,22,15,10,6][tac.ph];
+  for(const i of [2,1,0]){const r=B[i];if(!r)continue;const li=T.lu.findIndex(x=>x.c.id===r.c.id);if(li<0)continue;
+    const best=T.bench.reduce((a,c)=>c.r.spd>a.r.spd?c:a);if(best.r.spd-r.c.r.spd<thr)continue;
+    if(g.inn<8&&batVal(r.c)>batVal(best)+8)continue; // 7회엔 중심타자를 빼지 않음
+    const pos=T.lu[li].pos;subIn(g,bat,li,best,pos);B[i]={c:best,p:r.p};say(g,`대주자: ${r.c.name} → ${best.name}`,'c');return}}
+// 대수비: 수비 시작 때 ①못 맡는 포지션에 선 선수(대타·대주자)는 점수와 상관없이 교체 ②8회 이후 1~3점 리드면 수비가 크게 처지는 자리를 교체(감독 수비 성향 shift)
+function aiDefSub(g,f){const T=g.t[f],tac=T.tac||TAC_DEF,key=g.inn*2+g.half;if(g.dsub&&g.dsub[f]===key)return;(g.dsub=g.dsub||[0,0])[f]=key;
+  if(!T.bench.length)return;const lead=g.sc[f]-g.sc[1-f],w=p=>p==='C'||p==='SS'||p==='CF'?1.3:1;
+  for(let i=0;i<T.lu.length&&T.bench.length;i++){const x=T.lu[i];if(x.pos==='DH'||canPlay(x.c,x.pos))continue;
+    const cs=T.bench.filter(c=>canPlay(c,x.pos));if(!cs.length)continue;const nb=cs.reduce((a,c)=>effDef(c,x.pos)>effDef(a,x.pos)?c:a);
+    subIn(g,f,i,nb,x.pos);say(g,`대수비: ${x.c.name} → ${nb.name} (${PK[x.pos]||x.pos})`,'c')}
+  if(g.inn<8||lead<1||lead>3||!T.bench.length)return;const thr=[999,14,9,6,4][tac.shift];let n=0;
+  const opts=T.lu.map((x,i)=>{if(x.pos==='DH')return null;const cs=T.bench.filter(c=>canPlay(c,x.pos));if(!cs.length)return null;const nb=cs.reduce((a,c)=>effDef(c,x.pos)>effDef(a,x.pos)?c:a);return {i,x,nb,gain:(effDef(nb,x.pos)-effDef(x.c,x.pos))*w(x.pos)}}).filter(o=>o&&o.gain>=thr).sort((a,b)=>b.gain-a.gain);
+  for(const o of opts){if(n>=2)break;if(!T.bench.includes(o.nb))continue;subIn(g,f,o.i,o.nb,o.x.pos);n++;say(g,`대수비: ${o.x.c.name} → ${o.nb.name} (${PK[o.x.pos]||o.x.pos})`,'c')}}
 function pa(g,manual){
   if(g.done)return;
   const bat=g.half,f=1-bat;manage(g,f);g.hnr=false;g.inf=false;
   let tk=g.pending;g.pending=null;const mine=s=>manual&&g.ctrl===s;
+  if(!mine(f)&&g.outs===0&&!g.bases.some(Boolean))aiDefSub(g,f);if(!mine(bat))aiPR(g,bat);
   if(!tk&&!mine(bat))tk=aiOff(g,bat);if(!tk&&!mine(f))tk=aiDef(g,f);
   const OT=g.t[bat],DT=g.t[f],ofx=OT.fx||{},dfx=DT.fx||{},otac=OT.tac||TAC_DEF,dtac=DT.tac||TAC_DEF,po=dtac.shift,OA=g.ta[bat],DA=g.ta[f];
   // 개인 수비: 수비 위치의 야수와 그 포지션 수비값. 보살(a)·실책(e)은 수비팀 박스에 기록
@@ -847,7 +883,7 @@ function pa(g,manual){
   const armOut=(F,s,base)=>F&&rnd()<cl(base+.02*DX(F.d)-.03*X(s.c.r.spd),.005,.15);
   const stealP=s=>cl((.6+.25*X(s.c.r.spd)+(ofx.steal||0)-.04*po-.04*cArm)*(OA.has('b6')?1.2:1)*(DA.has('c4')?.8:1),.05,.95);
   if(tk&&tk.kind==='ph'){const T0=g.t[bat],i=T0.bench.findIndex(x=>x.id===tk.arg);if(i>=0){const nb=T0.bench.splice(i,1)[0],slot=T0.lu[g.idx[bat]];
-    say(g,`대타: ${slot.c.name} → ${nb.name}`,'c');g.phNow=nb.id;g.phPrev=(g.idx[bat]+1)%9;T0.lu[g.idx[bat]]={c:nb,pos:slot.pos};g.bx[bat][nb.id]={c:nb,pos:slot.pos,ab:0,h:0,hr:0,rbi:0,bb:0,k:0,sb:0,r:0,e:0,a:0}}}
+    say(g,`대타: ${slot.c.name} → ${nb.name}`,'c');g.phNow=nb.id;g.phPrev=(g.idx[bat]+1)%9;T0.lu[g.idx[bat]]={c:nb,pos:slot.pos};reDef(T0);g.bx[bat][nb.id]={c:nb,pos:slot.pos,ab:0,h:0,hr:0,rbi:0,bb:0,k:0,sb:0,r:0,e:0,a:0}}}
   const T=g.t[bat],b=T.lu[g.idx[bat]].c,P=g.pit[f],pc=P.c,B=g.bases,bs=g.bx[bat][b.id],run={c:b,p:P};
   if(tk&&tk.kind==='steal'){const fr=B[1]&&!B[2]?1:B[0]&&!B[1]?0:-1;if(fr>=0){const s=B[fr];
     if(rnd()<stealP(s)){B[fr+1]=s;B[fr]=null;g.bx[bat][s.c.id].sb++;say(g,`${s.c.name} ${fr+2}루 도루 성공`)}else{B[fr]=null;out(g,1);if(CAT)cr(CAT);say(g,`${s.c.name} ${fr+2}루 도루 실패${CAT?` (포수 ${CAT.c.name} 저지)`:''}`);if(g.outs>=3){endHalf(g);return}}}}
@@ -929,7 +965,7 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
 
 </script>
 <script>
@@ -1301,7 +1337,7 @@ function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
   return 0}
 // 합성 (엔진 synth)
 function doSynth(){const k=S.sk||'p',pool=synPool(k),m=pool.filter(x=>S.mat.includes(x.key));if(synCheck(k,m))return;let out='';
-  const mats=k==='p'?m.map(x=>x.c.id):k==='b'?m.map(x=>x.b):m.map(x=>x.x[0]);const r=synth(k,mats,S.locks.filter(x=>!/~\d+$/.test(x)));if(r.err){S.msg=r.err;return}
+  const mats=k==='p'?m.map(x=>x.c.id):k==='b'?m.map(x=>x.b):m.map(x=>x.x[0]);const r=synth(k,mats,S.locks.filter(x=>!/~\d+$/.test(x)),{ex:k==='p'?(S.synEx||[]):[]});if(r.err){S.msg=r.err;return}
   if(k==='p'){const ids=new Set(m.map(x=>x.c.id)),back=S.blocks.filter(b=>ids.has(b.on)).length;S.blocks=S.blocks.filter(b=>!ids.has(b.on));
     for(const x of m){const id=baseId(x.c.id);S.owned[id]=(S.owned[id]|0)-1;if(S.owned[id]<=0){delete S.owned[id];S.blocks=S.blocks.filter(b=>b.on!==id)}}
     S.locks=S.locks.filter(x=>!ids.has(x));const got=r.out;ECON.gain(S,[got]);const c=byId[got];out=card(c,{})+`<small>코스트 ${r.cost} 선수 획득${r.rules&&r.rules.length?' · '+esc(r.rules.join(' · ')):''}${back?` · 끼워 둔 스킬 블록 ${back}개도 사라짐`:''}</small>`}
@@ -1514,7 +1550,8 @@ function synCheck(k,m){if(m.length<NEED(k))return `재료를 ${NEED(k)}개 골�
  if(k==='b'&&new Set(m.map(x=>x.b.t)).size>1)return '타자용과 투수용 블록은 섞을 수 없어요.';
  if(k==='s'&&new Set(m.map(x=>x.x[0])).size>1)return '같은 서포트 카드 3장이 필요해요.';
  if(k==='t'&&new Set(m.map(x=>x.x[3])).size>1)return '같은 등급 작전 카드 3장이 필요해요.';return ''}
-function synPreview(k,m){if(k==='p'){const a=m.reduce((s,x)=>s+x.c.cost,0)/m.length,R=synthRules(m.map(x=>byId[baseId(x.c.id)]));return `코스트 ${Math.min(10,Math.round(a)+1)}~${Math.min(10,Math.round(a)+3)} 선수`+(R.list.length?' · '+R.list.map(x=>x.n).join(' · '):'')}
+const SYN_LINES=['LG','두산','삼성','KIA','롯데','키움','한화','SK','NC','KT'];
+function synPreview(k,m){if(k==='p'){const a=m.reduce((s,x)=>s+x.c.cost,0)/m.length,R=synthRules(m.map(x=>byId[baseId(x.c.id)]));return `코스트 ${Math.min(10,Math.round(a)+1)}~${Math.min(10,Math.round(a)+3)} 선수`+(R.list.length?' · '+R.list.map(x=>x.n).join(' · '):'')+((S.synEx||[]).length?' · 제외: '+S.synEx.join(', '):'')}
  if(k==='b'){const g=['C','B','A','S'][Math.max(...m.map(x=>'CBAS'.indexOf(x.b.g)))];return m[0].b.g===m[1].b.g?`${GUP[g]}등급 60% · ${g}등급 40%`:`${g}등급 블록`}
  if(k==='s')return `${m[0].x[1]}+ (효과 1.5배, 3경기)`;return `${TUP[m[0].x[3]]} 작전 카드`}
 
@@ -1556,13 +1593,16 @@ function abAct(D){if(D.abd){S.abSel=D.abd;return 1}if(D.abpick){S.abPick=D.abpic
  if(D.a==='absend'){abSend();return 1}
  if(D.abrush){const a=abOf(D.abrush),f=rushFee(a.end-Date.now());if(ECON.pay(S,f).err)return 1;a.end=Date.now();return 1}
  return 0}
+function synList(pool,mk){return `<div class="scroll"><table class="tbl lul synl"><thead><tr><th></th><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th><th>같은 선수</th><th>블록</th><th>잠금</th></tr></thead><tbody>
+ ${pool.map(x=>{const c=x.c,lk=isLocked(lkey('p',x)),on=mk.has(x.key);return `<tr class="${on?'on':''}${lk?' use':''}" ${lk?'':`data-mat="${esc(x.key)}" role="button" tabindex="0"`}><td>${on?'✓':''}</td><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}${c.dup?' <small>중복</small>':''}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td><td>${c.cost}</td><td>${dupN(c)}</td><td>${hasBlk(c.id)?'있음':''}</td><td><button class="ghost lockt" data-lock="${esc(lkey('p',x))}" aria-pressed="${lk}" aria-label="${lk?'잠금 해제':'잠그기'}">${LOCKI(lk)}</button></td></tr>`}).join('')||'<tr><td colspan="9">재료가 없어요.</td></tr>'}</tbody></table></div>`}
 function vSynth(){const k=S.sk||'p',pool=synPoolF(k),mk=new Set(S.mat),m=pool.filter(x=>mk.has(x.key)),err=synCheck(k,m);
  return `<section class="band"><h2>합성</h2><div class="subnav" role="tablist">${Object.entries(SYN).map(([x,v])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-sk="${x}">${v.n}</button>`).join('')}</div>
- <div class="syn"><div class="sslots">${[...Array(NEED(k)).keys()].map(i=>m[i]?`<div class="ss" data-mat="${esc(m[i].key)}" title="빼기">${m[i].html}</div>`:'<div class="ss empty">재료</div>').join('<span class="plus">+</span>')}<span class="plus">→</span>
+ <div class="syn${k==='p'?' sticky':''}"><div class="sslots">${[...Array(NEED(k)).keys()].map(i=>m[i]?`<div class="ss${k==='p'?' sm':''}" data-mat="${esc(m[i].key)}" title="빼기">${k==='p'?`<span class="oart" style="--tc:${m[i].c.col}">${photo(m[i].c,0,0)}</span><b>${esc(m[i].c.name)}</b><small>${String(m[i].c.year).slice(2)}' ${esc(m[i].c.team)} · 코스트 ${m[i].c.cost}</small>`:m[i].html}</div>`:'<div class="ss empty">재료</div>').join('<span class="plus">+</span>')}<span class="plus">→</span>
  <div class="ss res">${S.synRes?`<div class="got">${S.synRes}</div>`:`<b>${m.length===NEED(k)&&!err?esc(synPreview(k,m)):'?'}</b><small>${err?esc(err):'예상 결과'}${k==='p'&&m.some(x=>hasBlk(x.c.id))?' · 끼운 스킬 블록도 사라져요':''}</small>`}</div></div>
  <div class="tools" style="justify-content:center;margin-top:12px"><button data-a="synth" ${err?'disabled':''}>합성하기</button><button class="ghost" data-a="synauto">자동 추천</button><button class="ghost" data-a="synclr">재료 비우기</button><button class="ghost qbtn${S.synHelp?' on':''}" data-a="synhelp" aria-label="합성 방식 설명" aria-pressed="${!!S.synHelp}">?</button></div>
+ ${k==='p'?`<div class="tools synex" style="justify-content:center;margin-top:8px;flex-wrap:wrap;gap:4px" title="결과로 안 나왔으면 하는 구단(최대 ${SYN_EX_MAX}개)"><small style="align-self:center">제외 구단</small>${SYN_LINES.map(l=>{const on=(S.synEx||[]).includes(l);return `<button class="ghost${on?' on':''}" data-synex="${esc(l)}" aria-pressed="${on}" style="padding:2px 8px;font-size:12px${on?';text-decoration:line-through':''}">${esc(l)}</button>`}).join('')}</div>`:''}
  ${S.msg?`<p class="note" style="text-align:center" aria-live="polite">${esc(S.msg)}</p>`:''}${S.synHelp?`<p class="note synrule">${esc(SYN[k].rule)}</p>`:''}</div>
- <h3 style="margin-top:18px">재료로 쓸 수 있는 ${SYN[k].n} <span class="pill">${pool.length}</span></h3>${k==='p'?synFilt():''}<div class="mpool">${pool.map(x=>{const lk=isLocked(lkey(k,x));return `<div class="mpw"><div class="mp${mk.has(x.key)?' on':''}${lk?' locked':''}" ${lk?'aria-disabled="true"':`data-mat="${esc(x.key)}" role="button" tabindex="0"`}>${x.html}${lk?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div><button class="ghost lockt" data-lock="${esc(lkey(k,x))}" aria-pressed="${lk}" aria-label="${lk?'잠금 해제':'잠그기'}" title="${lk?'잠금 해제':'잠그기'}">${LOCKI(lk)}</button></div>`}).join('')||'<p class="note">재료가 없어요.</p>'}</div>
+ <h3 style="margin-top:18px">재료로 쓸 수 있는 ${SYN[k].n} <span class="pill">${pool.length}</span></h3>${k==='p'?synFilt()+`<div class="tabs" role="tablist" aria-label="보기 방식" style="margin:6px 0">${[['card','카드'],['list','일람']].map(([v,n])=>`<button role="tab" aria-selected="${(S.synView||'card')===v}" class="${(S.synView||'card')===v?'on':''}" data-a="synview" data-v="${v}">${n}</button>`).join('')}</div>`:''}${k==='p'&&S.synView==='list'?synList(pool,mk):`<div class="mpool">${pool.map(x=>{const lk=isLocked(lkey(k,x));return `<div class="mpw"><div class="mp${mk.has(x.key)?' on':''}${lk?' locked':''}" ${lk?'aria-disabled="true"':`data-mat="${esc(x.key)}" role="button" tabindex="0"`}>${x.html}${lk?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div><button class="ghost lockt" data-lock="${esc(lkey(k,x))}" aria-pressed="${lk}" aria-label="${lk?'잠금 해제':'잠그기'}" title="${lk?'잠금 해제':'잠그기'}">${LOCKI(lk)}</button></div>`}).join('')||'<p class="note">재료가 없어요.</p>'}</div>`}
  <p class="note help">카드 아래 자물쇠로 잠그면 재료·자동 추천에서 빠져요. 재료 선수에 끼운 스킬 블록은 같이 사라져요.</p></section>`}
 const pick2=a=>a[Math.floor(Math.random()*a.length)];
 // 추천 라인업: 보유 카드로 자동 편성 (능력 우선 / 덱 효과 우선 / 코스트 절약). 코스트 상한 150 안에서
@@ -1775,7 +1815,7 @@ function modal(){if(S.dexView)return dexViewModal();const c=by[S.modal];if(!c)re
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.un?`대학 <b>${esc(c.un)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',!c.rg&&!c.hs?'출신 정보 없음':'',`${esc(lname(c.line))} 계보`,c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null?(abAge(c)?'유학 가능':'유학 불가'):''].filter(Boolean).join(' · ')}</p>${recHTML(c)}${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  <p class="note" style="text-align:center"><a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
-vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
+vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
  if(abAct(D)||shopAct(D)){render();return}
  if(D.dexk){S.dexK=D.dexk;S.dexLim=0;render();return}
  if(D.dexv){S.dexView=D.dexv;S.mflip=false;render();return}
@@ -1801,6 +1841,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[d
  else if(D.skc){S.skc=D.skc;S.blkSel=null}
  else if(D.sft){S.sf={...(S.sf||SF0),ty:D.sft};S.mat=[]}else if(D.sfd){S.sf={...(S.sf||SF0),dup:(S.sf||SF0).dup?0:1};S.mat=[]}else if(D.sk2){S.sk=D.sk2;S.mat=[];S.synRes=null;location.hash='synth';render();return}
  else if(D.sk){S.sk=D.sk;S.mat=[];S.synRes=null}
+ else if(D.synex){const E=S.synEx=S.synEx||[],i=E.indexOf(D.synex);if(i>=0)E.splice(i,1);else if(E.length>=SYN_EX_MAX)S.msg=`제외 구단은 ${SYN_EX_MAX}개까지 고를 수 있어요.`;else E.push(D.synex);S.synRes=null}
  else if(D.mat){const i=S.mat.indexOf(D.mat);S.synRes=null;if(i>=0)S.mat.splice(i,1);else if(S.mat.length<NEED(S.sk||'p'))S.mat.push(D.mat)}
  else if(D.ssel)S.ssel=S.ssel===D.ssel?null:D.ssel;
  else if(D.sgive){if(S.sup.length<2&&S.ssel){S.sup.push({id:S.ssel,cid:D.sgive,left:SUP_BY[S.ssel][4]});S.sq[S.ssel]--;S.ssel=null}}
@@ -2250,7 +2291,7 @@ function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}r
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','coupon']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','coupon']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -2259,6 +2300,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='more'){flt.lim+=240;render()}
   else if(a==='luview'){S.luView=b.dataset.v;if(b.dataset.v==='card')S.luStat='';render()}
   else if(a==='dism'){const r=ECON.dismantle(S,byId,b.dataset.id,1);S.toast=r.err||(r.shard?`EX 조각 +1 (${r.left}/3)${r.tix?` · 구단 지정 EX 확정권 ${r.tix}장 받았어요`:''}`:`분해 · +${r.pt}P`);rebuildOwn();if(!by[S.modal])S.modal=null;save();render()}
+  else if(a==='synview'){S.synView=b.dataset.v;render()}
   else if(a==='lustat'){S.luStat=b.dataset.v;render()}
   else if(/^deck/.test(a))deckAct(a);
   else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=0;render()}

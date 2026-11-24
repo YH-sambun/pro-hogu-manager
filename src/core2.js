@@ -204,30 +204,33 @@ function synthRules(cs){const all=f=>cs.length===3&&cs.every(f),same=k=>all(c=>c
   if(all(c=>c.v==='GG'||c.v==='EX'||c.v==='AS')){gg=true;L.push({n:'특별 카드 3장 → 골든글러브판 25%'})}
   const player=L.some(x=>x.player)?c=>c.pk===cs[0].pk&&!cs.some(m=>m.year===c.year):null;return {list:L,up,gg,player}}
 const L3same=cs=>cs.every(c=>c.line===cs[0].line);
-function synth(kind,mats,locks){
+// opt.ex: 결과에서 뺄 구단 계보(line) 목록, 최대 SYN_EX_MAX개. 걸러서 후보가 없으면 제외를 무시
+const SYN_EX_MAX=3;
+function synth(kind,mats,locks,opt){
   if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 합성 재료로 쓸 수 없어요'}}
   if(kind!=='b'&&mats.length!==3)return {err:'재료 3개가 필요해요'};
   if(kind==='p'){const cs=mats.map(id=>byId[baseId(id)]);if(cs.some(c=>!c))return {err:'없는 카드'};
+    const EXL=new Set(((opt&&opt.ex)||[]).slice(0,SYN_EX_MAX)),okL=c=>!EXL.has(c.line),exf=P=>{const Q=P.filter(okL);return Q.length?Q:P},exN=EXL.size?`제외: ${[...EXL].join(', ')}`:'';
     const R=synthRules(cs),a=Math.round(cs.reduce((s,c)=>s+c.cost,0)/3),u=rnd(),up=R.up;
     // EX 합성(사용자 확정): EX 3장 → 평균 코스트 이상 EX 확정(같은 구단 3장이면 그 구단) · EX 2장+아무 1장 → EX 50% · EX 1장+골글/올스타 2장 → EX 25%, 실패 시 골글판 이상 확정
-    {const nEX=cs.filter(c=>c.v==='EX').length,nSP=cs.filter(c=>c.v==='GG'||c.v==='AS').length,EXS=CARDS.filter(c=>c.v==='EX');
+    {const nEX=cs.filter(c=>c.v==='EX').length,nSP=cs.filter(c=>c.v==='GG'||c.v==='AS').length,EXS=exf(CARDS.filter(c=>c.v==='EX'));
      const exOut=(lineOnly)=>{let P=EXS.filter(c=>c.cost>=Math.min(a,10));const L=cs.filter(c=>c.v==='EX').map(c=>c.line);
        if(lineOnly){const Q=P.filter(c=>c.line===L[0]);if(Q.length)P=Q}if(!P.length)P=EXS;return pick(P)};
-     const done=(c,n)=>({kind,out:c.id,cost:c.cost,rules:[n]});
+     const done=(c,n)=>({kind,out:c.id,cost:c.cost,rules:exN?[n,exN]:[n]});
      if(nEX===3)return done(exOut(L3same(cs)),'EX 3장 → EX 확정'+(L3same(cs)?` (${cs[0].line})`:''));
      if(nEX===2&&u<.5)return done(exOut(cs.filter(c=>c.v==='EX').every((c,i,A)=>c.line===A[0].line)),'EX 2장 → EX 50% 성공');
      if(nEX===1&&nSP===2){if(u<.25)return done(exOut(false),'EX+특별 2장 → EX 25% 성공');
-       const G=CARDS.filter(c=>c.v==='GG'&&c.cost>=a).sort((x,y)=>x.cost-y.cost);if(G.length){const lo=G[0].cost;return done(pick(G.filter(c=>c.cost<=Math.max(lo,a+1))),'EX+특별 2장 → 실패, 골든글러브판 확정')}}}
+       const G=exf(CARDS.filter(c=>c.v==='GG'&&c.cost>=a)).sort((x,y)=>x.cost-y.cost);if(G.length){const lo=G[0].cost;return done(pick(G.filter(c=>c.cost<=Math.max(lo,a+1))),'EX+특별 2장 → 실패, 골든글러브판 확정')}}}
     const t=Math.min(10,a+(u<up[2]?3:u<up[2]+up[1]?2:1));
     // 규칙의 조건(f)을 모두 만족하는 카드 중 목표 코스트. 없으면 조건을 뒤에서부터 하나씩 풀고, 그래도 없으면 가장 가까운 코스트
-    let fs=R.list.filter(x=>x.f).map(x=>x.f),out=null;const base=c=>c.v!=='EX'&&c.v!=='AS';
+    let fs=R.list.filter(x=>x.f).map(x=>x.f),out=null;const base=c=>c.v!=='EX'&&c.v!=='AS'&&okL(c);
     // 같은 선수 3장: 그 선수 다른 시즌 중 목표 코스트(평균+1~3) 이하에서 가장 높은 카드. 없으면 일반 규칙으로(예전엔 코스트 무시하고 최고 카드라 1코 3장→8~9코가 나왔음)
     if(R.player){const P=CARDS.filter(c=>base(c)&&R.player(c)&&c.cost>a&&c.cost<=t).sort((x,y)=>y.cost-x.cost);if(P.length){out=P[0];fs=[]}}
     if(!out)for(;;){const P=CARDS.filter(c=>base(c)&&fs.every(f=>f(c)));if(P.length){const T=P.filter(c=>c.cost===t);if(T.length){out=pick(T);break}
         const hi=P.filter(c=>c.cost>a&&c.cost<=t).sort((x,y)=>Math.abs(x.cost-t)-Math.abs(y.cost-t));if(hi.length){out=pick(hi.filter(c=>c.cost===hi[0].cost));break}}
-      if(!fs.length){out=pick(CARDS.filter(c=>base(c)&&c.cost===t));break}fs=fs.slice(0,-1)}
+      if(!fs.length){const Z=CARDS.filter(c=>base(c)&&c.cost===t);out=pick(Z.length?Z:CARDS.filter(c=>c.v!=='EX'&&c.v!=='AS'&&c.cost===t));break}fs=fs.slice(0,-1)}
     if(R.gg&&rnd()<.25){const g=CARDS.find(c=>c.v==='GG'&&c.pk===out.pk&&c.year===out.year);if(g)out=g}
-    return {kind,out:out.id,cost:out.cost,rules:R.list.filter(x=>R.player?x.player&&out.pk===cs[0].pk:(!x.f||fs.includes(x.f))).map(x=>x.n)}}
+    return {kind,out:out.id,cost:out.cost,rules:R.list.filter(x=>R.player?x.player&&out.pk===cs[0].pk:(!x.f||fs.includes(x.f))).map(x=>x.n).concat(exN?[exN]:[])}}
   if(kind==='b'){if(mats.length!==2)return {err:'블록 2개가 필요해요'};const t=mats[0].t;if(mats.some(b=>b.t!==t))return {err:'같은 종류(타자용/투수용) 블록만 합성할 수 있어요'};
     const order='CBAS',a=order.indexOf(mats[0].g),b=order.indexOf(mats[1].g);const g=a===b?(rnd()<.6?order[Math.min(3,a+1)]:order[a]):order[Math.max(a,b)];return {kind,out:mkBlock(t,g)}}
   if(kind==='s'){if(mats.some(x=>x!==mats[0]))return {err:'같은 서포트 카드 3장이 필요해요'};if(mats[0].endsWith('+'))return {err:'강화판은 더 합성할 수 없어요'};return {kind,out:mats[0]+'+'}}
@@ -289,10 +292,31 @@ function aiOff(g,bat){const T=g.t[bat],tac=T.tac||TAC_DEF,B=g.bases,b=T.lu[g.idx
 function aiDef(g,f){const T=g.t[f],tac=T.tac||TAC_DEF,B=g.bases,b=g.t[1-f].lu[g.idx[1-f]].c,close=Math.abs(g.sc[0]-g.sc[1])<=2;
   if(B[2]&&g.outs<2&&close&&g.inn>=[99,9,7,5,1][tac.shift])g.inf=true;
   if(!B[0]&&(B[1]||B[2])&&g.inn>=7&&close&&b.r.pow>=[999,100,92,85,78][tac.ibb])return {kind:'ibb'};return null}
+// 선수 교체: 대주자(공격)·대수비(수비). 바뀐 선수는 박스에 새 줄로 기록하고 팀 수비력을 다시 계산
+const reDef=T=>{const w=p=>p==='C'||p==='SS'||p==='CF'?1.3:1,fl=T.lu.filter(x=>x.pos!=='DH');if(fl.length)T.def=fl.reduce((s,x)=>s+effDef(x.c,x.pos)*w(x.pos),0)/fl.reduce((s,x)=>s+w(x.pos),0)+((T.fx||{}).def||0)};
+function subIn(g,s,i,nb,pos){const T=g.t[s],k=T.bench.findIndex(x=>x.id===nb.id);if(k<0)return;T.bench.splice(k,1);T.lu[i]={c:nb,pos};g.bx[s][nb.id]={c:nb,pos,ab:0,h:0,hr:0,rbi:0,bb:0,k:0,sb:0,r:0,e:0,a:0};reDef(T)}
+// 대주자: 7회 이후 2점 차 이내(지고 있거나 동점·1점 리드), 느린 주자를 벤치의 빠른 선수로. 감독 대타(ph) 성향이 높을수록 적극적
+function aiPR(g,bat){const T=g.t[bat],tac=T.tac||TAC_DEF,B=g.bases,d=g.sc[bat]-g.sc[1-bat];
+  if(g.inn<7||d<-2||d>1||!T.bench.length||tac.ph===0||(T.bench.length<2&&g.inn<9))return;
+  const thr=[999,22,15,10,6][tac.ph];
+  for(const i of [2,1,0]){const r=B[i];if(!r)continue;const li=T.lu.findIndex(x=>x.c.id===r.c.id);if(li<0)continue;
+    const best=T.bench.reduce((a,c)=>c.r.spd>a.r.spd?c:a);if(best.r.spd-r.c.r.spd<thr)continue;
+    if(g.inn<8&&batVal(r.c)>batVal(best)+8)continue; // 7회엔 중심타자를 빼지 않음
+    const pos=T.lu[li].pos;subIn(g,bat,li,best,pos);B[i]={c:best,p:r.p};say(g,`대주자: ${r.c.name} → ${best.name}`,'c');return}}
+// 대수비: 수비 시작 때 ①못 맡는 포지션에 선 선수(대타·대주자)는 점수와 상관없이 교체 ②8회 이후 1~3점 리드면 수비가 크게 처지는 자리를 교체(감독 수비 성향 shift)
+function aiDefSub(g,f){const T=g.t[f],tac=T.tac||TAC_DEF,key=g.inn*2+g.half;if(g.dsub&&g.dsub[f]===key)return;(g.dsub=g.dsub||[0,0])[f]=key;
+  if(!T.bench.length)return;const lead=g.sc[f]-g.sc[1-f],w=p=>p==='C'||p==='SS'||p==='CF'?1.3:1;
+  for(let i=0;i<T.lu.length&&T.bench.length;i++){const x=T.lu[i];if(x.pos==='DH'||canPlay(x.c,x.pos))continue;
+    const cs=T.bench.filter(c=>canPlay(c,x.pos));if(!cs.length)continue;const nb=cs.reduce((a,c)=>effDef(c,x.pos)>effDef(a,x.pos)?c:a);
+    subIn(g,f,i,nb,x.pos);say(g,`대수비: ${x.c.name} → ${nb.name} (${PK[x.pos]||x.pos})`,'c')}
+  if(g.inn<8||lead<1||lead>3||!T.bench.length)return;const thr=[999,14,9,6,4][tac.shift];let n=0;
+  const opts=T.lu.map((x,i)=>{if(x.pos==='DH')return null;const cs=T.bench.filter(c=>canPlay(c,x.pos));if(!cs.length)return null;const nb=cs.reduce((a,c)=>effDef(c,x.pos)>effDef(a,x.pos)?c:a);return {i,x,nb,gain:(effDef(nb,x.pos)-effDef(x.c,x.pos))*w(x.pos)}}).filter(o=>o&&o.gain>=thr).sort((a,b)=>b.gain-a.gain);
+  for(const o of opts){if(n>=2)break;if(!T.bench.includes(o.nb))continue;subIn(g,f,o.i,o.nb,o.x.pos);n++;say(g,`대수비: ${o.x.c.name} → ${o.nb.name} (${PK[o.x.pos]||o.x.pos})`,'c')}}
 function pa(g,manual){
   if(g.done)return;
   const bat=g.half,f=1-bat;manage(g,f);g.hnr=false;g.inf=false;
   let tk=g.pending;g.pending=null;const mine=s=>manual&&g.ctrl===s;
+  if(!mine(f)&&g.outs===0&&!g.bases.some(Boolean))aiDefSub(g,f);if(!mine(bat))aiPR(g,bat);
   if(!tk&&!mine(bat))tk=aiOff(g,bat);if(!tk&&!mine(f))tk=aiDef(g,f);
   const OT=g.t[bat],DT=g.t[f],ofx=OT.fx||{},dfx=DT.fx||{},otac=OT.tac||TAC_DEF,dtac=DT.tac||TAC_DEF,po=dtac.shift,OA=g.ta[bat],DA=g.ta[f];
   // 개인 수비: 수비 위치의 야수와 그 포지션 수비값. 보살(a)·실책(e)은 수비팀 박스에 기록
@@ -302,7 +326,7 @@ function pa(g,manual){
   const armOut=(F,s,base)=>F&&rnd()<cl(base+.02*DX(F.d)-.03*X(s.c.r.spd),.005,.15);
   const stealP=s=>cl((.6+.25*X(s.c.r.spd)+(ofx.steal||0)-.04*po-.04*cArm)*(OA.has('b6')?1.2:1)*(DA.has('c4')?.8:1),.05,.95);
   if(tk&&tk.kind==='ph'){const T0=g.t[bat],i=T0.bench.findIndex(x=>x.id===tk.arg);if(i>=0){const nb=T0.bench.splice(i,1)[0],slot=T0.lu[g.idx[bat]];
-    say(g,`대타: ${slot.c.name} → ${nb.name}`,'c');g.phNow=nb.id;g.phPrev=(g.idx[bat]+1)%9;T0.lu[g.idx[bat]]={c:nb,pos:slot.pos};g.bx[bat][nb.id]={c:nb,pos:slot.pos,ab:0,h:0,hr:0,rbi:0,bb:0,k:0,sb:0,r:0,e:0,a:0}}}
+    say(g,`대타: ${slot.c.name} → ${nb.name}`,'c');g.phNow=nb.id;g.phPrev=(g.idx[bat]+1)%9;T0.lu[g.idx[bat]]={c:nb,pos:slot.pos};reDef(T0);g.bx[bat][nb.id]={c:nb,pos:slot.pos,ab:0,h:0,hr:0,rbi:0,bb:0,k:0,sb:0,r:0,e:0,a:0}}}
   const T=g.t[bat],b=T.lu[g.idx[bat]].c,P=g.pit[f],pc=P.c,B=g.bases,bs=g.bx[bat][b.id],run={c:b,p:P};
   if(tk&&tk.kind==='steal'){const fr=B[1]&&!B[2]?1:B[0]&&!B[1]?0:-1;if(fr>=0){const s=B[fr];
     if(rnd()<stealP(s)){B[fr+1]=s;B[fr]=null;g.bx[bat][s.c.id].sb++;say(g,`${s.c.name} ${fr+2}루 도루 성공`)}else{B[fr]=null;out(g,1);if(CAT)cr(CAT);say(g,`${s.c.name} ${fr+2}루 도루 실패${CAT?` (포수 ${CAT.c.name} 저지)`:''}`);if(g.outs>=3){endHalf(g);return}}}}
@@ -384,4 +408,4 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
