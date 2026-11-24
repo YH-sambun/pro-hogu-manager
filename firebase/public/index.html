@@ -616,6 +616,8 @@ const adjBonus=(L,i)=>{const n=L.length;if(n<2)return 0;return adjPair(L[i],L[(i
 const ABD=[['d1','국내 2군 캠프',null,2,1,['con','eye','ctl','men'],'처음부터 열림'],['d2','호주 윈터리그','ai3',4,1,['con','pow','eye','spd','def','vel','stu','brk','ctl','sta'],'AI 시즌 3위 안'],
  ['d3','일본 캠프','aiW',8,2,['con','eye','bun','ctl','brk'],'AI 시즌 우승'],['d4','도미니카 윈터리그','aiW2',12,2,['spd','def','pow','vel','sta'],'AI 시즌 2회 우승 또는 승률 6할'],['d5','미국 캠프','fr',24,3,['pow','con','vel','stu'],'친구 리그 우승']];
 const AB_BY=Object.fromEntries(ABD.map(d=>[d[0],d])),AB_CAP=12,ABG=[['대성공',.15,6],['성공',.6,4],['보통',1,2]];
+// 코스트별 유학 효율(2026-11-24, SJ): 저코스트일수록 상승 폭·상한이 크고 고코스트는 미미. 등급별 기본 상승치 × AB_MUL[코스트](반올림, 최소 1), 상한 = 20 × min(배율,1.5)(최소 2)
+const AB_MUL=[0,1.6,1.45,1.3,1.15,1,.8,.6,.45,.3,.2],abMul=c=>AB_MUL[Math.min(10,Math.max(1,c|0))],abGain=(g,c)=>g>0?Math.max(1,Math.round(g*abMul(c))):0,abCap=c=>Math.max(2,Math.round(20*Math.min(1.5,abMul(c))));
 const ageOf=c=>c&&c.b?c.year-c.b:null,abAge=c=>{if(c&&(c.v==='IR'||c.v==='RY'))return false;const a=ageOf(c);return a!=null&&(a<=25||a>=35)};
 // used: 이 카드의 지금까지 유학 상승 합계. 반환 {g:등급, st:{능력:+n}}
 function abRoll(d,c,used){d=AB_BY[d]||d;const u=rnd(),g=ABG.find(x=>u<x[1]),keys=Object.keys(c.r).filter(k=>d[5].includes(k));let pts=Math.max(0,Math.min(g[2]+(d[4]-1),AB_CAP-(used||0)));const st={};
@@ -922,9 +924,9 @@ function pa(g,manual){
   // ── 타석 모델: 능력치 70 = 그 시즌 리그 평균(카드 변환식 기준). 타자·투수 각자의 비율을 log5로 합쳐 특징이 그대로 드러나게 ──
   const dS=stu-pc.r.stu,kv=(pc.r.kv!=null?pc.r.kv:pc.r.stu)+dS,hv=(pc.r.hv!=null?pc.r.hv:pc.r.stu)+dS,pgb=pc.r.gb!=null?pc.r.gb:LG.gb;
   const plat=!b.bh||!pc.ph?0:b.bh==='S'?.5:b.bh===pc.ph?-1:1; // 같은 손 -1, 반대 손 +1, 스위치 +0.5
-  const bBB=cl(LG.bb+(br.eye-70)*.0032,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0011,.002,.09),
+  const bBB=cl(LG.bb+(br.eye-70)*.0032,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0016,.002,.1),
     bBA=cl(LG.babip+(br.con-70)*.0028,.2,.42),bGB=cl(LG.gb-(br.pow-70)*.004+(br.spd-70)*.001,.28,.62);
-  const qBB=cl(LG.bb-(ctl-70)*.0028,.02,.2),qK=cl(LG.k+(kv-70)*.0045,.06,.36),qHR=cl(LG.hr-(hv-70)*.0005,.008,.05),qBA=cl(LG.babip-(hv-70)*.0012,.24,.36);
+  const qBB=cl(LG.bb-(ctl-70)*.0065,.012,.25),qK=cl(LG.k+(kv-70)*.011,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005,.008,.05),qBA=cl(LG.babip-(hv-70)*.0012,.24,.36);
   const pBB=cl(log5(bBB,qBB,LG.bb)-.003*sw+.002*po,.015,.25),pK=cl(log5(bK,qK,LG.k)*(1-.05*plat)+.006*sw+(g.hnr?.015:0)+(ofx.kp||0),.03,.45),
     pG=log5(bGB,pgb,LG.gb),pHR=cl(log5(bHR,qHR,LG.hr)*(1-pG)/(1-LG.gb)*(1+.07*plat)*(1+.12*sw)+(ofx.hrp||0),.001,.11),
     pBA=log5(bBA,qBA,LG.babip)+.01*plat-.04*X(def)+(g.inf?.03:0)-.003*sw-.004*sh-(risp?(dfx.risp||0):0);
@@ -983,7 +985,7 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
 
 </script>
 <script>
@@ -1289,7 +1291,7 @@ const ABU={ai5:[()=>lgTop()>=2,'주간 리그 2단계 도달'],ai3:[()=>lgTop()>
 const abWhy=c=>c.v?'특수 카드는 유학 불가':'유학 불가 (25세 이하·35세 이상만)';
 const dupsOf=c=>OWN.filter(x=>x.dup&&baseId(x.id)===c.id&&!isLocked(x.id));
 function abRoll(a){const d=abd(a.d),c=byId[a.id],r=ECON.studyRoll(a.d),keys=Object.keys(c.r).filter(k=>d[5].includes(k));
-  let pts=Math.min(r.gain,AB_CAP-abUsed(c));const st={};while(pts>0&&keys.length){const k=keys[Math.floor(Math.random()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:r.name,st}}
+  let pts=Math.max(0,Math.min(abGain(r.gain,c.cost),abCap(c.cost)-abUsed(c)));const st={};while(pts>0&&keys.length){const k=keys[Math.floor(Math.random()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:r.name,st}}
 function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAge(c)||ECON.canStudy(c).err)return;const m=dupsOf(c).slice(0,d[4]);if(m.length<d[4])return;
   const fee=studyFee(d[0],c.cost);if(ECON.pay(S,fee).err){S.msg='포인트가 모자라요';return}
   S.owned[c.id]-=m.length;S.locks=S.locks.filter(k=>!m.some(x=>x.id===k));S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
@@ -1600,11 +1602,11 @@ const planeB=(c,cls)=>{const t=[...new Set(((S.abHist||{})[c.id]||[]).map(h=>abd
 const abUsed=c=>(S.abSum||{})[c.id]||0;
 const hm=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floor(m/60)}시간 ${m%60}분`:`${m}분`};
 function vAbroad(){const now=Date.now(),d=abd(S.abSel)||ABD[0],cand=OWN.filter(c=>!c.dup&&!c.v&&!used().includes(c.id)&&!abOf(c.id)&&ageOf(c)!=null),pick=by[S.abPick],need=d[4],have=pick?dupsOf(pick).length:0;
- const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&abAge(pick)&&have>=need&&abUsed(pick)<AB_CAP&&S.pt>=fee;
+ const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&abAge(pick)&&have>=need&&abUsed(pick)<abCap(pick.cost)&&S.pt>=fee;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">유학</h2><span class="pill">진행 중 ${S.ab.filter(a=>!a.got).length}명</span></div>
- <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군에 등록되지 않은 선수를 유학 보내면 정해진 시간 동안 쓸 수 없어요. 시간이 끝나면 결과를 확인해 능력치가 올라요. 재료로 같은 카드(중복)를 써요. 카드 한 장이 유학으로 올릴 수 있는 능력치는 합계 +${AB_CAP}까지예요. 시간·확률·상승치는 제안안이에요.</p>
+ <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군에 등록되지 않은 선수를 유학 보내면 정해진 시간 동안 쓸 수 없어요. 시간이 끝나면 결과를 확인해 능력치가 올라요. 재료로 같은 카드(중복)를 써요. 코스트가 낮을수록 효율이 좋아요: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 카드당 상승 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4예요. 시간·확률·상승치는 제안안이에요.</p>
  ${abMapHTML(d)}<div class="abl"><div class="box"><h3 style="margin-top:0">${d[1]}</h3>${abOpen(d)?`<p class="abm" title="${ABR[d[0]][0].map((p,i)=>ABGN[i]+' '+p+'%'+(i<3?' (+'+ABR[d[0]][1][i]+')':'')).join(' · ')}"><span>${d[3]}시간</span><span>대성공 +${ABR[d[0]][1][0]}</span><span${ABR[d[0]][0][3]?' class="risk"':''}>실패 ${ABR[d[0]][0][3]}%</span><span>중복 ${d[4]}장</span><span>${d[5].map(k=>SKN[k]).filter((v,i,a)=>a.indexOf(v)===i).join('·')}</span></p>
-  <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">중복 ${have}/${need} · 상승 ${abUsed(pick)}/${AB_CAP}</p>
+  <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">중복 ${have}/${need} · 상승 ${abUsed(pick)}/${abCap(pick.cost)} · 효율 ×${abMul(pick.cost)}</p>
    <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트가 모자라요</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드는 유학 갈 수 없어요':ageOf(pick)+'세라 유학 갈 수 없어요 (25세 이하 또는 35세 이상)'}</p>`:have<need?'<p class="note" style="color:var(--bad);margin:6px 0 0">중복 카드가 모자라요</p>':''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수를 고르세요</p>'}</div>
   <h3>보낼 선수</h3><div class="abc">${cand.sort((a,b)=>abAge(b)-abAge(a)||dupsOf(b).length-dupsOf(a).length||b.ovr-a.ovr).slice(0,24).map(c=>`<button class="abr${c.id===S.abPick?' on':''}${abAge(c)?'':' no'}" data-abpick="${esc(c.id)}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><span><b>${esc(c.name)}</b><small>${c.year} · ${ageOf(c)}세${abAge(c)?'':' · 유학 불가'} · 중복 ${dupsOf(c).length}장</small></span></button>`).join('')}</div>`
   :`<p class="note">아직 잠겨 있어요. 여는 조건: <b>${d[6]}</b></p>`}</div></div>

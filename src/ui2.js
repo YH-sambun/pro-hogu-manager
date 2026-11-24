@@ -94,7 +94,7 @@ const ABU={ai5:[()=>lgTop()>=2,'주간 리그 2단계 도달'],ai3:[()=>lgTop()>
 const abWhy=c=>c.v?'특수 카드는 유학 불가':'유학 불가 (25세 이하·35세 이상만)';
 const dupsOf=c=>OWN.filter(x=>x.dup&&baseId(x.id)===c.id&&!isLocked(x.id));
 function abRoll(a){const d=abd(a.d),c=byId[a.id],r=ECON.studyRoll(a.d),keys=Object.keys(c.r).filter(k=>d[5].includes(k));
-  let pts=Math.min(r.gain,AB_CAP-abUsed(c));const st={};while(pts>0&&keys.length){const k=keys[Math.floor(Math.random()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:r.name,st}}
+  let pts=Math.max(0,Math.min(abGain(r.gain,c.cost),abCap(c.cost)-abUsed(c)));const st={};while(pts>0&&keys.length){const k=keys[Math.floor(Math.random()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:r.name,st}}
 function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAge(c)||ECON.canStudy(c).err)return;const m=dupsOf(c).slice(0,d[4]);if(m.length<d[4])return;
   const fee=studyFee(d[0],c.cost);if(ECON.pay(S,fee).err){S.msg='포인트가 모자라요';return}
   S.owned[c.id]-=m.length;S.locks=S.locks.filter(k=>!m.some(x=>x.id===k));S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
@@ -405,11 +405,11 @@ const planeB=(c,cls)=>{const t=[...new Set(((S.abHist||{})[c.id]||[]).map(h=>abd
 const abUsed=c=>(S.abSum||{})[c.id]||0;
 const hm=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floor(m/60)}시간 ${m%60}분`:`${m}분`};
 function vAbroad(){const now=Date.now(),d=abd(S.abSel)||ABD[0],cand=OWN.filter(c=>!c.dup&&!c.v&&!used().includes(c.id)&&!abOf(c.id)&&ageOf(c)!=null),pick=by[S.abPick],need=d[4],have=pick?dupsOf(pick).length:0;
- const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&abAge(pick)&&have>=need&&abUsed(pick)<AB_CAP&&S.pt>=fee;
+ const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&abAge(pick)&&have>=need&&abUsed(pick)<abCap(pick.cost)&&S.pt>=fee;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">유학</h2><span class="pill">진행 중 ${S.ab.filter(a=>!a.got).length}명</span></div>
- <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군에 등록되지 않은 선수를 유학 보내면 정해진 시간 동안 쓸 수 없어요. 시간이 끝나면 결과를 확인해 능력치가 올라요. 재료로 같은 카드(중복)를 써요. 카드 한 장이 유학으로 올릴 수 있는 능력치는 합계 +${AB_CAP}까지예요. 시간·확률·상승치는 제안안이에요.</p>
+ <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군에 등록되지 않은 선수를 유학 보내면 정해진 시간 동안 쓸 수 없어요. 시간이 끝나면 결과를 확인해 능력치가 올라요. 재료로 같은 카드(중복)를 써요. 코스트가 낮을수록 효율이 좋아요: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 카드당 상승 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4예요. 시간·확률·상승치는 제안안이에요.</p>
  ${abMapHTML(d)}<div class="abl"><div class="box"><h3 style="margin-top:0">${d[1]}</h3>${abOpen(d)?`<p class="abm" title="${ABR[d[0]][0].map((p,i)=>ABGN[i]+' '+p+'%'+(i<3?' (+'+ABR[d[0]][1][i]+')':'')).join(' · ')}"><span>${d[3]}시간</span><span>대성공 +${ABR[d[0]][1][0]}</span><span${ABR[d[0]][0][3]?' class="risk"':''}>실패 ${ABR[d[0]][0][3]}%</span><span>중복 ${d[4]}장</span><span>${d[5].map(k=>SKN[k]).filter((v,i,a)=>a.indexOf(v)===i).join('·')}</span></p>
-  <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">중복 ${have}/${need} · 상승 ${abUsed(pick)}/${AB_CAP}</p>
+  <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">중복 ${have}/${need} · 상승 ${abUsed(pick)}/${abCap(pick.cost)} · 효율 ×${abMul(pick.cost)}</p>
    <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트가 모자라요</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드는 유학 갈 수 없어요':ageOf(pick)+'세라 유학 갈 수 없어요 (25세 이하 또는 35세 이상)'}</p>`:have<need?'<p class="note" style="color:var(--bad);margin:6px 0 0">중복 카드가 모자라요</p>':''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수를 고르세요</p>'}</div>
   <h3>보낼 선수</h3><div class="abc">${cand.sort((a,b)=>abAge(b)-abAge(a)||dupsOf(b).length-dupsOf(a).length||b.ovr-a.ovr).slice(0,24).map(c=>`<button class="abr${c.id===S.abPick?' on':''}${abAge(c)?'':' no'}" data-abpick="${esc(c.id)}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><span><b>${esc(c.name)}</b><small>${c.year} · ${ageOf(c)}세${abAge(c)?'':' · 유학 불가'} · 중복 ${dupsOf(c).length}장</small></span></button>`).join('')}</div>`
   :`<p class="note">아직 잠겨 있어요. 여는 조건: <b>${d[6]}</b></p>`}</div></div>
