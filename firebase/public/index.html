@@ -299,7 +299,7 @@ i.r-win{background:#d8f0df;color:#14532d}i.r-lose{background:#fbe1dd;color:#8a1c
 .dexl{display:grid;gap:12px;margin-top:12px}.dexs{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}.dexs.done{border-color:var(--gold)}
 .dexh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}.dexh b{font:400 18px "Black Han Sans";margin-right:auto}.dexok{border-color:var(--gold);color:var(--gold)}.dexrw{font-size:13px;color:var(--gold);font-weight:700}
 .dexg{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px}.dexc{display:grid;gap:2px;text-align:center;cursor:pointer}.dexc .oart{border-radius:8px;overflow:hidden}.dexc small{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dexc.no{cursor:default}.dexc.no .oart{filter:grayscale(.9) brightness(.55)}.dexc.no .oart img{filter:blur(1.5px)}.dexc.no small{opacity:.55}.dexc .q{position:absolute;inset:0;display:grid;place-items:center;font:400 28px "Black Han Sans";color:#777}
+.dexc.no{cursor:default}.dexc.no .oart{filter:grayscale(.85) brightness(.72) blur(.6px)}.dexc.no small{opacity:.55}.dexc .q{position:absolute;inset:0;display:grid;place-items:center;font:400 28px "Black Han Sans";color:#777}
 .plate i.age{font-style:normal}.plate i.age.ab{color:#7fd4ff;font-weight:700}
 .plb,.oplb{position:absolute;z-index:3;background:#2f6fb0;color:#fff;border-radius:50%;display:grid;place-items:center;font-style:normal;cursor:help}.plb{right:6px;bottom:6px;width:20px;height:20px}.oplb{right:3px;bottom:3px;width:16px;height:16px}
 .plb svg{width:12px;height:12px;display:block}.oplb svg{width:10px;height:10px;display:block}.mmeta.abh{display:flex;gap:6px;align-items:center;color:#7fd4ff}.mmeta.abh svg{width:16px;height:16px;flex:0 0 auto}
@@ -1111,7 +1111,7 @@ function ensureUI(){if(S.__ui)return;Object.defineProperty(S,'__ui',{value:1,enu
   for(const k of ['mgr','tsel'])Object.defineProperty(S,k,{get(){return this.team[k]},set(v){this.team[k]=v},enumerable:false,configurable:true});
   Object.defineProperty(S,'sup',{get(){return this.team.sup=(this.team.sup||[]).filter(x=>x.left>0)},set(v){this.team.sup=v},enumerable:false,configurable:true});
   if(typeof ECON!=='undefined')ECON.migrate(S);
-  const D={locks:[],tq:{},sq:{},blocks:[],gp:{},cond:{},ab:[],abHist:{},abSt:{},abSum:{},photos:{},mat:[],sub:'order',tb:'B',pf:'all',side:'line',sort:'ovr',fteam:'all',fyear:'all',sk:'p',dexK:'team',back:false,pt:0};
+  const D={locks:[],tq:{},sq:{},blocks:[],gp:{},cond:{},ab:[],abHist:{},abSt:{},abSum:{},photos:{},mat:[],sub:'order',tb:'B',pf:'all',side:'line',sort:'ovr',fteam:'all',fyear:'all',sk:'p',dexK:'all',back:false,pt:0};
   for(const k in D)if(S[k]==null)S[k]=D[k];
   if(!MG.some(m=>m.id===S.team.mgr))S.team.mgr=MG[0].id;
   pullTeam();if(!byId[S.cardId])S.cardId=used()[0]||Object.keys(S.owned)[0]}
@@ -1153,12 +1153,13 @@ function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAg
   S.owned[c.id]-=m.length;S.locks=S.locks.filter(k=>!m.some(x=>x.id===k));S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
 const TIXN=ECON.TIX,rwText=ECON.rwText,dexHas=id=>ECON.dexHas(S,id),dexCard=id=>byId[id];
-function vDex(){const k=S.dexK||'team',KN={team:'팀 세트',gg:'골든글러브',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||24,F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
+function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',gg:'골든글러브',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||24,F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
   const prog=s=>ECON.setProgress(S,s),tmOf=s=>s.kind==='team'?s.id.split('|')[1]:'',all=ECON.SETS.filter(s=>s.kind===k);
   const YS=[...new Set(all.map(s=>s.year).filter(Boolean))].sort((a,b)=>b-a),TS=[...new Set(all.map(tmOf).filter(Boolean))].sort();
   let L=all.filter(s=>(!q||s.name.includes(q))&&(!F.y||s.year===+F.y)&&(!F.t||tmOf(s)===F.t)&&(!F.st||(F.st==='done')===!!S.dexDone[s.id]));
   L=L.map(s=>({s,p:prog(s)})).sort((a,b)=>(!!S.dexDone[a.s.id])-(!!S.dexDone[b.s.id])||b.p.have/b.p.need-a.p.have/a.p.need);
   const tix=Object.entries(S.tix||{}).filter(([,n])=>n>0),sel=(id,v,lab,opts)=>`<select id="${id}" aria-label="${lab}"><option value="">${lab}</option>${opts.map(([x,n])=>`<option value="${esc(x)}"${String(v)===String(x)?' selected':''}>${esc(n)}</option>`).join('')}</select>`,on=F.y||F.t||F.st||F.h||q;
+  if(k==='all')return dexAll(KN,tix,sel,q);
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
   <p class="note help">한 번 얻은 카드는 합성·분해로 없어져도 도감에 남아요. 세트를 다 모으면 보상이 바로 들어와요. 확정권은 카드팩 화면에서 써요.</p>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
@@ -1168,6 +1169,17 @@ function vDex(){const k=S.dexK||'team',KN={team:'팀 세트',gg:'골든글러브
    <span class="abbar"><i style="width:${p.have/p.need*100}%"></i></span>
    ${s.ids?`<div class="dexg">${ids.map(id=>{const c=dexCard(id),h=dexHas(id);if(!c)return '';return `<div class="dexc${h?'':' no'}" ${h&&S.owned[id]?`data-pick="${esc(id)}" role="button" tabindex="0"`:''} title="${esc(c.name)} ${c.year}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`}).join('')}</div>`:''}</div>`}).join('')||'<p class="note">조건에 맞는 세트가 없어요.</p>'}</div>
   ${L.length>lim?`<div class="tools" style="justify-content:center;margin-top:12px"><button class="ghost" data-a="dexmore">더 보기 (${L.length-lim})</button></div>`:''}</section>`}
+const dexCell=c=>{const h=dexHas(c.id);return `<div class="dexc${h?'':' no'}" ${h&&S.owned[c.id]?`data-pick="${esc(c.id)}" role="button" tabindex="0"`:''} title="${esc(c.name)} ${c.year} ${esc(c.team)}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`};
+let DEXYS=null;
+function dexAll(KN,tix,sel,q){const F=S.dexF,lim=S.dexLim||60;DEXYS=DEXYS||[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);
+  const TS=[...new Set(CARDS.filter(c=>!F.y||c.year===+F.y).map(c=>c.team))].sort(),VK=[['n','일반 카드'],...Object.entries(VN)];
+  const L=CARDS.filter(c=>(!F.y||c.year===+F.y)&&(!F.t||c.team===F.t)&&(!F.p||(F.p==='P'?['SP','RP'].includes(c.pos):F.p==='B'?!['SP','RP'].includes(c.pos):c.pos===F.p))&&(!F.v||(F.v==='n'?!c.v:c.v===F.v))&&(!F.h||(F.h==='have')===!!dexHas(c.id))&&(!q||c.name.includes(q)));
+  const have=L.filter(c=>dexHas(c.id)).length,on=F.y||F.t||F.p||F.v||F.h||q;
+  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
+  <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${x==='all'}" class="${x==='all'?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
+  <div class="dexf">${sel('dexy',F.y,'전체 연도',DEXYS.map(y=>[y,y+'년']))}${sel('dext',F.t,'전체 구단',TS.map(t=>[t,t]))}${sel('dexp',F.p,'전체 포지션',[['P','투수 전체'],['B','타자 전체'],...Object.entries(PFULL)])}${sel('dexv',F.v,'전체 종류',VK)}${sel('dexh',F.h,'모든 카드',[['have','모은 카드만'],['miss','못 모은 카드만']])}<input id="dexq" value="${esc(q)}" placeholder="선수 이름" aria-label="선수 검색">${on?'<button class="ghost" data-a="dexclr">필터 초기화</button>':''}<span class="note" style="margin:0">${L.length.toLocaleString()}장 · 모음 ${have.toLocaleString()}</span></div>
+  <div class="dexg dexall">${L.slice(0,lim).map(dexCell).join('')||'<p class="note">조건에 맞는 선수가 없어요.</p>'}</div>
+  ${L.length>lim?`<div class="tools" style="justify-content:center;margin-top:12px"><button class="ghost" data-a="dexmore">더 보기 (${(L.length-lim).toLocaleString()})</button></div>`:''}</section>`}
 // 카드팩·확정권 (econ.js)
 const PACKS=ECON.PACKS.map(p=>[p.k,p.n,p.p,p.d.replace('최대 3개','3개')]);
 let LINES=[],YEARS=[];
@@ -1622,7 +1634,7 @@ function modal(){const c=by[S.modal];if(!c)return '';if(S.cmpA&&S.cmpA!==c.id)re
  <p class="note" style="text-align:center"><a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
 vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
  if(abAct(D)||shopAct(D)){render();return}
- if(D.dexk){S.dexK=D.dexk;render();return}
+ if(D.dexk){S.dexK=D.dexk;S.dexLim=0;render();return}
  if(D.dexgot){S.dexGot=S.dexGot||{};S.dexGot[D.dexgot]=Date.now();render();return}
  if(D.cmp){S.cmpA=D.cmp;S.modal=null;S.mslot=null;render();return}
  if(D.cmpx){S.cmpA=null;S.modal=null;render();return}
@@ -2068,8 +2080,8 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='end'){simAll(G);render()}else if(a==='fin'){if(G.friendly)oFinish();else endGame()}
   else if(a==='tk'){const k=b.dataset.k;tactic(G,k,k==='ph'?$('#phs').value:null);pa(G);render()}
   else if(a==='more'){flt.lim+=240;render()}
-  else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=24;render()}
-  else if(a==='dexmore'){S.dexLim=(S.dexLim||24)+24;render()}
+  else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=0;render()}
+  else if(a==='dexmore'){{const st=(S.dexK||'all')==='all'?60:24;S.dexLim=(S.dexLim||st)+st};render()}
   else if(a==='coupon')redeemCoupon();
   else if(a==='guest'){S.guest=1;save();render()}
   else if(a==='rmphoto'){delete S.photos[S.modal];save();render()}
@@ -2084,8 +2096,8 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='tn'){S.team.name=t.value.trim()||'내 구단';save();render();return}
   if(t.id==='tyy'){S.pkSel.ty={year:+t.value,team:TEAMS_OF(t.value)[0]};render();return}
   if(t.id==='tyt'){S.pkSel.ty.team=t.value;render();return}
-  if(t.id==='dexq'){S.dexQ=t.value;S.dexLim=24;render();return}
-  if(/^dex(y|t|st|h)$/.test(t.id)){S.dexF=S.dexF||{};S.dexF[t.id.slice(3)]=t.value;S.dexLim=24;render();return}
+  if(t.id==='dexq'){S.dexQ=t.value;S.dexLim=0;render();return}
+  if(/^dex(y|t|st|h|p|v)$/.test(t.id)){S.dexF=S.dexF||{};S.dexF[t.id.slice(3)]=t.value;if(t.id==='dexy')S.dexF.t='';S.dexLim=0;render();return}
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});
 // ===== 시작 =====
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
