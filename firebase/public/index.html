@@ -610,6 +610,7 @@ body.xl a{color:#0563c1}
 .thm button{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:4px 10px;background:var(--board);color:var(--ink);border:1px solid var(--line);font-size:13px}
 .thm button i{width:16px;height:16px;border-radius:3px;background:linear-gradient(135deg,var(--a) 0 55%,var(--b) 55%)}
 .thm button.on{border-color:var(--gold);outline:1px solid var(--gold)}
+.stars b{color:#ff4b3a;font-weight:inherit;text-shadow:0 0 3px rgba(255,75,58,.6)}body.xl .stars b{color:#c00!important}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1527,7 +1528,7 @@ function bars(c,keys,bonus){return keys.map(k=>{const v=c.r[k],p=k==='sta'?0:(bo
 const CONDN=['','최악','나쁨','보통','좋음','최상'],CONDA=[0,90,45,0,-45,-90];
 const condOf=c=>{if(!c)return 3;const v=(S.cond||{})[baseId(c.id)]||3;return Math.max(condMin(baseId(c.id)),v)};
 const condI=c=>{const v=condOf(c);return `<i class="cnd cd${v}" title="컨디션 ${CONDN[v]}" aria-label="컨디션 ${CONDN[v]}"><svg viewBox="0 0 14 12" aria-hidden="true">${[0,1,2,3,4].map(k=>`<rect x="${k*3}" y="${10-k*2.5}" width="2" height="${2+k*2.5}" ${k<v?'':'class="off"'}/>`).join('')}</svg></i>`};
-const stars=n=>`<i class="stars${n>5?' sn':''}" title="코스트 ${n}" aria-label="코스트 ${n}">${n>5?'★'+n:'★'.repeat(n)}</i>`; // 6 이상은 ★7처럼 숫자로(카드 폭 넘침 방지)
+const stars=n=>{const k=Math.max(0,Math.min(5,n-5)),m=Math.min(n,5);return `<i class="stars" title="코스트 ${n}" aria-label="코스트 ${n}">${k?`<b>${'★'.repeat(k)}</b>`:''}${'★'.repeat(m-k)}</i>`}; // 6 이상: 5칸 중 (n-5)칸을 붉게
 function card(c,o={}){if(!c)return '';const keys=c.type==='B'?BK:PKEY,d=o.full?deckFx():null,bn=d&&used().includes(c.id)?(c.type==='B'?d.bat:d.pit):o.full?0:null;
  return `<div class="card t-${c.tier}${c.v?' cv-'+c.v:''}${o.dim?' dim':''}${o.full?' big':o.stats?'':' slim'}" style="--tc:${c.col}" ${o.pick?`role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}" aria-label="${esc(c.name)} 카드 크게 보기"`:''}>
  <div class="art">${photo(c,o.full,o.full)}${c.v?`<span class="fxo fx-${c.v}" aria-hidden="true"></span>`:''}<span class="ovr">${condI(c)}${c.ovr}</span><span class="tag">${PFULL[c.pos]}${c.tw?' · 겸업':''}${HAND[c.h]?` · ${HAND[c.h]}`:''}</span>${c.v?`<span class="vb v-${c.v}">${VN[c.v]}</span>`:''}${planeB(c,'plb')}${o.inUse?'<span class="use">1군</span>':''}${abOf(c.id)?'<span class="use abu">유학 중</span>':''}${S.locks&&S.locks.includes(c.id)?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div>
