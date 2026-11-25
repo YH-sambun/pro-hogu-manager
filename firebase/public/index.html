@@ -2221,6 +2221,14 @@ function setPos(i,p){const c=by[S.lu[i][1]];if(!canPos(c,p))return;const j=S.lu.
 const PDIR={직구:-90,포심:-90,투심:150,싱커:135,커터:-30,슬라이더:0,커브:45,파워커브:45,슬러브:20,체인지업:120,포크:90,스플리터:90,너클볼:-150,서클체인지업:120,SFF:90};
 // 지금 등급: 카드 능력치 + 덱 효과(1군일 때) + 스킬 블록으로 오른 변화(직구는 구속)만큼 구종 등급이 올라감(SS·SSS·SSS+까지)
 function ptNow(c){if(c.type!=='P')return [];const d=deckFx(),bn=used().includes(c.id)?d.pit||0:0,sk=skillOf(c.id),t=k=>Math.min(120,c.r[k]+bn+(sk[k]||0));return ptGrades(c,t('brk'),t('vel'))}
+// 카드 상세 수비 위치: 구장 다이아몬드 위에 포지션별 적성·수비력 표시
+const FXY={C:[150,203],'1B':[222,140],'2B':[190,98],SS:[110,98],'3B':[78,140],LF:[58,52],CF:[150,30],RF:[242,52]};
+function fieldMap(c){const col=f=>f==='X'?'#55615a':fitCls(f)==='A'?'#2f9e5e':f==='B'?'#c99a1c':'#c8513f';
+ return `<svg viewBox="0 0 300 228" class="pmap fmap" role="img" aria-label="수비 위치별 적성"><rect width="300" height="228" rx="12" fill="var(--board)"/>
+ <path d="M150 214 L18 82 Q150 -38 282 82 Z" fill="#245f3d"/><path d="M150 214 L18 82 Q150 -38 282 82 Z" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+ <path d="M150 210 L92 150 Q150 70 208 150 Z" fill="#9a6a43"/><path d="M150 196 L112 156 L150 118 L188 156 Z" fill="#2f7a4f"/>
+ <circle cx="150" cy="158" r="5" fill="#9a6a43"/>${[[150,196],[188,156],[150,118],[112,156]].map(([x,y])=>`<rect x="${x-3}" y="${y-3}" width="6" height="6" fill="#fff" transform="rotate(45 ${x} ${y})"/>`).join('')}
+ ${POS.filter(p=>p!=='DH'&&FXY[p]).map(p=>{const f=fit(c,p),[x,y]=FXY[p],no=f==='X';return `<g transform="translate(${x} ${y})"${no?' opacity=".7"':''}><rect x="-31" y="-17" width="62" height="34" rx="9" fill="${col(f)}" stroke="rgba(0,0,0,.35)"/><text y="-3" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${PFULL[p]}</text><text y="12" text-anchor="middle" font-size="12.5" font-weight="800" fill="#fff">${no?'불가':`${f} · ${c.ps[p]}`}</text></g>`}).join('')}</svg>`}
 function pitchMap(c){const E=ptNow(c).map(x=>[x[0],x[1]]),gc={S:'#e2b23c',A:'#b05ad6',B:'#3d8fd1',C:'#8a9a90',D:'#6b6b6b'};
  return `<svg viewBox="0 0 300 200" class="pmap" role="img" aria-label="구종과 휘는 방향"><rect width="300" height="200" rx="12" fill="var(--board)"/>
  ${[40,70].map(r=>`<circle cx="150" cy="100" r="${r}" fill="none" stroke="rgba(255,255,255,.12)"/>`).join('')}
@@ -2237,7 +2245,7 @@ function seasonLine(c){const H=c.type==='B'?['타율','홈런','타점','도루'
 function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells(b).forEach(([r,q])=>occ[(r+b.at[0])*4+q+b.at[1]]=b)});const op=open(c),os=openSet(c),pt=patOf(c);
  const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g:''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g:''}"></span>`}).join('');
  return `<div class="cback" style="--tc:${c.col}"><div class="cbh"><b>${esc(c.name)}</b><span>${c.year} ${esc(c.team)} · ${PFULL[c.pos]}</span></div><div class="cbm">${[ageOf(c)!=null?`${ageOf(c)}세`:'',HAND[c.h]||'',c.rg||'',c.hs||'',c.un||''].filter(Boolean).map(esc).join(' · ')||'출신 정보 없음'}</div>
-  ${c.type==='P'?`<div class="pv">${pitchMap(c)}<div class="vel"><small>최고구속</small><b>${c.kmh??'–'}</b><small>km/h</small></div></div>`:`<div class="apt" style="margin:0">${POS.filter(p=>p!=='DH').map(p=>{const f=fit(c,p);return `<span>${PFULL[p]}<b style="color:${f==='X'?'var(--mute)':fitCls(f)==='A'?'var(--ok)':f==='B'?'var(--warn)':'var(--bad)'}">${f==='X'?'–':f}</b>${f==='X'?'불가':c.ps[p]}</span>`}).join('')}</div>`}
+  ${c.type==='P'?`<div class="pv">${pitchMap(c)}<div class="vel"><small>최고구속</small><b>${c.kmh??'–'}</b><small>km/h</small></div></div>`:fieldMap(c)}
   ${seasonLine(c)}<div class="lbl">스킬</div><div class="sk2"><div class="grid4">${grid}</div>
   <div class="eq">${S.blocks.filter(b=>b.on===c.id).map(b=>`<div><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))}<small>${Object.entries(b.st).map(([k,v])=>SKN[k]+'+'+v).join(' ')}</small></div>`).join('')||'<div class="none">장착한 스킬 없음</div>'}
   <div class="sup2"><span>SUPPORT CARD</span>${supOn(c.id)?`<b>${esc(sp(supOn(c.id).id)[1])}</b><small>${esc(sp(supOn(c.id).id)[3])} · ${supOn(c.id).left}경기 남음</small>`:'<small>없음</small>'}</div></div></div></div>`}
