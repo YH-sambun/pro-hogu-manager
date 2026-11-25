@@ -446,13 +446,25 @@ function vSynth(){const k=S.sk||'p',pool=synPoolF(k),mk=new Set(S.mat),m=pool.fi
 const pick2=a=>a[Math.floor(Math.random()*a.length)];
 // 추천 라인업: 보유 카드로 자동 편성 (능력 우선 / 덱 효과 우선 / 코스트 절약). 코스트 상한 150 안에서
 const bv=c=>c.r.con*.35+c.r.pow*.35+c.r.eye*.2+c.r.spd*.1;
-function recommend(mode){for(let cp=0;cp<=12;cp+=.5){const r=recommend1(mode,cp);if(recCost(r)<=COST_CAP||cp>=12)return r}}
-const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||(t.s&&c.name===t.s))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
+// 코스트 페널티 cp를 이분 탐색: 상한 안에 들어가는 가장 작은 cp(=예산을 최대한 씀)
+function recommend(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)return r;let lo=0,hi=12,best=recommend1(mode,hi);for(let i=0;i<14;i++){const m=(lo+hi)/2,x=recommend1(mode,m);if(recCost(x)<=COST_CAP){hi=m;best=x}else lo=m}return best}
+const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
 // 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
-let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{return recommend('power')}finally{S.recF=keep;REC_ALL=0}}
-function recommend1(mode,cp){const own=exTrim([...new Map((REC_ALL?CARDS:OWN.filter(c=>!c.dup&&!abOf(c.id))).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
+let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{let r=recommend('power');if(recCost(r)>COST_CAP){REC_ALL=2;r=recommend('power')}return recFix(r,recFx())}finally{S.recF=keep;REC_ALL=0}}
+// 계보별 최소 인원(t.q)이 모자라면 주전 중 남는 계보의 낮은 능력 선수를 같은 자리에 설 수 있는 부족 계보 선수로 바꿈(코스트 상한 안에서)
+function recFix(r,t){if(!t||!t.q)return r;const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
+ for(let it=0;it<30;it++){const lc={};for(const s of sl){const c=byId[get(s)];if(c){const l=c.v==='RN'?'*':c.line;lc[l]=(lc[l]||0)+1}}const lc2={...lc};delete lc2['*'];const top=Object.entries(lc2).sort((a,b)=>b[1]-a[1])[0];if(top&&lc['*'])lc2[top[0]]+=lc['*'];
+  const ql=Object.keys(t.q),need=ql.find(l=>(lc[l]||0)<t.q[l])||(ql.reduce((x,l)=>x+(lc2[l]||0),0)<20?ql.sort((a,b)=>(lc2[a]||0)-(lc2[b]||0))[0]:null);if(!need)break;
+  const names=new Set([...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean).map(id=>byId[id].name)),room=COST_CAP-recCost(r);let ok=false;
+  const dn=f=>sl.filter(s=>{const c=byId[get(s)];return c&&!(c.name===t.s&&t.m(c))&&f(c)}).sort((a,b)=>byId[get(a)].ovr-byId[get(b)].ovr),don=dn(c=>c.v!=='RN'&&(!(c.line in t.q)||(lc[c.line]||0)>t.q[c.line]&&c.line!==need));
+  for(const s of don.length?don:dn(c=>c.v==='RN')){const o=byId[get(s)];
+   const c=CARDS.filter(c=>c.line===need&&c.type===o.type&&c.v!=='EX'&&c.v!=='RN'&&!names.has(c.name)&&c.cost<=o.cost+room&&(s[0]==='lu'?canPos(c,r.lu[s[1]][0]):s[0]==='rot'?c.pos==='SP':true)).sort((a,b)=>b.ovr-a.ovr)[0];
+   if(c){set(s,c.id);ok=true;break}}
+  if(!ok)break}
+ return r}
+function recommend1(mode,cp){const own=exTrim([...new Map((REC_ALL?(recFx()&&REC_ALL===1?CARDS.filter(recMatch):CARDS):OWN.filter(c=>!c.dup&&!abOf(c.id))).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
  const yc={};for(const c of own){const k=c.year+' '+c.team;yc[k]=(yc[k]||0)+1}const topY=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0][0];
- const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0)+(recFx()&&recFx().s&&c.name===recFx().s?80:0);
+ const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0)+(recFx()&&recFx().s&&c.name===recFx().s&&recFx().m(c)?80:0);
  const B=own.filter(c=>c.type==='B'),P=own.filter(c=>c.type==='P'),used2=new Set(),lu=[];
  for(const p of ['C','SS','CF','2B','3B','RF','LF','1B']){const cand=B.filter(c=>!used2.has(c.id)&&canPos(c,p)).map(c=>[c,(c.ps&&c.ps[p]!=null?c.ps[p]*.5:-1e9)+bv(c)*.8+w(c)]).sort((a,b)=>b[1]-a[1])[0];if(cand){used2.add(cand[0].id);lu.push([p,cand[0].id])}}
  const dh=B.filter(c=>!used2.has(c.id)).sort((a,b)=>bv(b)+w(b)-bv(a)-w(a))[0];if(dh){used2.add(dh.id);lu.push(['DH',dh.id])}
