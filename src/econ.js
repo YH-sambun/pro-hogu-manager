@@ -219,8 +219,8 @@ function unequip(S,u){const it=(S.eq||[]).find(x=>x.u===u);if(it)it.on=null;retu
 // 카드에 끼운 장비 합계 {stat:+v}. 엔진이 능력치에 더할 때 사용
 function cardEq(S,cardId,byId){const o={},c=byId[cardId];for(const it of S.eq||[])if(it.on===cardId){const b=eqBonus(it,c);if(b)o[b.stat]=(o[b.stat]|0)+b.v}return o}
 // ── 미션 챕터(OOTP식) ─────────────────────────────────────────
-// 구단 계보마다 챕터 1개, 미션 ★1~★5. 미션 3개 → 그 구단 EX 확정권, 5개 → 미션 전용 EX(c.mx, 없으면 EX 확정권+1만P)
-// 챕터 3개 완료 → 레전드 선택권, 전부 → 명예의 전당 보상. 완료 기록 S.ms[챕터id]={m1:시각,...,mid,fin}
+// 구단 계보마다 챕터 1개, 미션 ★1~★5. 미션 3개 → 그 구단 EX 확정권, 5개 → 영구결번 카드(v:'RN', mx) 1장 + 전설 장비. 챕터 재완료는 없음
+// 챕터 3개 완료 → 레전드 선택권, 전부 → 명예의 전당 보상(첫 완료 기준 S.msFin). 진행 기록 S.ms[챕터id]={cyc,m1:시각,...,mid,fin}
 // 제출 미션은 기본적으로 중복만 소모(1장은 남김). S.opt.submitLast=true면 마지막 1장도 제출 가능(도감 기록은 유지)
 const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['m2',2,'그 구단 주전 세트 1개 완성',{pt:2000,tix:{star:1},eq:'일반'}],
   ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,exShard:1,eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 주간 리그 4단계 이상 우승',{pt:4000,tix:{gg:1},eq:'희귀'}],
@@ -228,24 +228,32 @@ const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['
 const MS_META=[[3,'챕터 3개 완료',{pt:10000,tix:{pick:1}}],['all','모든 챕터 완료 · 명예의 전당',{pt:50000,tix:{pick:2}}]];
 let CHAPTERS=[],CARDS_=[];
 function buildMissions(CARDS){CARDS_=CARDS;const L=[...new Set(CARDS.map(c=>c.line))];
-  CHAPTERS=L.map(l=>({id:'ch:'+l,line:l,mx:CARDS.filter(c=>c.v==='EX'&&c.mx&&c.line===l).map(c=>c.id)}));return CHAPTERS}
+  CHAPTERS=L.map(l=>({id:'ch:'+l,line:l,mx:CARDS.filter(c=>c.mx&&c.line===l).map(c=>c.id)}));return CHAPTERS}
+// 회차: 구단에 영구결번이 여러 장이면(삼성·한화 4장 등) 챕터를 다시 돌 수 있음. 회차 c마다 조건이 올라감
+const msReq=(c)=>({m1:10+5*c,m2:1+c,m3:5+3*c,m4:Math.min(10,4+2*c),m5:3+c});
+const msCyc=(S,ch)=>((S.ms&&S.ms[ch.id]&&S.ms[ch.id].cyc)|0);
+function msText(S,ch,mid){const q=msReq(msCyc(S,ch));return {m1:`그 구단 카드 ${q.m1}장 보유`,m2:`그 구단 주전 세트 ${q.m2}개 완성`,m3:`그 구단 7코스트 이상 카드 ${q.m3}장 제출`,
+  m4:`그 구단 선수 15명 이상 1군으로 주간 리그 ${q.m4}단계 이상 우승`,m5:`그 구단 레전드(9+) 카드 ${q.m5}장 보유`}[mid]}
 const ownedOf=(S,f)=>CARDS_.filter(c=>(S.owned[c.id]|0)>0&&f(c));
 function msProg(S,ch,mid){const l=ch.line,st=(S.ms&&S.ms[ch.id])||{};if(st[mid])return {done:true,have:1,need:1};
-  if(mid==='m1'){const n=ownedOf(S,c=>c.line===l).length;return {have:Math.min(n,10),need:10}}
-  if(mid==='m2'){const n=SETS.some(s=>s.kind==='team'&&s.line===l&&S.dexDone&&S.dexDone[s.id]);return {have:n?1:0,need:1}}
-  if(mid==='m3'){return {have:(st.sub|0),need:5}}
-  if(mid==='m4')return {have:0,need:1};
-  if(mid==='m5'){const n=ownedOf(S,c=>c.line===l&&c.cost>=9).length;return {have:Math.min(n,3),need:3}}}
+  const q=msReq(st.cyc|0);
+  if(mid==='m1'){const n=ownedOf(S,c=>c.line===l).length;return {have:Math.min(n,q.m1),need:q.m1}}
+  if(mid==='m2'){const n=SETS.filter(s=>s.kind==='team'&&s.line===l&&S.dexDone&&S.dexDone[s.id]).length;return {have:Math.min(n,q.m2),need:q.m2}}
+  if(mid==='m3'){return {have:(st.sub|0),need:q.m3}}
+  if(mid==='m4')return {have:0,need:1,tier:q.m4};
+  if(mid==='m5'){const n=ownedOf(S,c=>c.line===l&&c.cost>=9&&!c.mx).length;return {have:Math.min(n,q.m5),need:q.m5}}}
 function msDone(S,ch,mid,out){S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{};if(st[mid])return;st[mid]=Date.now();
   const rw={...MS_DEF.find(m=>m[0]===mid)[3]};if(rw.exShard){S.exShard=(S.exShard|0)+rw.exShard;while(S.exShard>=3){S.exShard-=3;rw.tix={...(rw.tix||{}),ex:((rw.tix||{}).ex|0)+1}}delete rw.exShard}
   let eqx='';if(rw.eq){const it=mkEquip(S,rw.eq,ch.line);eqx=' · 장비: '+eqName(it);delete rw.eq}
-  grant(S,rw);out.push({ch:ch.line,what:MS_DEF.find(m=>m[0]===mid)[2]+(mid==='m3'?' (EX 조각 +1)':'')+eqx,rw});
+  grant(S,rw);out.push({ch:ch.line,what:msText(S,ch,mid)+(mid==='m3'?' (EX 조각 +1)':'')+eqx,rw});
   const n=MS_DEF.filter(m=>st[m[0]]).length;
   if(n>=3&&!st.mid){st.mid=Date.now();const r={tix:{ex:1}};grant(S,r);out.push({ch:ch.line,what:'미션 3개 달성',rw:r})}
   if(n>=5&&!st.fin){st.fin=Date.now();{const it=mkEquip(S,'전설',ch.line);out.push({ch:ch.line,what:'챕터 완료 · 전설 장비: '+eqName(it),rw:{}})}const miss=ch.mx.filter(id=>!(S.owned[id]>0));
     if(ch.mx.length){const id=(miss.length?miss:ch.mx)[Math.floor(rnd()*(miss.length||ch.mx.length))];gain(S,[id]);out.push({ch:ch.line,what:'챕터 완료',card:id,rw:{}})}
     else{const r={pt:10000,tix:{ex:1}};grant(S,r);out.push({ch:ch.line,what:'챕터 완료',rw:r})}
-    const fin=CHAPTERS.filter(c=>S.ms[c.id]&&S.ms[c.id].fin).length;S.msMeta=S.msMeta||{};
+    S.msFin=S.msFin||{};if(!S.msFin[ch.id])S.msFin[ch.id]=Date.now();
+    if(ch.mx.some(id=>!(S.owned[id]>0))){S.ms[ch.id]={cyc:(st.cyc|0)+1};out.push({ch:ch.line,what:`${(st.cyc|0)+2}회차 시작 (남은 영구결번 ${ch.mx.filter(id=>!(S.owned[id]>0)).length}장, 조건 상향)`,rw:{}})}
+    const fin=CHAPTERS.filter(c=>S.msFin[c.id]).length;S.msMeta=S.msMeta||{};
     for(const [k,name,r] of MS_META){const need=k==='all'?CHAPTERS.length:k;if(fin>=need&&!S.msMeta[k]){S.msMeta[k]=Date.now();grant(S,r);out.push({ch:'',what:name,rw:r})}}}}
 // 보유·도감 조건 미션 자동 확인(카드 얻은 뒤, 화면 열 때 호출). 새로 깬 미션 목록 반환
 function missionCheck(S){const out=[];for(const ch of CHAPTERS)for(const mid of ['m1','m2','m5']){const p=msProg(S,ch,mid);if(!p.done&&p.have>=p.need)msDone(S,ch,mid,out)}return out}
@@ -254,11 +262,11 @@ function missionSubmit(S,line,ids){const ch=CHAPTERS.find(c=>c.line===line);if(!
   if(st.m3)return {err:'이미 완료한 미션이에요'};const last=S.opt&&S.opt.submitLast,use={};
   for(const id of ids){const c=CARDS_.find(x=>x.id===id);if(!c||c.line!==line||c.cost<7)return {err:'그 구단 7코스트 이상 카드만 낼 수 있어요'};use[id]=(use[id]|0)+1}
   for(const id in use){const keep=last?0:1;if((S.owned[id]|0)-use[id]<keep)return {err:last?'가진 장수보다 많아요':'중복 카드만 낼 수 있어요 (옵션에서 마지막 1장 제출 허용 가능)'}}
-  const room=5-(st.sub|0);let n=0;for(const id in use){const k=Math.min(use[id],room-n);if(k<=0)break;S.owned[id]-=k;if(S.owned[id]<=0)delete S.owned[id];n+=k}
-  st.sub=(st.sub|0)+n;const out=[];if(st.sub>=5)msDone(S,ch,'m3',out);return {used:n,have:st.sub,out}}
+  const room=msReq(st.cyc|0).m3-(st.sub|0);let n=0;for(const id in use){const k=Math.min(use[id],room-n);if(k<=0)break;S.owned[id]-=k;if(S.owned[id]<=0)delete S.owned[id];n+=k}
+  st.sub=(st.sub|0)+n;const out=[];if(st.sub>=msReq(st.cyc|0).m3)msDone(S,ch,'m3',out);return {used:n,have:st.sub,out}}
 // ★4: 주간 리그 우승 때 모드 쪽에서 호출. lineupCards = 1군 카드 객체 배열
-function missionLeague(S,tier,lineupCards){const out=[];if(tier<4)return out;const cnt={};for(const c of lineupCards||[])if(c)cnt[c.line]=(cnt[c.line]|0)+1;
-  for(const ch of CHAPTERS)if((cnt[ch.line]|0)>=15)msDone(S,ch,'m4',out);return out}
+function missionLeague(S,tier,lineupCards){const out=[];const cnt={};for(const c of lineupCards||[])if(c)cnt[c.line]=(cnt[c.line]|0)+1;
+  for(const ch of CHAPTERS)if((cnt[ch.line]|0)>=15&&tier>=msReq(msCyc(S,ch)).m4)msDone(S,ch,'m4',out);return out}
 const isMissionOnly=c=>!!(c&&c.mx);
 // ── 4. 공통 ──────────────────────────────────────────────────
 function grant(S,rw){if(!rw)return S;S.pt=(S.pt||0)+(rw.pt||0);S.tix=S.tix||{};for(const k in rw.tix||{})S.tix[k]=(S.tix[k]|0)+rw.tix[k];return S}
@@ -271,6 +279,6 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
   S.dexDone=S.dexDone||{};return S}
 
 const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,pityTick,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
-  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,missionCheck,missionSubmit,missionLeague,isMissionOnly,EQ_KIND,EQ_SLOTS,EQ_G,EQ_BASE,mkEquip,eqName,eqBonus,equip,unequip,cardEq,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
+  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,msText,msReq,msCyc,missionCheck,missionSubmit,missionLeague,isMissionOnly,EQ_KIND,EQ_SLOTS,EQ_G,EQ_BASE,mkEquip,eqName,eqBonus,equip,unequip,cardEq,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);

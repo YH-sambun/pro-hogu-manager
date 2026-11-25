@@ -285,11 +285,11 @@ function deckBar(){const d=deckFx();return `<div class="deck">
  ${meter('코스트 (1군 25명 전체)',`${d.cost} / ${COST_CAP}`,COST_CAP,d.cost>COST_CAP?'코스트 상한 초과':`남은 코스트 ${COST_CAP-d.cost}`,d.cost>COST_CAP)}
  ${meter('1군 등록',`${d.cnt} / 25`,25,(()=>{const n=exCount(used());return `야수 9 · 벤치 5 · 선발 5 · 불펜 6 · EX 타자 ${n.B}/${EX_MAX.B} · 투수 ${n.P}/${EX_MAX.P}`})())}
  <div class="meter tcm"><b>팀컬러 · 야수 +${d.bat} · 투수 +${d.pit}</b><div class="tcl">${d.fx.map(tcChip).join('')||'<span class="note">아직 없음</span>'}<button class="ghost tcall" data-a="tcall" aria-pressed="${!!S.tcAll}">${S.tcAll?'접기':'고르기'}</button></div></div></div>
- ${S.tcAll?fxPickHTML(used().map(id=>byId[id]).filter(Boolean),S.team.fxsel,'team'):''}`}
+ ${S.tcAll?fxPickHTML(starters(S.team),S.team.fxsel,'team'):''}`}
 // 덱 효과 고르기: 조건을 채운 효과 중 등급(S·A·B)마다 1개, 최대 3개. sel은 효과 key 배열
 function fxPickHTML(cards,sel,scope){const T=teamColor(cards,sel),A=T.all||[],on=new Set(T.fx.map(x=>x.key));
  return `<div class="fxpick">${['S','A','B'].map(g=>{const o=A.filter(x=>x.g===g);return `<label class="fxg g-${g}"><i>${g}</i><select data-fxg="${g}" data-fxs="${scope}" ${o.length?'':'disabled'} aria-label="${g}등급 덱 효과">${o.length?o.map(x=>`<option value="${esc(x.key)}"${on.has(x.key)?' selected':''}>${esc(x.name)} · ${esc(x.d)} (야수 +${x.b} · 투수 +${x.p})</option>`).join(''):'<option>조건을 채운 효과 없음</option>'}</select></label>`}).join('')}</div>`}
-function fxSet(scope,g,key){const tgt=scope==='bld'?S.bld:S.team,cards=scope==='bld'?bldCards():used().map(id=>byId[id]).filter(Boolean),A=teamColor(cards,tgt.fxsel).all||[];
+function fxSet(scope,g,key){const tgt=scope==='bld'?S.bld:S.team,cards=scope==='bld'?bldStart():starters(S.team),A=teamColor(cards,tgt.fxsel).all||[];
  const keep=(tgt.fxsel||[]).filter(k=>{const x=A.find(y=>y.key===k);return x&&x.g!==g});tgt.fxsel=[...keep,key];save();render()}
 function field(){return `<div class="field"><svg viewBox="0 0 100 86" preserveAspectRatio="none" aria-hidden="true">
  <rect width="100" height="86" fill="#2a7d4f"/>${[0,1,2,3,4,5,6,7].map(i=>`<rect x="${i*12.5}" width="6.25" height="86" fill="rgba(255,255,255,.05)"/>`).join('')}
@@ -526,6 +526,7 @@ const BLD_POS=['C','1B','2B','3B','SS','LF','CF','RF','DH'];
 function bldInit(){const B=S.bld=S.bld||{};if(!B.lu)B.lu=BLD_POS.map(p=>[p,null]);B.bench=B.bench||[null,null,null,null,null];B.rot=B.rot||[null,null,null,null,null];B.pen=B.pen||[null,null,null,null,null,null];B.fxsel=B.fxsel||[];return B}
 const bldIds=()=>{const B=bldInit();return [...B.lu.map(x=>x[1]),...B.bench,...B.rot,...B.pen].filter(Boolean)};
 const bldCards=()=>bldIds().map(id=>byId[id]).filter(Boolean);
+const bldStart=()=>{const B=bldInit();return [...B.lu.map(x=>x[1]),...B.rot,...B.pen].filter(Boolean).map(id=>byId[id]).filter(Boolean)};
 function bldSlotGet(k){const [a,i]=k.split(':'),B=bldInit();return a==='lu'?B.lu[+i][1]:B[a][+i]}
 function bldSlotSet(k,id){const [a,i]=k.split(':'),B=bldInit();if(a==='lu')B.lu[+i][1]=id;else B[a][+i]=id}
 function bldPut(id){const c=byId[id],B=bldInit();if(!c)return;if(bldIds().some(x=>byId[x]&&byId[x].pk===c.pk&&byId[x].type===c.type)){S.msg=`${c.name}은(는) 이미 포함`;return}
@@ -534,7 +535,7 @@ function bldPut(id){const c=byId[id],B=bldInit();if(!c)return;if(bldIds().some(x
   if(c.type==='B'){const i=B.lu.findIndex(x=>!x[1]&&canPlay(c,x[0]));k=i>=0?'lu:'+i:free('bench')[0]}
   else k=(c.pos==='SP'?free('rot')[0]||free('pen')[0]:free('pen')[0]||free('rot')[0])}
  if(!k){S.msg='빈 자리 없음. 바꿀 자리 먼저 선택';return}bldSlotSet(k,id);S.bldSel=null;S.msg=''}
-function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cost=cards.reduce((t,c)=>t+c.cost,0),ex=exCount([...ids]),own=cards.filter(c=>S.owned[c.id]).length,T=teamColor(cards,B.fxsel),F=S.bldF=S.bldF||{};
+function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cost=cards.reduce((t,c)=>t+c.cost,0),ex=exCount([...ids]),own=cards.filter(c=>S.owned[c.id]).length,T=teamColor(bldStart(),B.fxsel),F=S.bldF=S.bldF||{};
  const row=(k,lab,sub)=>{const id=bldSlotGet(k),c=byId[id];return `<tr class="${S.bldSel===k?'sel':''}${c&&!S.owned[c.id]?' noown':''}" data-bslot="${k}" role="button" tabindex="0"><td class="l"><b>${lab}</b>${sub?` <small>${sub}</small>`:''}</td>${c?`<td class="l">${esc(c.name)}${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${c.ovr}</td><td>${c.cost}</td><td>${S.owned[c.id]?'보유':'<span class="mute">없음</span>'}</td><td><button class="ghost bx" data-bclr="${k}" aria-label="빼기">×</button></td>`:'<td class="l mute" colspan="6">비어 있음</td>'}</tr>`};
  const pool=(()=>{const q=(F.q||'').trim();let L=CARDS.filter(c=>(!F.y||c.year===+F.y)&&(!F.t||c.team===F.t)&&(!F.p||(F.p==='P'?c.type==='P':F.p==='B'?c.type==='B':c.pos===F.p))&&(!F.own||S.owned[c.id])&&(!q||c.name.includes(q))&&(!F.v||(F.v==='n'?!c.v:c.v===F.v)));
   return L.sort((a,b)=>b.ovr-a.ovr||b.cost-a.cost)})(),lim=S.bldLim||40;
@@ -542,7 +543,7 @@ function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cos
  const full=cards.length===25,allOwn=full&&own===25;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">덱 짜보기</h2><button class="ghost" data-a="bldfrom">지금 라인업 가져오기</button><button class="ghost" data-a="bldclr">${S.bldClr?'한 번 더 누르면 비움':'모두 비우기'}</button><button data-a="bldapply" ${allOwn?'':'disabled'} title="${allOwn?'':'25명 모두 보유해야 적용 가능'}">라인업에 적용</button><button class="ghost" data-a="bldsave" ${full?'':'disabled'}>덱으로 저장</button></div>
  <div class="bsum"><span>코스트 <b class="${cost>COST_CAP?'bad':''}">${cost}</b>/${COST_CAP}</span><span>인원 <b>${cards.length}</b>/25</span><span>보유 <b>${own}</b>/${cards.length}</span><span>EX 타자 <b class="${ex.B>EX_MAX.B?'bad':''}">${ex.B}</b>/${EX_MAX.B} · 투수 <b class="${ex.P>EX_MAX.P?'bad':''}">${ex.P}</b>/${EX_MAX.P}</span><span>덱 효과 야수 <b>+${T.bat}</b> · 투수 <b>+${T.pit}</b></span></div>
- ${fxPickHTML(cards,B.fxsel,'bld')}
+ ${fxPickHTML(bldStart(),B.fxsel,'bld')}
  ${S.msg?`<p class="note hint on" aria-live="polite">${esc(S.msg)}</p>`:''}
  <div class="bld"><div class="scroll"><table class="tbl bslots"><thead><tr><th class="l">자리</th><th class="l">선수</th><th>연도·구단</th><th>능력</th><th>코스트</th><th>보유</th><th></th></tr></thead><tbody>
  ${B.lu.map((x,i)=>row('lu:'+i,(i+1)+'번',PFULL[x[0]])).join('')}${B.bench.map((x,i)=>row('bench:'+i,'벤치',i+1)).join('')}${B.rot.map((x,i)=>row('rot:'+i,'선발',i+1)).join('')}${B.pen.map((x,i)=>row('pen:'+i,i===0?'마무리':i===1?'셋업':'중계',i>1?i-1:'')).join('')}</tbody></table></div>
