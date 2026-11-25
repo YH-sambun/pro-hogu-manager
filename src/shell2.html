@@ -684,6 +684,25 @@ body.xl .yly.won{background:#e6f2ea!important}body.xl .yly.todo{background:#fff!
 @media(min-width:700px){.deck{grid-template-columns:3fr 2fr}.deck .meter.reg{grid-column:auto}.deck>.meter.reg+.meter{grid-row:auto}}
 .strip>.sh[data-tb]{cursor:pointer}.strip.cur{border-color:var(--clay);box-shadow:0 0 0 1px var(--clay)}.strip:not(.cur):not(.tcr)>.sh{opacity:.6}
 .lu2 .tabs.tb{margin-right:6px}.lu2 .tabs.tb button{font-weight:800}
+/* readability: weekly league */
+.chip.lad{padding:4px 10px;border-radius:10px;font-size:14px;font-weight:600;border:1px solid #6b7a72;color:#e9efe9;background:rgba(0,0,0,.35)}
+.chip.lad.cur{background:var(--clay);border-color:var(--clay);color:#fff;font-weight:800}
+.chip.lad.done{border-color:#4fbf7d;color:#bff0cf}
+.chip.lad.todo{color:#a9b5ae;border-color:#3f4a44;border-style:dashed}
+.lg .res div{font-size:15px;align-items:center;background:rgba(0,0,0,.45)}
+.lg .res .lose{color:#9aa69f}.lg .res .win{color:#fff;font-weight:700}
+.lg .res b{font:800 20px var(--fh);color:#9aa69f}.lg .res b i{font-style:normal}.lg .res b i.hi{color:var(--gold,#f2c94c)}
+.lg .res .me{outline:2px solid var(--clay);background:rgba(0,0,0,.6)}
+.lg details.gl>summary.glr,.glr{display:grid;grid-template-columns:2em 4.2em minmax(0,10em) 5.5em minmax(0,10em) 3em 1fr;align-items:center;gap:8px;padding:8px 4px;font-size:15px;cursor:pointer}
+.glr::after{content:'▾';color:var(--mute);text-align:right}details[open]>.glr::after{content:'▴'}
+.lg details.gl>summary.glr{list-style:none}.lg details.gl>summary.glr::-webkit-details-marker{display:none}
+.glr .wl{display:inline-grid;place-items:center;width:1.8em;height:1.8em;border-radius:6px;font-size:13px;color:#fff}
+.glr .wl.w{background:#c8233a}.glr .wl.l{background:#46607a}.glr .wl.d{background:#6b6b6b}
+.glr .gn{color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
+.glr .ta{text-align:right;color:#c6d0ca}.glr .th{color:#c6d0ca}.glr .me{color:var(--gold,#f2c94c);font-weight:800}
+.glr .gs{display:flex;justify-content:center;gap:6px;font:800 19px var(--fh);font-variant-numeric:tabular-nums;color:#9aa69f}.glr .gs i{font-style:normal;min-width:1.4em;text-align:center}.glr .gs i.hi{color:#fff}.glr .gs em{font-style:normal}
+.glr .ha{font-size:12px;color:var(--mute);text-align:center}
+@media(max-width:600px){.lg details.gl>summary.glr,.glr{grid-template-columns:1.8em minmax(0,1fr) 4.5em minmax(0,1fr) 1em;font-size:14px}.glr .gn,.glr .ha{display:none}}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>

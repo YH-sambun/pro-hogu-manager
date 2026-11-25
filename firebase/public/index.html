@@ -684,6 +684,25 @@ body.xl .yly.won{background:#e6f2ea!important}body.xl .yly.todo{background:#fff!
 @media(min-width:700px){.deck{grid-template-columns:3fr 2fr}.deck .meter.reg{grid-column:auto}.deck>.meter.reg+.meter{grid-row:auto}}
 .strip>.sh[data-tb]{cursor:pointer}.strip.cur{border-color:var(--clay);box-shadow:0 0 0 1px var(--clay)}.strip:not(.cur):not(.tcr)>.sh{opacity:.6}
 .lu2 .tabs.tb{margin-right:6px}.lu2 .tabs.tb button{font-weight:800}
+/* readability: weekly league */
+.chip.lad{padding:4px 10px;border-radius:10px;font-size:14px;font-weight:600;border:1px solid #6b7a72;color:#e9efe9;background:rgba(0,0,0,.35)}
+.chip.lad.cur{background:var(--clay);border-color:var(--clay);color:#fff;font-weight:800}
+.chip.lad.done{border-color:#4fbf7d;color:#bff0cf}
+.chip.lad.todo{color:#a9b5ae;border-color:#3f4a44;border-style:dashed}
+.lg .res div{font-size:15px;align-items:center;background:rgba(0,0,0,.45)}
+.lg .res .lose{color:#9aa69f}.lg .res .win{color:#fff;font-weight:700}
+.lg .res b{font:800 20px var(--fh);color:#9aa69f}.lg .res b i{font-style:normal}.lg .res b i.hi{color:var(--gold,#f2c94c)}
+.lg .res .me{outline:2px solid var(--clay);background:rgba(0,0,0,.6)}
+.lg details.gl>summary.glr,.glr{display:grid;grid-template-columns:2em 4.2em minmax(0,10em) 5.5em minmax(0,10em) 3em 1fr;align-items:center;gap:8px;padding:8px 4px;font-size:15px;cursor:pointer}
+.glr::after{content:'▾';color:var(--mute);text-align:right}details[open]>.glr::after{content:'▴'}
+.lg details.gl>summary.glr{list-style:none}.lg details.gl>summary.glr::-webkit-details-marker{display:none}
+.glr .wl{display:inline-grid;place-items:center;width:1.8em;height:1.8em;border-radius:6px;font-size:13px;color:#fff}
+.glr .wl.w{background:#c8233a}.glr .wl.l{background:#46607a}.glr .wl.d{background:#6b6b6b}
+.glr .gn{color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
+.glr .ta{text-align:right;color:#c6d0ca}.glr .th{color:#c6d0ca}.glr .me{color:var(--gold,#f2c94c);font-weight:800}
+.glr .gs{display:flex;justify-content:center;gap:6px;font:800 19px var(--fh);font-variant-numeric:tabular-nums;color:#9aa69f}.glr .gs i{font-style:normal;min-width:1.4em;text-align:center}.glr .gs i.hi{color:#fff}.glr .gs em{font-style:normal}
+.glr .ha{font-size:12px;color:var(--mute);text-align:center}
+@media(max-width:600px){.lg details.gl>summary.glr,.glr{grid-template-columns:1.8em minmax(0,1fr) 4.5em minmax(0,1fr) 1em;font-size:14px}.glr .gn,.glr .ha{display:none}}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2579,7 +2598,7 @@ function recGame(L,g,pr,tag){const B=s=>Object.values(g.bx[s]).map(b=>[b.c.name,
   L.gl=[...(L.gl||[]),{n:tag||L.round+1,a:pr[0],h:pr[1],sc:g.sc,ln:g.line,ht:g.hits,bx:[B(0),B(1)],px:[P(0),P(1)],hl:hlOf(g,pr).log}].slice(-20)}
 function gamesHTML(L){const G=(L.gl||[]).slice().reverse();if(!G.length)return '';const ip=o=>`${Math.floor(o/3)}.${o%3}`;
   return `<section class="band"><h3>내 경기 기록 <small>최근 ${G.length}경기 · 눌러서 세부 기록</small></h3>${G.map(x=>{const me=x.a===0?0:1,w=x.sc[me]>x.sc[1-me]?'승':x.sc[me]<x.sc[1-me]?'패':'무',n=Math.max(9,x.ln[0].length);
-   return `<details class="gl"><summary><b>${w}</b> ${typeof x.n==='number'?x.n+'경기':esc(x.n)} · ${esc(tname(x.a,L))} ${x.sc[0]} : ${x.sc[1]} ${esc(tname(x.h,L))}</summary>
+   return `<details class="gl"><summary class="glr"><b class="wl ${w==='승'?'w':w==='패'?'l':'d'}">${w}</b><span class="gn">${typeof x.n==='number'?x.n+'경기':esc(x.n)}</span><span class="ta${me===0?' me':''}">${esc(tname(x.a,L))}</span><span class="gs"><i class="${x.sc[0]>x.sc[1]?'hi':''}">${x.sc[0]}</i><em>:</em><i class="${x.sc[1]>x.sc[0]?'hi':''}">${x.sc[1]}</i></span><span class="th${me===1?' me':''}">${esc(tname(x.h,L))}</span><small class="ha">${me?'홈':'원정'}</small></summary>
    <div class="scroll"><table class="tbl ls"><thead><tr><th class="l"></th>${Array.from({length:n},(_,i)=>`<th>${i+1}</th>`).join('')}<th>R</th><th>H</th></tr></thead><tbody>${[0,1].map(s=>`<tr><td class="l">${esc(tname(s?x.h:x.a,L))}</td>${Array.from({length:n},(_,i)=>`<td>${x.ln[s][i]??''}</td>`).join('')}<td><b>${x.sc[s]}</b></td><td>${x.ht[s]}</td></tr>`).join('')}</tbody></table></div>
    ${[0,1].map(s=>`<div class="scroll"><table class="tbl"><thead><tr><th class="l">${esc(tname(s?x.h:x.a,L))}</th><th>타수</th><th>안타</th><th>홈런</th><th>타점</th><th>득점</th><th>볼넷</th><th>삼진</th><th>도루</th><th>보살</th><th>실책</th></tr></thead><tbody>${x.bx[s].map(b=>`<tr><td class="l">${esc(b[0])} <small>${PK[b[1]]||b[1]}</small></td>${b.slice(2).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>
    <table class="tbl"><thead><tr><th class="l">투수</th><th>이닝</th><th>피안타</th><th>실점</th><th>볼넷</th><th>삼진</th></tr></thead><tbody>${x.px[s].map(p=>`<tr><td class="l">${esc(p[0])}</td><td>${ip(p[1])}</td>${p.slice(2).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('')}
@@ -2635,7 +2654,7 @@ function tableHTML(L,title){L=L||S.season;const R=lgStand(L),top=R[0],me=R.findI
   return `<section class="band"><div class="tools"><h3 style="margin:0;margin-right:auto">${title||'순위표'}</h3><button class="ghost" data-a="m-stand" aria-expanded="true">접기</button></div><div class="scroll"><table class="tbl"><thead><tr><th>순위</th><th class="l">구단</th><th>경기</th><th>승</th><th>패</th><th>무</th><th>승률</th><th>게임차</th><th>득점</th><th>실점</th></tr></thead><tbody>
   ${R.map((x,k)=>`<tr class="${x.i===0?'me':''}"><td>${k+1}</td><td class="l"><i class="dot" style="background:${x.i===0?'#e07a45':L.teams[x.i].color}"></i>${esc(tname(x.i,L))}</td><td>${x.g}</td><td>${x.w}</td><td>${x.l}</td><td>${x.d}</td><td>${x.pct.toFixed(3).replace(/^0/,'')}</td><td>${k?(((top.w-x.w)+(x.l-top.l))/2).toFixed(1):'-'}</td><td>${x.rs}</td><td>${x.ra}</td></tr>`).join('')}</tbody></table></div></section>`}
 function lastHTML(L){return lastRes(L)+gamesHTML(L)+statsHTML(L)}
-function lastRes(L){return L.last&&L.last.length?`<section class="band"><h3>지난 경기</h3><div class="res">${L.last.map(x=>`<div class="${x.me?'me':''}"><span>${esc(tname(x.a,L))}</span><b>${x.sc[0]} : ${x.sc[1]}</b><span>${esc(tname(x.h,L))}</span></div>`).join('')}</div></section>`:''}
+function lastRes(L){return L.last&&L.last.length?`<section class="band"><h3>지난 경기</h3><div class="res">${L.last.map(x=>`<div class="${x.me?'me':''}"><span class="${x.sc[0]>x.sc[1]?'win':'lose'}">${esc(tname(x.a,L))}</span><b><i class="${x.sc[0]>x.sc[1]?'hi':''}">${x.sc[0]}</i> : <i class="${x.sc[1]>x.sc[0]?'hi':''}">${x.sc[1]}</i></b><span class="${x.sc[1]>x.sc[0]?'win':'lose'}">${esc(tname(x.h,L))}</span></div>`).join('')}</div></section>`:''}
 // 내 투수 피로도 표시: 피로가 남은 투수만. 선발은 15 미만이어야 등판, 불펜은 55 이상이면 그날 휴식
 function fatHTML(L){const T=teamOf(0,L),F=fatOf(L,0),P=[...(T.rot||[]).map(id=>[id,'선발']),...(T.pen||[]).map(id=>[id,'불펜'])].filter(([id])=>id&&(F[id]||0)>0).sort((a,b)=>F[b[0]]-F[a[0]]);
  if(!P.length)return '<p class="note fat" style="margin:6px 0 0">투수 피로 없음</p>';
@@ -2646,7 +2665,7 @@ function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),
    <div class="vs"><small class="mlab">${label}</small><b>VS</b><div class="btns fixbtn"><button class="big" data-a="${aS}" ${e.length?'disabled':''}>하이라이트 보기</button><button data-a="${aA}" ${e.length?'disabled':''}>결과만 보기</button></div>${predHTML(L)}${fatHTML(L)}
    ${e.length?`<p class="warn">${esc(e[0])} · <a href="#lineup">라인업 수정</a></p>`:''}</div>
    <div class="side"><small>홈 · 평균 ${teamOvr(H)}</small><h2>${esc(tname(pr[1],L))}</h2>${sp(H)?cardHTML(sp(H),{cond:pr[1]===0?S.cond[sp(H).id]:0}):''}</div></div>`}
-function ladderHTML(s){return `<div class="btns" style="flex-wrap:wrap;margin-top:8px" aria-label="리그 단계">${TIERS.map((t,i)=>`<span class="chip" style="padding:3px 8px;border-radius:10px;border:1px solid ${i+1===s.tier?'#e07a45':'#555'};${i+1===s.tier?'background:#e07a45;color:#111;font-weight:700':i+1<=(S.lgBest||1)?'':'opacity:.5'}">${i+1}. ${t.n}</span>`).join('')}</div>`}
+function ladderHTML(s){return `<div class="btns" style="flex-wrap:wrap;margin-top:8px" aria-label="리그 단계">${TIERS.map((t,i)=>`<span class="chip lad ${i+1===s.tier?'cur':i+1<=(S.lgBest||1)?'done':'todo'}">${i+1<s.tier||(i+1!==s.tier&&i+1<=(S.lgBest||1))?'✓ ':''}${i+1}. ${t.n}</span>`).join('')}</div>`}
 function vSeason(){
   weekTick();const s=S.season,T=S.team,nxt=s.wk+7*864e5;
   const head=`<p class="mini" title="${esc(TIER_DESC[s.tier-1])} · 주가 끝나면 남은 경기는 결과만 처리(보상 없음)">${wkLabel(s.wk)} · ${s.tier<10?`1위면 <b>${tierName(s.tier+1)}</b> 승급`:'최고 단계'}</p>${ladderHTML(s)}`;
