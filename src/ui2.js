@@ -454,7 +454,7 @@ const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],
 // 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
 let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{let r=recommend('power');if(recCost(r)>COST_CAP){REC_ALL=2;r=recommend('power')}return recFix(recStar(r,recFx()),recFx())}finally{S.recF=keep;REC_ALL=0}}
 // FA 이적 목표: 그 선수(t.s)가 주전에 없으면 같은 자리에 설 수 있는 가장 약한 주전과 바꿔 넣음(코스트 상한 안에서)
-function recStar(r,t){if(!t||!t.s)return r;const ids=[...r.lu.map(x=>x[1]),...r.rot,...r.pen].filter(Boolean);if(ids.some(id=>byId[id]&&byId[id].name===t.s))return r;
+function recStar(r,t){if(t&&t.must){for(const e of t.must){const [n,y]=e.split(':');r=recStar(r,{s:n,m:c=>t.m(c)&&(!y||c.year===+y)})}return r}if(!t||!t.s)return r;const ids=[...r.lu.map(x=>x[1]),...r.rot,...r.pen].filter(Boolean);if(ids.some(id=>byId[id]&&byId[id].name===t.s))return r;
  const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
  const room=COST_CAP-recCost(r),C=CARDS.filter(c=>c.name===t.s&&t.m(c)&&c.v!=='EX').sort((a,b)=>b.ovr-a.ovr);
  for(const c of C)for(const s of sl.filter(s=>{const o=byId[get(s)];return o&&o.type===c.type&&o.v!=='EX'&&c.cost<=o.cost+room&&(s[0]==='lu'?canPos(c,r.lu[s[1]][0]):s[0]==='rot'?c.pos==='SP':true)}).sort((a,b)=>byId[get(a)].ovr-byId[get(b)].ovr)){const o=byId[get(s)];if(t.q&&t.q[o.line]&&o.line!==c.line)continue;set(s,c.id);r.bench=r.bench.filter(id=>!id||byId[id].name!==t.s);return r}
@@ -470,7 +470,7 @@ function recFix(r,t){if(!t||!t.q)return r;const sl=[...r.lu.map((x,i)=>['lu',i])
    if(c){set(s,c.id);ok=true;break}}
   if(!ok)break}
  return r}
-function recommend1(mode,cp){const own=exTrim([...new Map((REC_ALL?(recFx()&&REC_ALL===1?CARDS.filter(recMatch):CARDS):OWN.filter(c=>!c.dup&&!abOf(c.id))).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
+function recommend1(mode,cp){const own=exTrim([...new Map((REC_ALL?(recFx()&&REC_ALL===1&&!recFx().loose?CARDS.filter(recMatch):CARDS):OWN.filter(c=>!c.dup&&!abOf(c.id))).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
  const yc={};for(const c of own){const k=c.year+' '+c.team;yc[k]=(yc[k]||0)+1}const topY=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0][0];
  const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0)+(recFx()&&recFx().s&&c.name===recFx().s&&recFx().m(c)?80:0);
  const B=own.filter(c=>c.type==='B'),P=own.filter(c=>c.type==='P'),used2=new Set(),lu=[];
@@ -615,7 +615,7 @@ function bldAct(a){const B=bldInit();
  if(a==='bldimg'){bldImage(B).then(r=>{S.bldImpMsg=r==='shared'?'이미지 공유':'이미지 저장';render()});return}
  if(a==='bldimp'){const d=bldDecode((document.getElementById('bldimp')||{}).value);if(!d){S.bldImpMsg='잘못된 코드';render();return}Object.assign(B,{lu:d.lu,bench:d.bench,rot:d.rot,pen:d.pen,fxsel:d.fxsel});S.bldCode='';S.bldImpMsg=d.miss?`불러옴 · 없는 카드 ${d.miss}장 제외`:'불러옴';save();render();return}
  if(a==='bldmore'){S.bldLim=(S.bldLim||40)+40}
- else if(a==='bldrec'){const fx=(S.bldF||{}).rx||'',r=recommendAll(fx),pad=(a,n)=>[...a,...Array(n).fill(null)].slice(0,n);B.lu=r.lu.map(([p,id])=>[p,id]);B.bench=pad(r.bench,5);B.rot=pad(r.rot,5);B.pen=pad(r.pen,6);B.fxsel=[];S.bldSel=null;const t=FX_T_BY[fx];if(t){const nm=t.k[0]==='F'?'FA 이적: '+t.s:t.k[0]==='L'?'단일구단':t.k==='S:AS'?'올스타덱':t.k==='S:GG'?'골든글러브덱':t.k.slice(2),x=(teamColor(bldStart(),[],(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean)).all||[]).find(x=>x.name===nm);if(x)B.fxsel=[x.key]}S.msg=`전체 카드 기준 추천으로 채움${t?' · 목표 '+t.n:''}. 마음에 들면 덱으로 저장`}
+ else if(a==='bldrec'){const fx=(S.bldF||{}).rx||'',r=recommendAll(fx),pad=(a,n)=>[...a,...Array(n).fill(null)].slice(0,n);B.lu=r.lu.map(([p,id])=>[p,id]);B.bench=pad(r.bench,5);B.rot=pad(r.rot,5);B.pen=pad(r.pen,6);B.fxsel=[];S.bldSel=null;const t=FX_T_BY[fx];if(t){const nm=t.k[0]==='N'?t.n:t.k[0]==='F'?'FA 이적: '+t.s:t.k[0]==='L'?'단일구단':t.k==='S:AS'?'올스타덱':t.k==='S:GG'?'골든글러브덱':t.k.slice(2),x=(teamColor(bldStart(),[],(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean)).all||[]).find(x=>x.name===nm);if(x)B.fxsel=[x.key]}S.msg=`전체 카드 기준 추천으로 채움${t?' · 목표 '+t.n:''}. 마음에 들면 덱으로 저장`}
  else if(a==='bldclr'){if(!S.bldClr){S.bldClr=1;render();return}S.bld=null;S.bldClr=0;S.bldSel=null;bldInit()}
  else if(a==='bldfrom'){syncTeam();const T=S.team,L=T.lineup||[];B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=[...(T.bench||[]),null,null,null,null,null].slice(0,5);B.rot=[...(T.rot||[]),null,null,null,null,null].slice(0,5);B.pen=[...(T.pen||[]),null,null,null,null,null,null].slice(0,6);B.fxsel=[...(T.fxsel||[])];S.msg='현재 라인업 불러옴'}
  else if(a==='bldapply'){if(bldCards().some(c=>!S.owned[c.id]))return;Object.assign(S.team,{lineup:B.lu.map(([pos,id])=>({id,pos})),bench:[...B.bench],rot:[...B.rot],pen:[...B.pen],fxsel:[...B.fxsel]});pullTeam();S.msg='라인업 적용 완료';save();go('lineup');return}
@@ -670,7 +670,9 @@ function place(id){const s=S.sel;if(!s)return;const c=by[id];if(c.type!==KIND(s.
 function setPos(i,p){const c=by[S.lu[i][1]];if(!canPos(c,p))return;const j=S.lu.findIndex(x=>x[0]===p);if(j>=0){const o=by[S.lu[j][1]];if(!canPos(o,S.lu[i][0])){S.msg=`${o.name}은(는) ${PFULL[S.lu[i][0]]}수비 불가 · 위치 교환 불가.`;return}S.lu[j][0]=S.lu[i][0]}S.lu[i][0]=p}
 // 구종 그림: 공을 가운데 두고 휘는 방향에 구종을 놓음 (우투수, 투수 시점)
 const PDIR={직구:-90,포심:-90,투심:150,싱커:135,커터:-30,슬라이더:0,커브:45,파워커브:45,슬러브:20,체인지업:120,포크:90,스플리터:90,너클볼:-150,서클체인지업:120,SFF:90};
-function pitchMap(c){const E=Object.entries(c.pt||{}),gc={S:'#e2b23c',A:'#b05ad6',B:'#3d8fd1',C:'#8a9a90',D:'#6b6b6b'};
+// 지금 등급: 카드 능력치 + 덱 효과(1군일 때) + 스킬 블록으로 오른 변화(직구는 구속)만큼 구종 등급이 올라감(SS·SSS·SSS+까지)
+function ptNow(c){if(c.type!=='P')return [];const d=deckFx(),bn=used().includes(c.id)?d.pit||0:0,sk=skillOf(c.id),t=k=>Math.min(120,c.r[k]+bn+(sk[k]||0));return ptGrades(c,t('brk'),t('vel'))}
+function pitchMap(c){const E=ptNow(c).map(x=>[x[0],x[1]]),gc={S:'#e2b23c',A:'#b05ad6',B:'#3d8fd1',C:'#8a9a90',D:'#6b6b6b'};
  return `<svg viewBox="0 0 300 200" class="pmap" role="img" aria-label="구종과 휘는 방향"><rect width="300" height="200" rx="12" fill="var(--board)"/>
  ${[40,70].map(r=>`<circle cx="150" cy="100" r="${r}" fill="none" stroke="rgba(255,255,255,.12)"/>`).join('')}
  <circle cx="150" cy="100" r="16" fill="#fff"/><path d="M140 90 Q150 100 140 110 M160 90 Q150 100 160 110" stroke="#c8102e" stroke-width="1.5" fill="none"/>
@@ -703,7 +705,7 @@ function vCard(){const c=by[S.cardId],op=open(c);
  :`<h3>${PFULL[c.pos]} ${stars(c.cost)}</h3>
   <p class="help" style="margin:0">막대 숫자 = 덱 효과·스킬 블록 포함, 오른쪽 작은 숫자 = 보너스. 육성으로 120까지 오르며 100을 넘는 등급은 S+, SS, SS+로 표시합니다.</p>
   <div class="lbl">덱 효과</div><p style="margin:0">${inUse?`1군 등록 중: ${d.fx.map(x=>`${x.n} ${x.g}`).join(' · ')||'팀컬러 없음'} (${c.type==='B'?'야수 +'+d.bat:'투수 +'+d.pit})`:'1군 등록 시 덱 효과 적용.'}</p>
-  ${c.type==='P'?`<div class="lbl">구종</div><div class="apt">${Object.entries(c.pt).map(([n,g])=>`<span>${esc(n)}<b>${esc(g)}</b></span>`).join('')}</div>`:''}
+  ${c.type==='P'?`<div class="lbl">구종</div><div class="apt">${ptNow(c).map(([n,g],i)=>{const b0=Object.values(c.pt)[i];return `<span>${esc(n)}<b${g.startsWith('SS')?' style="color:#e2b23c"':''}>${esc(g)}</b>${g!==b0?`<small style="opacity:.6"> (기본 ${esc(b0)})</small>`:''}</span>`}).join('')}</div>`:''}
   <div class="lbl">이번 시즌</div><p style="margin:0">${S.gp[baseId(S.cardId)]||0}경기 출전 · 컨디션 <b>${CONDN[condOf(by[S.cardId])]}</b></p>`}</div></div></section>`}
 let grab=null;
 function tapBlk(i,cid){const c=by[cid],r=Math.floor(i/4),q=i%4;const hit=S.blocks.find(b=>b.on===cid&&cells(b).some(([a,d])=>a+b.at[0]===r&&d+b.at[1]===q));
