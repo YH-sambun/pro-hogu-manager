@@ -324,7 +324,9 @@ function vMgr(){const m=MG.find(x=>x.id===S.mgr),fl=S.mf||'all',list=MG.filter(x
  <div class="skill"><b>[${esc(m.sn)}]</b> ${esc(m.se)}</div>
  <div class="lbl">작전 경향 (감독이 정함)</div>${MT.map(([k,n,l,r])=>`<div class="tq"><span>${n}</span><span class="tl">${l}</span><span class="tbar" aria-label="${n}: ${l} ${m.tac[k]} / 4 ${r}"><i style="left:${m.tac[k]*25}%"></i></span><span class="tl">${r}</span></div>`).join('')}
  <p class="note help">감독 이름은 KBO 역대 감독 별명, 성향은 게임용 해석. 모든 경기는 고른 감독의 경향대로 작전이 나와요.</p></div></div>`}
-function mface(m){const hue={small:'#2f7d6d',big:'#c22a2a',speed:'#e8691b',trust:'#23214f',pen:'#0a5fb4',data:'#7b1530'}[m.st];
+// 감독 일러스트(SJ 제공, 2026-11-26). 없으면 아래 SVG 얼굴
+const MGR_IMG={"m7":"img/mgr-130d94c41c.jpg","m1":"img/mgr-211a6a0417.jpg","m12":"img/mgr-b9b00c68da.jpg","m5":"img/mgr-060aa2e4ce.jpg"};
+function mface(m){if(MGR_IMG[m.id])return `<img src="${MGR_IMG[m.id]}" alt="" loading="lazy">`;const hue={small:'#2f7d6d',big:'#c22a2a',speed:'#e8691b',trust:'#23214f',pen:'#0a5fb4',data:'#7b1530'}[m.st];
  let h=0;for(const ch of m.id)h=h*7+ch.charCodeAt(0);const hair=['#1b1d1c','#4a3b30','#8a8a8a','#d0d0d0'][h%4],gl=h%3===0;
  return `<svg viewBox="0 0 80 80" aria-hidden="true"><rect width="80" height="80" rx="40" fill="${hue}"/><path d="M14 80 Q18 60 40 58 Q62 60 66 80Z" fill="#20242a"/><path d="M34 58 L40 70 L46 58" fill="#fff"/>
  <ellipse cx="40" cy="38" rx="15" ry="17" fill="#f1d3b5"/><path d="M25 34 Q26 18 40 18 Q54 18 55 34 Q48 26 40 27 Q32 26 25 34Z" fill="${hair}"/>
