@@ -225,8 +225,8 @@ const L3same=cs=>cs.every(c=>c.line===cs[0].line);
 // opt.ex: 결과에서 뺄 구단 계보(line) 목록, 최대 SYN_EX_MAX개. 걸러서 후보가 없으면 제외를 무시
 const SYN_EX_MAX=3;
 function synth(kind,mats,locks,opt){
-  if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 합성 재료로 쓸 수 없어요'}}
-  if(kind!=='b'&&mats.length!==3)return {err:'재료 3개가 필요해요'};
+  if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 재료 불가'}}
+  if(kind!=='b'&&mats.length!==3)return {err:'재료 3개 필요'};
   if(kind==='p'){const cs=mats.map(id=>byId[baseId(id)]);if(cs.some(c=>!c))return {err:'없는 카드'};
     const EXL=new Set(((opt&&opt.ex)||[]).slice(0,SYN_EX_MAX)),okL=c=>!EXL.has(c.line),exf=P=>{const Q=P.filter(okL);return Q.length?Q:P},exN=EXL.size?`제외: ${[...EXL].join(', ')}`:'';
     const R=synthRules(cs),a=Math.round(cs.reduce((s,c)=>s+c.cost,0)/3),u=rnd(),up=R.up;
@@ -249,10 +249,10 @@ function synth(kind,mats,locks,opt){
       if(!fs.length){const Z=CARDS.filter(c=>base(c)&&c.cost===t);out=pick(Z.length?Z:CARDS.filter(c=>c.v!=='EX'&&c.v!=='AS'&&c.cost===t));break}fs=fs.slice(0,-1)}
     if(R.gg&&rnd()<.25){const g=CARDS.find(c=>c.v==='GG'&&c.pk===out.pk&&c.year===out.year);if(g)out=g}
     return {kind,out:out.id,cost:out.cost,rules:R.list.filter(x=>R.player?x.player&&out.pk===cs[0].pk:(!x.f||fs.includes(x.f))).map(x=>x.n).concat(exN?[exN]:[])}}
-  if(kind==='b'){if(mats.length!==2)return {err:'블록 2개가 필요해요'};const t=mats[0].t;if(mats.some(b=>b.t!==t))return {err:'같은 종류(타자용/투수용) 블록만 합성할 수 있어요'};
+  if(kind==='b'){if(mats.length!==2)return {err:'블록 2개 필요'};const t=mats[0].t;if(mats.some(b=>b.t!==t))return {err:'같은 종류(타자용/투수용) 블록만 합성 가능'};
     const order='CBAS',a=order.indexOf(mats[0].g),b=order.indexOf(mats[1].g);const g=a===b?(rnd()<.6?order[Math.min(3,a+1)]:order[a]):order[Math.max(a,b)];return {kind,out:mkBlock(t,g)}}
-  if(kind==='s'){if(mats.some(x=>x!==mats[0]))return {err:'같은 서포트 카드 3장이 필요해요'};if(mats[0].endsWith('+'))return {err:'강화판은 더 합성할 수 없어요'};return {kind,out:mats[0]+'+'}}
-  if(kind==='t'){const gs=mats.map(id=>TC_BY[id]&&TC_BY[id][3]);if(gs.some(g=>g!==gs[0]))return {err:'같은 등급 카드 3장이 필요해요'};if(gs[0]==='황금')return {err:'황금 카드는 더 합성할 수 없어요'};
+  if(kind==='s'){if(mats.some(x=>x!==mats[0]))return {err:'같은 서포트 카드 3장 필요'};if(mats[0].endsWith('+'))return {err:'강화판은 합성 불가'};return {kind,out:mats[0]+'+'}}
+  if(kind==='t'){const gs=mats.map(id=>TC_BY[id]&&TC_BY[id][3]);if(gs.some(g=>g!==gs[0]))return {err:'같은 등급 카드 3장 필요'};if(gs[0]==='황금')return {err:'황금 카드는 합성 불가'};
     const g=gs[0]==='특수'?'황금':(rnd()<.2?'황금':'특수');return {kind,out:pick(TCARDS.filter(x=>x[3]===g))[0],grade:g}}
   return {err:'알 수 없는 합성'}}
 function clash(mine,opp){return (mine||[]).filter(id=>TC_BY[id]).map(id=>{const c=TC_BY[id];for(const o of opp||[]){const q=TC_BY[o];if(!q)continue;

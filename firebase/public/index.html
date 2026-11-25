@@ -2,28 +2,28 @@
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>프로호구 매니저</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* VOICE 덕아웃 옆 카드 테이블, 수집의 설렘과 전광판의 긴장감 (v1 톤 유지)
    IDEA 잔디 위에 펼친 연도별 선수카드 + 수동식 외야 전광판
    PICTURE 두 줄로 늘어선 오더 카드와 보직 표시, 옆에 배터리 궁합 막대
    COLOUR 잔디 초록 바탕, 흙색 클레이 포인트, 분필 흰색, 카드는 종이색 + 구단색
-   TYPE Black Han Sans + Noto Sans KR
+   TYPE Barlow Condensed(숫자) + IBM Plex Sans KR
    LAYOUT 상단 탭 / 라인업: 야수 줄(타순 9 + 벤치 5), 투수 줄(선발 5 → 중계 4, 셋업, 마무리), 아래 보유 카드 + 배터리 궁합 / 폰: 줄은 가로 스크롤 */
-:root{color-scheme:light dark;--bg:light-dark(#1f6b45,#0b2b1d);--bg2:light-dark(#195a3a,#0f3626);--board:light-dark(#0d3a27,#06190f);--ink:#f3f7f1;--mute:light-dark(#d2e7d9,#a3c1af);--clay:#e07a45;--clay2:#c4602d;--line:rgba(255,255,255,.18);--paper:#fbfaf6;--pi:#1b1d1c;--gold:#ffd27a;--ok:#7fe0a3;--warn:#ffd27a;--bad:#ff8a7a}
+:root{--fh:"Barlow Condensed","IBM Plex Sans KR",sans-serif;--fb:"IBM Plex Sans KR",system-ui,sans-serif;color-scheme:light dark;--bg:light-dark(#1f6b45,#0b2b1d);--bg2:light-dark(#195a3a,#0f3626);--board:light-dark(#0d3a27,#06190f);--ink:#f3f7f1;--mute:light-dark(#d2e7d9,#a3c1af);--clay:#e07a45;--clay2:#c4602d;--line:rgba(255,255,255,.18);--paper:#fbfaf6;--pi:#1b1d1c;--gold:#ffd27a;--ok:#7fe0a3;--warn:#ffd27a;--bad:#ff8a7a}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans KR",system-ui,sans-serif;overflow-x:clip;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 60px,transparent 60px 120px)}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--fb);overflow-x:clip;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 60px,transparent 60px 120px)}
 #app{max-width:1240px;margin:0 auto;padding:0 max(3vw,16px) 60px}
-h1,h2,h3,.logo{font-family:"Black Han Sans","Noto Sans KR",sans-serif;font-weight:400;line-height:1.1;margin:0 0 12px;text-wrap:balance}
+h1,h2,h3,.logo{font-family:var(--fh);font-weight:700;line-height:1.1;margin:0 0 12px;text-wrap:balance}
 h2{font-size:24px}h3{font-size:19px;color:var(--mute)}
-button{font:700 15px "Noto Sans KR",sans-serif;min-height:44px;padding:8px 16px;border-radius:10px;border:0;background:var(--clay);color:#fff;cursor:pointer}
+button{font:700 15px var(--fb);min-height:44px;padding:8px 16px;border-radius:10px;border:0;background:var(--clay);color:#fff;cursor:pointer}
 button.ghost{background:rgba(0,0,0,.22);color:var(--ink);border:1px solid var(--line)}
 button:focus-visible,.slot:focus-visible,.bc:focus-visible,.cell:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:18px 0 12px;border-bottom:2px dashed var(--line)}
 .logo{font-size:28px;margin:0;color:#fff;text-shadow:3px 3px 0 var(--clay2)}
-.logo small{display:block;font:500 13px "Noto Sans KR";color:var(--mute);text-shadow:none;margin-top:4px}
+.logo small{display:block;font:500 13px var(--fb);color:var(--mute);text-shadow:none;margin-top:4px}
 .wallet{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
 .wallet span{background:var(--board);border:1px solid var(--line);padding:6px 12px;border-radius:999px;font-weight:700;white-space:nowrap}
 nav{display:flex;gap:6px;flex-wrap:wrap;width:100%}
@@ -50,9 +50,9 @@ nav a.on{background:var(--clay);color:#fff}
 .field svg{position:absolute;inset:0;width:100%;height:100%}
 .slot{position:absolute;transform:translate(-50%,-50%);width:clamp(74px,15%,112px);background:var(--paper);color:var(--pi);border-radius:9px;padding:0;border:0;min-height:0;text-align:left;box-shadow:0 3px 0 rgba(0,0,0,.35);overflow:hidden;font-weight:500}
 .slot .ph{display:block;height:6px;background:var(--tc)}
-.slot .nm{display:block;font:700 14px/1.2 "Noto Sans KR";padding:4px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .nm{display:block;font:700 14px/1.2 var(--fb);padding:4px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot .mt{display:flex;justify-content:space-between;gap:4px;font-size:12px;padding:0 6px 4px;color:#555}
-.slot .pp{position:absolute;top:-1px;right:-1px;background:var(--pi);color:#fff;font:400 12px "Black Han Sans";padding:2px 5px;border-radius:0 0 0 7px}
+.slot .pp{position:absolute;top:-1px;right:-1px;background:var(--pi);color:#fff;font:700 12px var(--fh);padding:2px 5px;border-radius:0 0 0 7px}
 .slot.sel{outline:3px solid var(--gold);outline-offset:2px}
 .fit-A .mt b{color:#147a42}.cell.g-D{background:#6b6b6b}.fit-B .mt b{color:#9a6a00}.fit-C .mt b{color:#b3261e}
 .slot.empty{background:rgba(255,255,255,.15);color:var(--ink);border:2px dashed var(--line);box-shadow:none;text-align:center}
@@ -61,7 +61,7 @@ nav a.on{background:var(--clay);color:#fff}
 .box h3{margin-bottom:8px}
 ol.ord{list-style:none;margin:0;padding:0;display:grid;gap:4px}
 .ord li{display:grid;grid-template-columns:2em 3.2em minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.16)}
-.ord li .n{font:400 20px "Black Han Sans";color:var(--gold)}
+.ord li .n{font:700 20px var(--fh);color:var(--gold)}
 .ord .ps{font-size:13px;font-weight:700;background:rgba(255,255,255,.12);border-radius:6px;text-align:center;padding:2px 0}
 .ord .x{font-size:13px;color:var(--mute);white-space:nowrap}
 .mv{min-height:36px;width:36px;padding:0;background:rgba(255,255,255,.1)}
@@ -74,7 +74,7 @@ ol.ord{list-style:none;margin:0;padding:0;display:grid;gap:4px}
 .facecrop{transform:scale(1.45);transform-origin:55% 18%}
 .card .art,.oart{overflow:hidden;isolation:isolate}.card .art>img{z-index:1}.card .art>span{z-index:1}.card .plate{position:relative;z-index:2}.oart>i{z-index:1}.onm,.osub{position:relative;z-index:2}
 .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-select{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--board);color:var(--ink)}
+select{font:16px var(--fb);min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--board);color:var(--ink)}
 /* 카드 */
 .card{--tc:#444;position:relative;background:var(--paper);color:var(--pi);border-radius:12px;overflow:hidden;box-shadow:0 4px 0 rgba(0,0,0,.35);cursor:pointer;border:3px solid var(--paper)}
 .card.t-S{border-color:#c9ccd3}.card.t-L{border-color:#e2b23c}
@@ -83,9 +83,9 @@ select{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:1
 .stars{display:inline-block;vertical-align:middle;margin-left:4px;font:400 10px/1 sans-serif;color:var(--gold);letter-spacing:-1px;white-space:nowrap;font-style:normal}.cd .card .stars{font-size:13px}.ost{font:700 10px sans-serif;color:var(--gold);margin-left:3px;font-style:normal}
 .card .ovr .cnd,.oovr .cnd{position:static;display:grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;margin-right:3px;color:#fff;font-style:normal;text-shadow:none;box-shadow:0 1px 0 rgba(0,0,0,.35)}.oovr .cnd{width:14px;height:14px;margin-right:2px}.cnd svg{position:static!important;width:12px!important;height:12px!important;display:block}.oovr .cnd svg{width:10px!important;height:10px!important}
 .cd5{background:#e8452c}.cd4{background:#f08a24}.cd3{background:#d9b21e}.cd2{background:#3f86d9}.cd1{background:#7a5bd6}
-.card .ovr{position:absolute;top:6px;right:8px;display:flex;align-items:center;color:#fff;font:400 26px "Black Han Sans";text-shadow:2px 2px 0 rgba(0,0,0,.35)}
+.card .ovr{position:absolute;top:6px;right:8px;display:flex;align-items:center;color:#fff;font:700 26px var(--fh);text-shadow:2px 2px 0 rgba(0,0,0,.35)}
 .card .plate{display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:6px 8px;background:var(--pi);color:#fff}
-.card .plate b{font:400 17px "Black Han Sans";display:flex;align-items:center;min-width:0}.card .plate b em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.card .plate b .stars{flex:none}
+.card .plate b{font:700 17px var(--fh);display:flex;align-items:center;min-width:0}.card .plate b em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.card .plate b .stars{flex:none}
 .card .plate span{font-size:12px;white-space:nowrap;color:#d6d6d6}
 .card .st{padding:6px 8px 8px;display:grid;gap:2px}
 .sr{display:grid;grid-template-columns:2.6em minmax(0,1fr) 1.8em;gap:6px;align-items:center;font-size:12px}
@@ -114,13 +114,13 @@ select{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:1
 .blk small{display:block;font-size:12px}
 .sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.sum span{background:var(--board);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:700}
 .apt{display:grid;grid-template-columns:repeat(auto-fit,minmax(5.5em,1fr));gap:6px;margin-top:8px}
-.apt span{background:var(--board);border-radius:8px;padding:6px;text-align:center;font-size:13px}.apt b{display:block;font:400 20px "Black Han Sans"}
+.apt span{background:var(--board);border-radius:8px;padding:6px;text-align:center;font-size:13px}.apt b{display:block;font:700 20px var(--fh)}
 /* 경기 */
 .sb{background:var(--board);border:4px solid #3c2a1c;border-radius:12px;padding:10px;overflow-x:auto}
 .sb table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;min-width:520px}
 .sb th,.sb td{padding:6px 4px;text-align:center;font-weight:700}
 .sb th{color:var(--mute);font-size:13px}.sb td:first-child{text-align:left;white-space:nowrap}
-.sb td.r{color:var(--gold);font:400 22px "Black Han Sans"}.sb td.now{background:rgba(255,210,122,.18)}
+.sb td.r{color:var(--gold);font:700 22px var(--fh)}.sb td.now{background:rgba(255,210,122,.18)}
 .gm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr);gap:18px;margin-top:18px;align-items:center}
 .gm .card{cursor:default}
 .dia{width:100%;max-width:300px;display:block;margin:0 auto}
@@ -133,14 +133,14 @@ select{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:1
 /* 홈 */
 .hub{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;margin-top:18px}
 .mu{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:center}
-.vs{font:400 40px "Black Han Sans";color:var(--gold);text-align:center}
+.vs{font:700 40px var(--fh);color:var(--gold);text-align:center}
 .std{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .std td,.std th{padding:6px;border-bottom:1px solid var(--line);text-align:right}.std td:nth-child(2),.std th:nth-child(2){text-align:left}
 .std tr.me{background:rgba(224,122,69,.25)}
 .quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
 /* 오더 줄 */
 .strip{display:grid;grid-template-columns:2.4em minmax(0,1fr);gap:8px;margin-top:14px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:10px}
-.sh{writing-mode:vertical-rl;font:400 20px "Black Han Sans";color:var(--gold);display:grid;place-items:center;background:var(--board);border-radius:10px;letter-spacing:.3em}
+.sh{writing-mode:vertical-rl;font:700 20px var(--fh);color:var(--gold);display:grid;place-items:center;background:var(--board);border-radius:10px;letter-spacing:.3em}
 .row{display:flex;align-items:flex-end;gap:5px;padding-bottom:4px}
 .oc{flex:1 1 0;min-width:62px;max-width:96px;display:grid;gap:3px;justify-items:stretch;text-align:center}
 .onum{font-size:13px;font-weight:700;color:var(--mute);min-height:1.2em}
@@ -148,13 +148,13 @@ select{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:1
 .ocb.sel{outline:3px solid var(--gold);outline-offset:2px}
 .ocb.empty{height:122px;background:rgba(255,255,255,.08);border:2px dashed var(--line);color:var(--mute);box-shadow:none}
 .oart{display:block;position:relative;aspect-ratio:1;background:var(--tc)}.oart svg{position:absolute;inset:0;width:100%;height:100%}
-.oovr{position:absolute;right:4px;top:1px;display:flex;align-items:center;font:400 17px "Black Han Sans";color:#fff;font-style:normal;text-shadow:1px 1px 0 rgba(0,0,0,.4)}
-.onm{display:block;font:700 12px/1.3 "Noto Sans KR";padding:3px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oovr{position:absolute;right:4px;top:1px;display:flex;align-items:center;font:700 17px var(--fh);color:#fff;font-style:normal;text-shadow:1px 1px 0 rgba(0,0,0,.4)}
+.onm{display:block;font:700 12px/1.3 var(--fb);padding:3px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .osub{display:block;font-size:12px;background:var(--pi);color:#ddd;padding:1px 0}.osub.t-L{color:var(--gold)}.osub.t-S{color:#cfd6e0}
 .olab{font-weight:900;font-size:14px;color:var(--mute)}.olab.sp{color:#ffb98f}.olab.rp{color:#9fd6ff}.olab.su{color:var(--gold)}.olab.cl{color:var(--bad)}
 .psel{font-size:12px;min-height:32px;padding:2px 2px;width:100%;font-weight:700}
 .psel.fit-A{border-color:var(--ok)}.psel.fit-B{border-color:var(--warn)}.psel.fit-C{border-color:var(--bad);color:var(--bad)}
-.arr{flex:0 0 auto;align-self:center;font:400 24px "Black Han Sans";color:var(--mute);margin-top:18px}
+.arr{flex:0 0 auto;align-self:center;font:700 24px var(--fh);color:var(--mute);margin-top:18px}
 .gap{flex:0 0 8px;align-self:stretch;border-left:2px dashed var(--line);margin-left:4px}
 .lu2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
 .lu2>.box{max-height:430px;overflow-y:auto}
@@ -162,13 +162,13 @@ select{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:1
 .tabs button{background:rgba(0,0,0,.2);color:var(--ink);min-height:40px;padding:6px 14px}.tabs button.on{background:var(--clay);color:#fff}
 .bat{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px;height:220px}
 .bat{grid-template-columns:repeat(9,minmax(0,1fr))}.bozone{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px;margin-bottom:4px}.bozone span{font-size:11px;font-weight:700;text-align:center;background:rgba(255,255,255,.08);border-radius:4px;padding:2px 0;white-space:nowrap;overflow:hidden}
-.bc2.pen .bwrap{outline:2px dashed var(--bad);outline-offset:1px}.bwrap em{position:absolute;left:0;right:0;top:2px;font:700 10px 'Noto Sans KR';color:var(--bad);font-style:normal;text-align:center}.legend i.x{background:none;outline:2px dashed var(--bad)}
+.bc2.pen .bwrap{outline:2px dashed var(--bad);outline-offset:1px}.bwrap em{position:absolute;left:0;right:0;top:2px;font:700 10px var(--fb);color:var(--bad);font-style:normal;text-align:center}.legend i.x{background:none;outline:2px dashed var(--bad)}
 .tcm{grid-column:span 2}.tcl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}.tcall{min-height:30px;padding:2px 10px;font-size:12px}
 .tcc{display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.22);border-radius:8px;padding:3px 8px 3px 3px;font-size:12px;opacity:.6;margin:0 4px 4px 0}.tcc.on{opacity:1;outline:1px solid var(--gold)}
-.tcc i{font:400 13px/20px "Black Han Sans";font-style:normal;width:22px;text-align:center;border-radius:5px}.tcc.g-S i{background:linear-gradient(135deg,#fff0b3,#d4a017);color:#3a2405}.tcc.g-A i{background:#c22a2a;color:#fff}.tcc.g-B i{background:#2f6fb0;color:#fff}
+.tcc i{font:700 13px/20px var(--fh);font-style:normal;width:22px;text-align:center;border-radius:5px}.tcc.g-S i{background:linear-gradient(135deg,#fff0b3,#d4a017);color:#3a2405}.tcc.g-A i{background:#c22a2a;color:#fff}.tcc.g-B i{background:#2f6fb0;color:#fff}
 .tcc b{font-size:13px}.tcc small{color:var(--mute)}.tcc em{font-style:normal;font-weight:700;color:var(--gold)}
 .tcgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:8px 0;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px}@media(max-width:700px){.tcgrid{grid-template-columns:minmax(0,1fr)}.tcm{grid-column:auto}}
-.lch{width:100%;height:auto;display:block}.lch text{fill:var(--ink);font-family:'Noto Sans KR'}.lty{font-size:8px;opacity:.5}.ltv{font-size:9px;font-weight:700;text-anchor:middle}.ltx{font-size:10px;font-weight:700;text-anchor:middle}.ltn{font-size:8.5px;text-anchor:middle;opacity:.75}
+.lch{width:100%;height:auto;display:block}.lch text{fill:var(--ink);font-family:var(--fb)}.lty{font-size:8px;opacity:.5}.ltv{font-size:9px;font-weight:700;text-anchor:middle}.ltx{font-size:10px;font-weight:700;text-anchor:middle}.ltn{font-size:8.5px;text-anchor:middle;opacity:.75}
 .bosum.adj{background:rgba(70,140,230,.22)}.bwrap i.aj,.legend i.aj{background:#5aa9ff;border-radius:4px 4px 0 0}.bwrap em.aje{top:auto;color:#5aa9ff;transform:translateY(-2px)}.bc2.lk .bwrap{box-shadow:6px 0 0 -4px #5aa9ff}
 .bosum{margin:0 0 8px;font-size:13px;font-weight:700;padding:6px 10px;border-radius:8px}.bosum.ok{background:rgba(47,160,90,.18)}.bosum.bad{background:rgba(179,38,30,.25)}
 .bc2{display:grid;grid-template-rows:minmax(0,1fr) auto auto;justify-items:center;gap:2px;text-align:center}
@@ -184,11 +184,11 @@ select{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:1
 .sr small{font-size:11px;color:var(--clay2);font-weight:700;text-align:left}
 .card.big .sr{grid-template-columns:3em minmax(0,1fr) 2em 2em}
 .cback{background:var(--paper);color:var(--pi);border-radius:12px;border:3px solid var(--tc);padding:10px;display:grid;gap:10px}
-.cbh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;background:var(--tc);color:#fff;margin:-10px -10px 0;padding:8px 12px}.cbh b{font:400 22px "Black Han Sans"}.cbh span{font-size:13px}
+.cbh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;background:var(--tc);color:#fff;margin:-10px -10px 0;padding:8px 12px}.cbh b{font:700 22px var(--fh)}.cbh span{font-size:13px}
 .cback .apt span{background:#ece8de;color:var(--pi)}
 .pv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .pmap{width:100%;display:block}.pmap text{paint-order:stroke;stroke:rgba(0,0,0,.25);stroke-width:2px}
-.vel{background:var(--pi);color:#fff;border-radius:10px;padding:8px 10px;text-align:center}.vel b{display:block;font:400 30px "Black Han Sans";color:var(--gold)}.vel small{font-size:12px;color:#ccc}
+.vel{background:var(--pi);color:#fff;border-radius:10px;padding:8px 10px;text-align:center}.vel b{display:block;font:700 30px var(--fh);color:var(--gold)}.vel small{font-size:12px;color:#ccc}
 .sl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}.sl th{background:var(--pi);color:#ddd;font-weight:500}.sl th,.sl td{padding:4px 6px;text-align:right;white-space:nowrap}.sl td{border-bottom:1px solid #ddd}
 .cback .grid4{margin:0 auto}
 .trow{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px}.gtr{justify-content:center;flex-wrap:wrap}
@@ -196,12 +196,12 @@ select{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:1
 .tcd{position:relative;flex:0 0 132px;display:grid;gap:3px;align-content:start;text-align:left;background:var(--paper);color:var(--pi);border-radius:10px;border:3px solid #c9c3b4;padding:8px;min-height:150px;font-weight:500;box-shadow:0 3px 0 rgba(0,0,0,.3)}
 .tcd{padding-left:30px}.tcd.c-p{border-color:#c4473a;background:linear-gradient(#fbeeea,var(--paper) 40%)}.tcd.c-b{border-color:#2f6fb3;background:linear-gradient(#e8f0fb,var(--paper) 40%)}.tcd.c-c{border-color:#6b4fa3;background:linear-gradient(#efe9f8,var(--paper) 40%)}
 .tcd.tr-황금{box-shadow:0 0 0 3px #e2b23c,0 3px 0 rgba(0,0,0,.3)}.tcd.tr-특수{border-style:double;border-width:5px}
-.tcat{position:absolute;left:0;top:0;bottom:0;width:22px;display:grid;place-items:center;font:400 15px "Black Han Sans";color:#fff;font-size:15px!important}
+.tcat{position:absolute;left:0;top:0;bottom:0;width:22px;display:grid;place-items:center;font:700 15px var(--fh);color:#fff;font-size:15px!important}
 .c-p .tcat{background:#c4473a}.c-b .tcat{background:#2f6fb3}.c-c .tcat{background:#6b4fa3}
 .ttier{justify-self:start;font-size:11px!important;font-weight:700;background:var(--pi);color:#fff;border-radius:5px;padding:0 6px}.tr-황금 .ttier{background:#b8860b}
 .tpt{position:absolute;right:6px;top:6px;font-size:11px!important;font-weight:900;color:#fff;background:rgba(0,0,0,.45);border-radius:5px;padding:0 4px;z-index:1}
 .tart{display:block;width:calc(100% + 8px);margin:2px -4px 2px;height:64px;border-radius:6px}.c-p .tart{background:linear-gradient(135deg,#c4473a,#7a1f17)}.c-b .tart{background:linear-gradient(135deg,#2f6fb3,#13345e)}.c-c .tart{background:linear-gradient(135deg,#6b4fa3,#33225a)}
-.tcd .ttier{position:absolute;left:28px;top:6px;z-index:1}.tcd b{font:400 17px "Black Han Sans"}.tcd small{font-size:12px;color:#6b5b3a;font-weight:700}.tcd span{font-size:13px;line-height:1.35}
+.tcd .ttier{position:absolute;left:28px;top:6px;z-index:1}.tcd b{font:700 17px var(--fh)}.tcd small{font-size:12px;color:#6b5b3a;font-weight:700}.tcd span{font-size:13px;line-height:1.35}
 .tside{justify-self:start;font-size:11px!important;font-weight:700;color:#fff;border-radius:5px;padding:0 6px}.tside.atk{background:#c4602d}.tside.dfn{background:#0a5fb4}
 .tside.both{background:#5b4a8a}
 .rel{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px}.rel i,.legend2 i{font-style:normal;font-size:11px;font-weight:700;border-radius:5px;padding:0 5px;background:#e4e1d8;color:#333}
@@ -219,20 +219,20 @@ i.r-win{background:#d8f0df;color:#14532d}i.r-lose{background:#fbe1dd;color:#8a1c
 .sa b{display:block}.sa small{display:block;color:var(--mute);font-size:13px}.left{font-size:12px;font-weight:900;color:var(--gold)}
 .spool{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px}
 .scd{position:relative;display:grid;gap:3px;text-align:left;background:linear-gradient(#fff6dc,var(--paper) 50%);color:var(--pi);border:3px solid #d4a017;border-radius:10px;padding:10px;min-height:120px;font-weight:500}
-.scd b{font:400 18px "Black Han Sans"}.scd small{color:#6b5b3a;font-weight:700}.stg{justify-self:start;font-size:11px;font-weight:700;background:#b8860b;color:#fff;border-radius:5px;padding:0 6px}
+.scd b{font:700 18px var(--fh)}.scd small{color:#6b5b3a;font-weight:700}.stg{justify-self:start;font-size:11px;font-weight:700;background:#b8860b;color:#fff;border-radius:5px;padding:0 6px}
 .scd.on{outline:3px solid var(--gold);outline-offset:2px}
 .pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
 .pk{display:grid;gap:4px;justify-items:center;background:var(--board);color:var(--ink);padding:6px;font-size:13px;min-height:0}.pk .oart{width:60px;border-radius:8px;overflow:hidden}.pk:disabled{opacity:.4}
 .obo{display:block;font-size:11px;font-weight:700;line-height:16px;color:#2f6b3a;background:rgba(47,107,58,.12)}.obo.bad{color:#fff;background:#b3261e}
-.sbadge{position:absolute;right:3px;top:26px;z-index:3;font-style:normal;font:400 12px/18px "Black Han Sans";background:#d4a017;color:#3a2405;border-radius:5px;padding:0 4px}
+.sbadge{position:absolute;right:3px;top:26px;z-index:3;font-style:normal;font:700 12px/18px var(--fh);background:#d4a017;color:#3a2405;border-radius:5px;padding:0 4px}
 .ocb{position:relative}.supl{margin:8px 0 0;background:#d4a017;color:#3a2405;border-radius:8px;padding:6px 10px;font-weight:700;font-size:14px}
 @media(max-width:600px){.tsel2,.sact{grid-template-columns:minmax(0,1fr)}}
 .syn{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
 .sslots{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}
 .ss{width:150px;min-height:170px;display:grid;place-items:center;border-radius:12px;cursor:pointer}.ss.empty{border:2px dashed var(--line);color:var(--mute);cursor:default}
-.ss .card,.ss .tcd,.ss .scd,.ss .blk{width:100%}.ss.res{background:var(--board);border:2px solid var(--gold);text-align:center;padding:10px;cursor:default;gap:4px;align-content:center}.ss.res b{font:400 18px "Black Han Sans";color:var(--gold)}.ss.res small{font-size:13px;color:var(--mute)}
+.ss .card,.ss .tcd,.ss .scd,.ss .blk{width:100%}.ss.res{background:var(--board);border:2px solid var(--gold);text-align:center;padding:10px;cursor:default;gap:4px;align-content:center}.ss.res b{font:700 18px var(--fh);color:var(--gold)}.ss.res small{font-size:13px;color:var(--mute)}
 .got{display:grid;gap:4px;justify-items:center}.got .card,.got .tcd{width:130px}
-.plus{font:400 28px "Black Han Sans";color:var(--gold)}
+.plus{font:700 28px var(--fh);color:var(--gold)}
 .mpool{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;max-height:380px;overflow-y:auto;padding:4px}
 .mp{cursor:pointer;border-radius:12px}.mp.on{outline:3px solid var(--gold);outline-offset:2px}.mp .tcd,.mp .scd,.mp .blk{width:100%;pointer-events:none}.mp .card{pointer-events:none}
 @media(max-width:600px){.ss{width:100px;min-height:130px}}
@@ -247,7 +247,7 @@ i.r-win{background:#d8f0df;color:#14532d}i.r-lose{background:#fbe1dd;color:#8a1c
 .skr{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;background:var(--bg2);color:var(--ink);border:2px solid var(--line);padding:4px 8px;min-height:0;font-weight:500}
 .skr.on{border-color:var(--gold)}.skr .oart{border-radius:6px;overflow:hidden}.skr b{display:block;font-size:14px}.skr small{font-size:12px;color:var(--mute)}.skr i{font-style:normal;font-size:12px;color:var(--gold);font-weight:700}
 @media(max-width:860px){.skl{grid-template-columns:minmax(0,1fr)}.skp{grid-auto-flow:column;grid-auto-columns:200px;overflow-x:auto;max-height:none}}
-.qbtn{width:44px;padding:0;font:400 20px "Black Han Sans";border-radius:50%}.qbtn.on{background:var(--gold);color:#3a2405}
+.qbtn{width:44px;padding:0;font:700 20px var(--fh);border-radius:50%}.qbtn.on{background:var(--gold);color:#3a2405}
 .synrule{text-align:center;background:var(--board);border-radius:10px;padding:8px 12px;margin:10px auto 0;max-width:640px}
 .sfil{margin:6px 0 10px;flex-wrap:wrap}.pcr{font-size:11px;opacity:.75}.pcr a{color:inherit}.mpw{display:grid;gap:4px}.danger{color:#ffb4a8;border-color:#ffb4a8}.lockt{min-height:32px;padding:2px 8px;font-size:13px}
 .mp{position:relative}.mp.locked{opacity:.55;cursor:not-allowed}
@@ -269,7 +269,7 @@ i.r-win{background:#d8f0df;color:#14532d}i.r-lose{background:#fbe1dd;color:#8a1c
 .mgwrap>.mdet{order:-1}
 .mgrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin-top:12px;max-height:470px;overflow-y:auto;padding:4px}
 .mgr{display:grid;justify-items:center;gap:2px;text-align:center;background:var(--bg2);color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:10px 6px;font-weight:500;min-height:0}
-.mgr b{font:400 18px "Black Han Sans"}.mgr small{font-size:12px;color:var(--mute)}.mgr.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--bg2))}
+.mgr b{font:700 18px var(--fh)}.mgr small{font-size:12px;color:var(--mute)}.mgr.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--bg2))}
 .mface{display:block;width:56px;height:56px}.mface svg{width:100%;height:100%}.mface.big{width:84px;height:84px}
 .skill{margin-top:12px;background:var(--board);border-radius:10px;padding:8px 12px}.skill b{color:var(--gold)}
 .tq{display:grid;grid-template-columns:6.5em 3.6em minmax(0,1fr) 3.6em;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:14px}
@@ -284,8 +284,8 @@ i.r-win{background:#d8f0df;color:#14532d}i.r-lose{background:#fbe1dd;color:#8a1c
 .abq{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.abi{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;align-items:center;background:var(--board);border-radius:12px;padding:10px}.abi.done{outline:2px solid var(--gold)}
 .abbar{display:block;height:8px;border-radius:4px;background:rgba(255,255,255,.12);margin:6px 0;overflow:hidden}.abbar i{display:block;height:100%;background:var(--gold)}.abres{margin:0 0 6px;font-size:14px}.abres b{color:var(--gold)}.use.abu{background:#2f6fb0}
 @media(max-width:700px){.abl{grid-template-columns:minmax(0,1fr)}}
-.vb{position:absolute;top:6px;left:6px;z-index:2;font:400 12px/18px "Black Han Sans";padding:0 6px;border-radius:5px;letter-spacing:.5px}
-.ovb{position:absolute;left:3px;top:3px;z-index:2;font:400 10px/14px "Black Han Sans";padding:0 4px;border-radius:4px;font-style:normal}
+.vb{position:absolute;top:6px;left:6px;z-index:2;font:700 12px/18px var(--fh);padding:0 6px;border-radius:5px;letter-spacing:.5px}
+.ovb{position:absolute;left:3px;top:3px;z-index:2;font:700 10px/14px var(--fh);padding:0 4px;border-radius:4px;font-style:normal}
 .v-AS{background:#2f6fb0;color:#fff}.v-GG{background:#1f8a5b;color:#fff}.v-IR{background:linear-gradient(135deg,#5d6670,#b9c2cc 50%,#5d6670);color:#111}.v-EX{background:linear-gradient(135deg,#fff0b3,#f2c94c 40%,#b8860b);color:#3a2405;text-shadow:0 1px 0 rgba(255,255,255,.5)}
 .card.cv-AS{border-color:#5b9be0}.card.cv-IR{border-color:#aeb8c2;box-shadow:0 0 0 2px #aeb8c266,0 4px 0 rgba(0,0,0,.35)}.card.cv-GG{border-color:#2fb877;box-shadow:0 0 0 2px #2fb87755,0 4px 0 rgba(0,0,0,.35)}
 .card.cv-EX{border-width:4px;border-color:#f2c94c;background-image:linear-gradient(var(--paper),var(--paper)),linear-gradient(135deg,#fff0b3,#d4a017,#fff0b3,#b8860b);background-origin:border-box;background-clip:padding-box,border-box;border-color:transparent;box-shadow:0 0 0 2px #f2c94c88,0 0 14px #f2c94c66,0 4px 0 rgba(0,0,0,.35)}
@@ -297,9 +297,9 @@ i.r-win{background:#d8f0df;color:#14532d}i.r-lose{background:#fbe1dd;color:#8a1c
 @media(max-width:700px){.cmpg{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.cmpg .cmpt{grid-column:1/-1;order:3}}
 .mmeta{margin:-4px 0 10px;font-size:13px;color:var(--mute)}.mmeta b{color:var(--ink)}
 .dexl{display:grid;gap:12px;margin-top:12px}.dexs{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}.dexs.done{border-color:var(--gold)}
-.dexh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}.dexh b{font:400 18px "Black Han Sans";margin-right:auto}.dexok{border-color:var(--gold);color:var(--gold)}.dexrw{font-size:13px;color:var(--gold);font-weight:700}
+.dexh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}.dexh b{font:700 18px var(--fh);margin-right:auto}.dexok{border-color:var(--gold);color:var(--gold)}.dexrw{font-size:13px;color:var(--gold);font-weight:700}
 .dexg{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px}.dexc{display:grid;gap:2px;text-align:center;cursor:pointer}.dexc .oart{border-radius:8px;overflow:hidden}.dexc small{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dexc.no{cursor:default}.dexc.no .oart{filter:grayscale(.85) brightness(.72) blur(.6px)}.dexc.no small{opacity:.55}.dexc .q{position:absolute;inset:0;display:grid;place-items:center;font:400 28px "Black Han Sans";color:#777}
+.dexc.no{cursor:default}.dexc.no .oart{filter:grayscale(.85) brightness(.72) blur(.6px)}.dexc.no small{opacity:.55}.dexc .q{position:absolute;inset:0;display:grid;place-items:center;font:700 28px var(--fh);color:#777}
 .plate i.age{font-style:normal}.plate i.age.ab{color:#7fd4ff;font-weight:700}
 .plb,.oplb{position:absolute;z-index:3;background:#2f6fb0;color:#fff;border-radius:50%;display:grid;place-items:center;font-style:normal;cursor:help}.plb{right:6px;bottom:6px;width:20px;height:20px}.oplb{right:3px;bottom:3px;width:16px;height:16px}
 .plb svg{width:12px;height:12px;display:block}.oplb svg{width:10px;height:10px;display:block}.mmeta.abh{display:flex;gap:6px;align-items:center;color:#7fd4ff}.mmeta.abh svg{width:16px;height:16px;flex:0 0 auto}
@@ -311,24 +311,24 @@ i.r-win{background:#d8f0df;color:#14532d}i.r-lose{background:#fbe1dd;color:#8a1c
 .cbm{font-size:12px;color:#555;padding:4px 12px 0;font-weight:700}
 .pill{background:var(--board);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;white-space:nowrap}
 .ojoin{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-top:12px}.ojoin label{display:grid;gap:4px;font-size:13px;font-weight:700}
-input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--board);color:var(--ink)}
+input{font:16px var(--fb);min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--board);color:var(--ink)}
 .lgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;align-items:start}
-.code{font-size:14px}.code b{font:400 22px "Black Han Sans";color:var(--gold);letter-spacing:.08em;margin-left:4px}
+.code{font-size:14px}.code b{font:700 22px var(--fh);color:var(--gold);letter-spacing:.08em;margin-left:4px}
 .ltab{display:grid;gap:6px;margin-top:12px}
 .lrow{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto 3.2em auto;gap:10px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
 .lrow.me{border-color:var(--clay);background:color-mix(in srgb,var(--clay) 22%,var(--bg2))}
-.rk{font:400 26px "Black Han Sans";color:var(--gold);text-align:center}
+.rk{font:700 26px var(--fh);color:var(--gold);text-align:center}
 .who b{display:block;font-size:17px}.who small{font-size:13px;color:var(--mute)}
 .wl{text-align:right;white-space:nowrap}.wl b{display:block;font-variant-numeric:tabular-nums}.wl small{font-size:12px;color:var(--mute)}
 .rd{font-weight:900;text-align:right;font-variant-numeric:tabular-nums}.rd.p{color:var(--ok)}.rd.m{color:var(--bad)}
 .act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.act button{min-height:40px;padding:6px 12px;font-size:14px}
 .tix{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;background:var(--board);border-radius:10px;padding:8px 12px;margin-top:6px;font-size:14px}
-.tix span:last-child{text-align:right}.tix b{font:400 22px "Black Han Sans";color:var(--gold);white-space:nowrap}.tix.mine{outline:2px solid var(--clay)}
+.tix span:last-child{text-align:right}.tix b{font:700 22px var(--fh);color:var(--gold);white-space:nowrap}.tix.mine{outline:2px solid var(--clay)}
 @media(max-width:860px){.lgrid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){.lrow{grid-template-columns:2em minmax(0,1fr) auto}.lrow .rd{display:none}.lrow .act{grid-column:1/-1}}
 .modal{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px;overflow:auto}
 .mbox{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:14px;width:min(760px,100%);max-height:100%;overflow:auto}
-.mhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}.mhead b{font:400 20px "Black Han Sans";margin-right:auto}
+.mhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}.mhead b{font:700 20px var(--fh);margin-right:auto}
 .faces{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
 .faces .face{display:flex;flex-direction:column}.faces .face>.card,.faces .face>.cback{flex:1}
 .faces .card.big{display:flex;flex-direction:column}.faces .card.big .st{flex:1;align-content:space-evenly}
@@ -367,12 +367,12 @@ input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10
 .lg .hero{padding:26px 0;border-bottom:2px dashed var(--line)}
 .lg .mu{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center;justify-items:center;text-align:center}
 .lg .side small{color:var(--mute);font-weight:700}
-.lg .vs{font-family:"Black Han Sans";font-size:20px;color:var(--mute)}
+.lg .vs{font-weight:700;font-family:var(--fh);font-size:20px;color:var(--mute)}
 .lg .vs>b{display:block;font-size:clamp(44px,6.5vw,72px);margin:4px 0 6px;color:#fff;line-height:1;text-shadow:4px 4px 0 var(--clay2);font-weight:400}
-.lg .vs .btns{justify-content:center;margin:14px 0 8px;font-family:"Noto Sans KR"}
+.lg .vs .btns{justify-content:center;margin:14px 0 8px;font-family:var(--fb)}
 .lg .btns{display:flex;flex-wrap:wrap;gap:8px}
 .lg .mini{font-size:14px;color:var(--mute)}
-.lg .warn{color:#ffd27a;font-size:14px;font-family:"Noto Sans KR"}
+.lg .warn{color:#ffd27a;font-size:14px;font-family:var(--fb)}
 .lg .row{display:flex;gap:10px;align-items:center;margin-bottom:12px}
 .lg .res{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
 .lg .res div{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;background:var(--board);padding:8px 12px;border-radius:8px;font-size:14px}
@@ -388,7 +388,7 @@ input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10
 .lg .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
 .lg details summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
 .lg .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:16px}
-.lg .cd,.lg .cdt{font:700 12px/1 "Noto Sans KR";font-style:normal;padding:4px 6px;border-radius:4px;color:#fff}
+.lg .cd,.lg .cdt{font:700 12px/1 var(--fb);font-style:normal;padding:4px 6px;border-radius:4px;color:#fff}
 .lg .cd{position:absolute;left:6px;top:42px}
 .lg .cdt{display:inline-block;margin-left:6px;vertical-align:middle}
 .lg .c5{background:#e0302a}
@@ -399,7 +399,7 @@ input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10
 .lg from{transform:perspective(700px) rotateY(90deg);opacity:0}
 .lg to{transform:none;opacity:1}
 .lg .lhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
-.lg .lhead small{font:500 18px "Noto Sans KR";color:var(--mute)}
+.lg .lhead small{font:500 18px var(--fb);color:var(--mute)}
 .lg .meter{background:var(--board);border-radius:12px;padding:14px 16px;margin:8px 0 14px}
 .lg .meter>div:first-child{display:flex;justify-content:space-between;font-weight:700}
 .lg .bar{height:10px;background:rgba(255,255,255,.12);border-radius:5px;margin:8px 0;overflow:hidden}
@@ -411,10 +411,10 @@ input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10
 .lg .filters{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px;align-items:center}
 .lg .chk{display:flex;gap:6px;align-items:center;min-height:44px}
 .lg .board{background:var(--board);border-radius:16px;padding:16px;margin-top:18px;box-shadow:inset 0 0 0 4px rgba(255,255,255,.06)}
-.lg .ls{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-family:"Black Han Sans";font-size:22px}
-.lg .ls th{font:500 13px "Noto Sans KR";color:var(--mute);padding:4px}
+.lg .ls{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--fh);font-size:22px}
+.lg .ls th{font:500 13px var(--fb);color:var(--mute);padding:4px}
 .lg .ls td{text-align:center;padding:6px 4px;border:1px solid rgba(255,255,255,.08);min-width:34px;color:#fff}
-.lg .ls .l{text-align:left;font:700 15px "Noto Sans KR";white-space:nowrap;padding-right:12px}
+.lg .ls .l{text-align:left;font:700 15px var(--fb);white-space:nowrap;padding-right:12px}
 .lg .ls .rr{color:#ffd27a}
 .lg .ls tr.up td.l{color:#ffd27a}
 .lg .gfield{display:grid;grid-template-columns:200px auto minmax(0,1fr);gap:20px;align-items:center;margin-top:12px}
@@ -430,14 +430,14 @@ input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10
 .lg .duel{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .lg .duel div{background:rgba(255,255,255,.06);border-radius:10px;padding:10px}
 .lg .duel small{display:block;color:var(--mute)}
-.lg .duel b{font:400 24px "Black Han Sans"}
+.lg .duel b{font:700 24px var(--fh)}
 .lg .duel span{display:block;font-size:13px;color:var(--mute)}
 .lg .final{color:#ffd27a}
 .lg .gb{margin-top:14px}
 .lg .cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px}
 .lg .glog{list-style:none;margin:0;padding:0;max-height:560px;overflow:auto;font-size:15px}
 .lg .glog li{padding:6px 10px;border-bottom:1px solid var(--line)}
-.lg .glog li.i{font-family:"Black Han Sans";color:var(--mute);background:rgba(0,0,0,.15)}
+.lg .glog li.i{font-weight:700;font-family:var(--fh);color:var(--mute);background:rgba(0,0,0,.15)}
 .lg .glog li.r{color:#ffd7bf;font-weight:700}
 .lg .glog li.hr{color:#ffd27a;font-weight:900}
 .lg .glog li.e{background:var(--clay);color:#fff;font-weight:700}
@@ -463,7 +463,7 @@ input{font:16px "Noto Sans KR";min-height:44px;padding:6px 10px;border-radius:10
 /* ===== 기존 화면(리그·경기장·보유 카드) 호환: .lg 안에서만 ===== */
 :root{--pink:#1b1d1c}
 .lg .mini{display:block;gap:0;margin:0}.lg .row{align-items:center;padding:0}.lg .side{display:block}.lg .mu .card{width:180px;max-width:180px}
-.lg .vs{font:400 20px "Black Han Sans";color:var(--mute)}.lg .glog{max-height:560px;background:none;padding:0;border-radius:0}
+.lg .vs{font:700 20px var(--fh);color:var(--mute)}.lg .glog{max-height:560px;background:none;padding:0;border-radius:0}
 .lg button.big{background:var(--clay);border-color:var(--clay);color:#fff}.lg .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
 .lg .gdia{width:200px}.lg .turf{fill:#2c7a4f;stroke:#c9a27c;stroke-width:6}.lg .mound{fill:#c9a27c}.lg .base{fill:#fff;opacity:.35}.lg .base.on{fill:#ffd27a;opacity:1}.lg .plate{fill:#fff}
 .lg .chips{max-height:none}.lg .meter{display:block}
@@ -486,19 +486,19 @@ body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 .login{max-width:440px;margin:12vh auto 0;display:grid;gap:16px;text-align:center;background:rgba(6,25,15,.7);border:1px solid var(--line);border-radius:18px;padding:32px 24px}.login .logo.big{font-size:40px}.login .gbtn{min-height:52px;font-size:18px;background:#fff;color:#1b1d1c;border-color:#fff}
 
 
-.lg .vs .mini,.lg .vs p{font-family:"Noto Sans KR";font-size:13px;color:var(--ink,#eee)}
+.lg .vs .mini,.lg .vs p{font-family:var(--fb);font-size:13px;color:var(--ink,#eee)}
 .lg .vs p b,.lg .vs .mini b{display:inline;font-size:inherit;text-shadow:none;color:var(--gold)}
-.lg .pred{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;margin:4px 0 0;font-family:"Noto Sans KR"}
+.lg .pred{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;margin:4px 0 0;font-family:var(--fb)}
 .lg .pred small{width:100%;font-size:11px;color:var(--mute);letter-spacing:.04em}
-.lg .pred button{padding:3px 9px!important;font:500 12px "Noto Sans KR"!important;border-radius:999px;min-height:0;line-height:1.4}
+.lg .pred button{padding:3px 9px!important;font:500 12px var(--fb)!important;border-radius:999px;min-height:0;line-height:1.4}
 .lg .pred button.big{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700!important}
-.lg .vs .mlab{display:block;font:600 12px "Noto Sans KR";color:var(--mute)}
+.lg .vs .mlab{display:block;font:600 12px var(--fb);color:var(--mute)}
 .standbar{display:flex;justify-content:center;margin-top:14px}
-.standbar button{background:rgba(6,14,10,.72);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:8px 18px;font:600 14px "Noto Sans KR";cursor:pointer}
+.standbar button{background:rgba(6,14,10,.72);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:8px 18px;font:600 14px var(--fb);cursor:pointer}
 
 .abmw{overflow-x:auto;margin-top:12px;border-radius:14px}.abmap{position:relative;aspect-ratio:960/416;min-width:620px;border-radius:14px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#13407a,#0a1f45 75%);border:1px solid rgba(140,190,255,.25)}
 .abmap svg{position:absolute;inset:0;width:100%;height:100%}.abmap path{stroke:#6fa3e0;stroke-width:5.2;stroke-linecap:round;opacity:.55}
-.abpin{position:absolute;transform:translate(-10px,-50%);display:flex;align-items:center;gap:5px;background:none;border:0;padding:0;color:#fff;cursor:pointer;font:600 12px "Noto Sans KR";white-space:nowrap}
+.abpin{position:absolute;transform:translate(-10px,-50%);display:flex;align-items:center;gap:5px;background:none;border:0;padding:0;color:#fff;cursor:pointer;font:600 12px var(--fb);white-space:nowrap}
 .abpin.t{flex-direction:column-reverse;gap:2px;transform:translate(-50%,calc(-100% + 10px))}.abpin.l{flex-direction:row-reverse;transform:translate(calc(-100% + 10px),-50%)}
 .abpin i{width:20px;height:20px;border-radius:50%;background:#e8eefb;border:3px solid #7d5bd6;box-shadow:0 0 0 2px rgba(0,0,0,.35);display:grid;place-items:center;flex:none}
 .abpin i .lki{width:10px;height:10px}
@@ -514,9 +514,9 @@ body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 .numart{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;background:linear-gradient(160deg,color-mix(in srgb,var(--tc) 88%,#fff) 0%,var(--tc) 45%,color-mix(in srgb,var(--tc) 55%,#000) 100%)}
 .numart .na-st{position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 14px,rgba(255,255,255,.09) 14px 22px)}
 .numart::after{content:"";position:absolute;left:0;right:0;bottom:12%;height:5%;background:rgba(255,255,255,.7);box-shadow:0 6px 0 color-mix(in srgb,var(--tc) 60%,#000)}
-.numart b{position:relative;z-index:1;font:400 clamp(20px,min(40cqw,52cqh),110px) "Black Han Sans";line-height:1;color:#fff;-webkit-text-stroke:2px color-mix(in srgb,var(--tc) 45%,#000);text-shadow:3px 3px 0 rgba(0,0,0,.35);margin-bottom:6%}
+.numart b{position:relative;z-index:1;font:700 clamp(20px,min(40cqw,52cqh),110px) var(--fh);line-height:1;color:#fff;-webkit-text-stroke:2px color-mix(in srgb,var(--tc) 45%,#000);text-shadow:3px 3px 0 rgba(0,0,0,.35);margin-bottom:6%}
 .numart.nopos b{font-size:clamp(16px,min(28cqw,40cqh),76px)}
-.numart small{position:absolute;z-index:2;top:6%;left:7%;font:700 clamp(8px,min(9cqw,11cqh),15px) "Noto Sans KR";color:rgba(255,255,255,.9);letter-spacing:.04em}
+.numart small{position:absolute;z-index:2;top:6%;left:7%;font:700 clamp(8px,min(9cqw,11cqh),15px) var(--fb);color:rgba(255,255,255,.9);letter-spacing:.04em}
 .oart,.cv,.cart,.fig{container-type:size}
 
 .lg details.gl{border-top:1px solid rgba(255,255,255,.1);padding:2px 0}.lg details.gl:first-of-type{border-top:0}
@@ -526,11 +526,11 @@ body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 .lg details.gl[open]{background:rgba(0,0,0,.18);border-radius:10px;padding:2px 8px 10px}
 .lg details.gl .tbl{font-size:12.5px;margin-top:8px}.lg .tbl.ls td,.lg .tbl.ls th{padding:4px 6px;text-align:center}
 .lg details.gl .glog{max-height:220px;overflow:auto;font-size:13px;margin:8px 0 0;padding-left:20px}
-.lg .band h3 small{font:500 12px "Noto Sans KR";color:var(--mute);margin-left:6px}
+.lg .band h3 small{font:500 12px var(--fb);color:var(--mute);margin-left:6px}
 .lg .band>details>summary{cursor:pointer;padding:4px 0}
-.stars.sn{letter-spacing:0;font-weight:700;font-family:"Noto Sans KR"}
+.stars.sn{letter-spacing:0;font-weight:700;font-family:var(--fb)}
 .lg .warn a{color:var(--gold)}
-.pw{position:relative}.pw .dupn{position:absolute;left:6px;bottom:6px;z-index:3;background:var(--gold);color:#111;font:700 12px "Noto Sans KR";padding:1px 7px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.pw{position:relative}.pw .dupn{position:absolute;left:6px;bottom:6px;z-index:3;background:var(--gold);color:#111;font:700 12px var(--fb);padding:1px 7px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .lul{font-size:13px;white-space:nowrap}.lul tbody tr{cursor:pointer}.lul tbody tr:hover{background:rgba(255,255,255,.08)}.lul tr.use{opacity:.55}.lul td,.lul th{padding:5px 7px;text-align:center}.lul .l{text-align:left}.lul small{color:var(--gold)}
 .lg details.gl,.lg .band>details{display:block;width:100%}
 .mrec{background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px;margin:6px 0 10px;font-size:13px}.mrec ul{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:3px}.mrec li span{display:inline-block;min-width:74px;color:var(--mute)}.mrec b{color:var(--gold)}
@@ -547,11 +547,11 @@ button.danger{color:#ff9a8a;border-color:rgba(255,120,100,.5)}
 .synl tr.on{background:rgba(240,190,60,.18)}.synl .lockt{padding:2px 6px;min-height:0}
 @media(max-width:600px){.ss.sm,.syn.sticky .ss.empty{width:96px}.ss.sm{grid-template-columns:1fr}.ss.sm .oart{display:none}}
 .syn.sticky{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 14px}.syn.sticky>.tools{margin-top:0!important}
-.syn.sticky .ss.res b{font:700 12.5px/1.35 "Noto Sans KR"}.syn.sticky .ss.res small{font-size:11px}
+.syn.sticky .ss.res b{font:700 12.5px/1.35 var(--fb)}.syn.sticky .ss.res small{font-size:11px}
 .syn.sticky [data-synex]{padding:3px 8px;font-size:12px;min-height:0}.syn.sticky>p{width:100%;margin:0}
 .tbl.synl,.tbl.lul{width:100%}
 .phup{display:inline-block;cursor:pointer;color:var(--gold);text-decoration:underline}.phrm{padding:2px 8px;min-height:0;font-size:12px}
-.fxpick{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.fxg{display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.2);padding:4px 8px;border-radius:6px}.fxg i{font:400 16px "Black Han Sans";font-style:normal;width:22px;text-align:center}.fxg.g-S i{color:#f0c040}.fxg.g-A i{color:#e07a45}.fxg.g-B i{color:#9cc}.fxg select{max-width:320px}
+.fxpick{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.fxg{display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.2);padding:4px 8px;border-radius:6px}.fxg i{font:700 16px var(--fh);font-style:normal;width:22px;text-align:center}.fxg.g-S i{color:#f0c040}.fxg.g-A i{color:#e07a45}.fxg.g-B i{color:#9cc}.fxg select{max-width:320px}
 .bsum{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;font-size:14px}.bsum b{font-size:16px}.bsum b.bad{color:var(--bad,#f77)}
 .bld{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;margin-top:10px;align-items:start}@media(max-width:900px){.bld{grid-template-columns:minmax(0,1fr)}}
 .bslots{width:100%;font-size:13px}.bslots td,.bslots th{padding:4px 6px;text-align:center}.bslots .l{text-align:left}.bslots tr{cursor:pointer}.bslots tr.sel{background:rgba(240,190,60,.22);outline:2px solid var(--gold)}.bslots tr.noown td{color:#c9d3cc}.bslots .mute,.bpool .mute{color:var(--mute)}.bslots .bx{padding:0 8px;min-height:0}
@@ -560,6 +560,15 @@ button.danger{color:#ff9a8a;border-color:rgba(255,120,100,.5)}
 button,.pill,.chip,.wallet>*,.tabs button,.subnav button,.subnav2 a,#nav a,select,input,.fxc,.tcc,.pchip,.pred button,.dupn{border-radius:5px!important}
 .band,.box,.deck .meter,.syn,.presets,.mrec,.abmap,.abmw,.card,.oart,.modal .mbox,#hdr,#view>.band,#view>.lg>.band,#view>.lg>.hero,#view>.lg>section.board{border-radius:8px!important}
 .bf label input{width:auto;height:auto}
+
+/* icon pass: condition bars, square badges */
+.cnd,.oovr .cnd{background:none!important;box-shadow:none;border-radius:0;width:auto;height:auto;margin-right:4px;align-self:center}
+.cnd svg{width:14px!important;height:12px!important;fill:currentColor;filter:drop-shadow(0 1px 0 rgba(0,0,0,.5))}
+.oovr .cnd svg{width:11px!important;height:10px!important}
+.cnd svg rect.off{fill:rgba(255,255,255,.28)}
+.cnd.cd5{color:#ff5a3c}.cnd.cd4{color:#ffa03a}.cnd.cd3{color:#f3d34a}.cnd.cd2{color:#6fb0ff}.cnd.cd1{color:#a98cff}
+.lockb{border-radius:4px;width:20px;height:20px}
+.qbtn{border-radius:5px;width:36px;min-height:36px;font-size:18px}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -792,8 +801,8 @@ const L3same=cs=>cs.every(c=>c.line===cs[0].line);
 // opt.ex: 결과에서 뺄 구단 계보(line) 목록, 최대 SYN_EX_MAX개. 걸러서 후보가 없으면 제외를 무시
 const SYN_EX_MAX=3;
 function synth(kind,mats,locks,opt){
-  if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 합성 재료로 쓸 수 없어요'}}
-  if(kind!=='b'&&mats.length!==3)return {err:'재료 3개가 필요해요'};
+  if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 재료 불가'}}
+  if(kind!=='b'&&mats.length!==3)return {err:'재료 3개 필요'};
   if(kind==='p'){const cs=mats.map(id=>byId[baseId(id)]);if(cs.some(c=>!c))return {err:'없는 카드'};
     const EXL=new Set(((opt&&opt.ex)||[]).slice(0,SYN_EX_MAX)),okL=c=>!EXL.has(c.line),exf=P=>{const Q=P.filter(okL);return Q.length?Q:P},exN=EXL.size?`제외: ${[...EXL].join(', ')}`:'';
     const R=synthRules(cs),a=Math.round(cs.reduce((s,c)=>s+c.cost,0)/3),u=rnd(),up=R.up;
@@ -816,10 +825,10 @@ function synth(kind,mats,locks,opt){
       if(!fs.length){const Z=CARDS.filter(c=>base(c)&&c.cost===t);out=pick(Z.length?Z:CARDS.filter(c=>c.v!=='EX'&&c.v!=='AS'&&c.cost===t));break}fs=fs.slice(0,-1)}
     if(R.gg&&rnd()<.25){const g=CARDS.find(c=>c.v==='GG'&&c.pk===out.pk&&c.year===out.year);if(g)out=g}
     return {kind,out:out.id,cost:out.cost,rules:R.list.filter(x=>R.player?x.player&&out.pk===cs[0].pk:(!x.f||fs.includes(x.f))).map(x=>x.n).concat(exN?[exN]:[])}}
-  if(kind==='b'){if(mats.length!==2)return {err:'블록 2개가 필요해요'};const t=mats[0].t;if(mats.some(b=>b.t!==t))return {err:'같은 종류(타자용/투수용) 블록만 합성할 수 있어요'};
+  if(kind==='b'){if(mats.length!==2)return {err:'블록 2개 필요'};const t=mats[0].t;if(mats.some(b=>b.t!==t))return {err:'같은 종류(타자용/투수용) 블록만 합성 가능'};
     const order='CBAS',a=order.indexOf(mats[0].g),b=order.indexOf(mats[1].g);const g=a===b?(rnd()<.6?order[Math.min(3,a+1)]:order[a]):order[Math.max(a,b)];return {kind,out:mkBlock(t,g)}}
-  if(kind==='s'){if(mats.some(x=>x!==mats[0]))return {err:'같은 서포트 카드 3장이 필요해요'};if(mats[0].endsWith('+'))return {err:'강화판은 더 합성할 수 없어요'};return {kind,out:mats[0]+'+'}}
-  if(kind==='t'){const gs=mats.map(id=>TC_BY[id]&&TC_BY[id][3]);if(gs.some(g=>g!==gs[0]))return {err:'같은 등급 카드 3장이 필요해요'};if(gs[0]==='황금')return {err:'황금 카드는 더 합성할 수 없어요'};
+  if(kind==='s'){if(mats.some(x=>x!==mats[0]))return {err:'같은 서포트 카드 3장 필요'};if(mats[0].endsWith('+'))return {err:'강화판은 합성 불가'};return {kind,out:mats[0]+'+'}}
+  if(kind==='t'){const gs=mats.map(id=>TC_BY[id]&&TC_BY[id][3]);if(gs.some(g=>g!==gs[0]))return {err:'같은 등급 카드 3장 필요'};if(gs[0]==='황금')return {err:'황금 카드는 합성 불가'};
     const g=gs[0]==='특수'?'황금':(rnd()<.2?'황금':'특수');return {kind,out:pick(TCARDS.filter(x=>x[3]===g))[0],grade:g}}
   return {err:'알 수 없는 합성'}}
 function clash(mine,opp){return (mine||[]).filter(id=>TC_BY[id]).map(id=>{const c=TC_BY[id];for(const o of opp||[]){const q=TC_BY[o];if(!q)continue;
@@ -1032,7 +1041,7 @@ function leagueEnd(tier,rank,firstWin){const base=rank===1?(firstWin?WIN.first:W
 // 단일팀 도전(팀컬러 팀, 난이도 1~10): 첫 클리어 300×난이도 + 난이도 5·10 첫 클리어 확정권. 반복 클리어는 하루 5회까지 40×난이도
 const CHAL={first:300,rep:40,daily:5,firstTix:{5:{star:1},10:{legend:1}}};
 function challenge(diff,first,todayRepeats){if(first)return {pt:CHAL.first*diff,tix:{...(CHAL.firstTix[diff]||{})}};
-  return todayRepeats<CHAL.daily?{pt:CHAL.rep*diff}:{pt:0,note:'오늘 반복 보상은 다 받았어요'}}
+  return todayRepeats<CHAL.daily?{pt:CHAL.rep*diff}:{pt:0,note:'오늘 반복 보상 완료'}}
 
 // 연도별 리그(그 해 실제 구단들과 시즌): 그 연도 첫 우승 3000P+골든글러브 확정권(그 연도 지정 가능), 재우승 500P. 2위 800·3위 500·그 외 200
 // 개인 타이틀: 리그 마감 때 내 선수가 1위인 부문마다 보너스. 주간 리그는 300P×단계 배율, 연도 리그는 300P(반복 상한 적용 대상)
@@ -1100,10 +1109,10 @@ function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); 
   if(pk.k==='ty'){const Y=(opt.tyYears||[]).map(Number);pool=pool.filter(c=>c.line===opt.line&&Y.includes(c.year))}
   return pool}
 // 카드 팩 뽑기: 포인트 차감 + 천장 + 도감 등록까지. 반환 {cards, dex(새로 완성된 세트), err}
-function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩이 아니에요'};
-  opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개를 골라 주세요'};
-  if(k==='tl'&&!opt.line)return {err:'구단을 골라 주세요'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개와 연도 3개를 골라 주세요'};
-  if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드가 없어요'};
+function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩 아님'};
+  opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개 선택'};
+  if(k==='tl'&&!opt.line)return {err:'구단 선택'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개 · 연도 3개 선택'};
+  if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
   S.pt-=pk.p;const out=[];const sp=k==='sx'?pool.filter(c=>c.v==='GG'||c.v==='AS'):null,nsp=sp&&pool.filter(c=>!c.v);
   for(let i=0;i<pk.cnt;i++)out.push(k==='ty'?pool[Math.floor(rnd()*pool.length)]:sp?wpick(rnd()<.25?sp:nsp):wpick(pool));
   if(sp&&!out.some(c=>c.v==='GG'||c.v==='AS'))out[out.length-1]=wpick(sp);
@@ -1115,11 +1124,11 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
   return {cards:out,dex:gain(S,out.map(c=>c.id))}}
 // 확정권 쓰기(카드형). pick은 id를 지정
 // arg: pick→카드 id, gg→연도(선택), ex→구단 계보(선택)
-function useTicket(S,CARDS,k,arg){const pickId=arg;if(!(S.tix&&S.tix[k]>0))return {err:'확정권이 없어요'};let c;
-  if(k==='pick'){c=CARDS.find(x=>x.id===pickId&&x.cost>=9);if(!c)return {err:'레전드(9+) 카드를 골라 주세요'}}
+function useTicket(S,CARDS,k,arg){const pickId=arg;if(!(S.tix&&S.tix[k]>0))return {err:'확정권 없음'};let c;
+  if(k==='pick'){c=CARDS.find(x=>x.id===pickId&&x.cost>=9);if(!c)return {err:'레전드(9+) 카드 선택'}}
   else if(tixPool[k]){const all=CARDS.filter(c=>tixPool[k](c)&&(arg==null||(k==='gg'&&c.year===+arg)||(k==='ex'&&c.line===arg)||!['gg','ex'].includes(k))),nw=all.filter(x=>!dexHas(S,x.id));c=wpick(nw.length?nw:all)} // 도감에 없는 카드 우선else return {err:'팩형 확정권은 팩 화면에서 써요'};
-  if(!c)return {err:'고른 조건에 맞는 카드가 없어요'};S.tix[k]--;return {cards:[c],dex:gain(S,[c.id])}}
-function dismantle(S,byId,id,n){n=n||1;const have=S.owned[id]|0;if(have-n<1)return {err:'1장은 남겨야 해요'};
+  if(!c)return {err:'조건에 맞는 카드 없음'};S.tix[k]--;return {cards:[c],dex:gain(S,[c.id])}}
+function dismantle(S,byId,id,n){n=n||1;const have=S.owned[id]|0;if(have-n<1)return {err:'1장은 남겨야 함'};
   S.owned[id]=have-n;if(byId[id].v==='EX'){S.exShard=(S.exShard|0)+n;let tk=0;while(S.exShard>=3){S.exShard-=3;tk++}if(tk){S.tix=S.tix||{};S.tix.ex=(S.tix.ex|0)+tk}return {shard:n,tix:tk,left:S.exShard}} // EX 중복 → EX 조각, 3개마다 EX 확정권(구단 지정 가능)
   const p=byId[id].cost*DISMANTLE*n;S.pt+=p;return {pt:p}}
 
@@ -1184,13 +1193,13 @@ const studyFee=(d,cost)=>{const x=STUDY_BY[d]||STUDY[0];return Math.round(500*Ma
 function studyRoll(d){const x=STUDY_BY[d]||STUDY[0],N=['대성공','성공','보통','실패'];let u=rnd()*100;
   for(let i=0;i<4;i++)if((u-=x[3][i])<0)return {name:N[i],gain:i<3?x[4][i]:0};return {name:'실패',gain:0}}
 // 유학 가능 여부(경제 쪽 검사): 특수 카드(올스타·골글·EX)는 불가. 나이 조건 등은 UI/엔진에서 추가 검사
-const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 유학 갈 수 없어요'}:{ok:true};
+const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 유학 불가'}:{ok:true};
 const rushFee=msLeft=>Math.max(0,Math.ceil(msLeft/36e5))*RUSH;
 function pay(S,p){if((S.pt||0)<p)return {err:'포인트가 모자라요'};S.pt-=p;return {pt:p}}
 // 쿠폰: Firestore coupons/{코드} 문서를 읽어 data로 넘김. 같은 코드는 한 번만(S.coupons에 기록). exp(만료 시각, ms 또는 Timestamp) 지나면 거절
 function redeem(S,code,data){code=String(code||'').trim().toUpperCase();S.coupons=S.coupons||{};
-  if(!data)return {err:'없는 쿠폰이에요'};if(S.coupons[code])return {err:'이미 쓴 쿠폰이에요'};
-  const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(exp&&Date.now()>exp)return {err:'기간이 지난 쿠폰이에요'};
+  if(!data)return {err:'없는 쿠폰'};if(S.coupons[code])return {err:'이미 사용한 쿠폰'};
+  const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(exp&&Date.now()>exp)return {err:'기간 만료 쿠폰'};
   const rw={pt:+data.pt||0,tix:data.tix||{}};S.coupons[code]=Date.now();grant(S,rw);return {rw,text:rwText(rw)}}
 // 연도 리그 경기 예측 전용 상한: 하루 1,500P (자동 진행 하루 약 60경기 × 평균 60P = 3,600P라 상한 없으면 과함). 주간 리그 예측은 상한 없음
 const PRED_CAP=1500;
@@ -1248,13 +1257,13 @@ const starters=T=>{T=clean(T);return [...T.lineup.map(x=>x.id),...T.rot,...T.pen
 const regCards=T=>{T=clean(T);return [...starters(T),...T.bench.map(id=>byId[id])].filter(Boolean)};
 function validate(){syncTeam();
   const T=S.team,e=[],ps=T.lineup.map(x=>x.pos);
-  if(T.lineup.length!==9||T.lineup.some(x=>!x.id))e.push('타순 9자리를 모두 채워 주세요');
+  if(T.lineup.length!==9||T.lineup.some(x=>!x.id))e.push('타순 9자리 필요');
   for(const p of POS)if(!ps.includes(p))e.push(`${PFULL[p]} 자리가 없습니다`);
-  for(const x of T.lineup){const c=byId[x.id];if(c&&!canPlay(c,x.pos))e.push(`${c.name}은(는) ${PFULL[x.pos]}을(를) 볼 수 없어요`)}
-  if(T.rot.filter(Boolean).length<5)e.push('선발 5명을 채워 주세요');
+  for(const x of T.lineup){const c=byId[x.id];if(c&&!canPlay(c,x.pos))e.push(`${c.name}은(는) ${PFULL[x.pos]}을(를) 수비 불가`)}
+  if(T.rot.filter(Boolean).length<5)e.push('선발 5명 필요');
   if(!T.pen.filter(Boolean).length)e.push('불펜에 최소 1명이 필요합니다');
   const nm={};for(const c of regCards(T))nm[pkt(c)]=(nm[pkt(c)]||0)+1;for(const k in nm)if(nm[k]>1)e.push(`${k.split('|')[0]} 선수가 중복 등록됐습니다`);
-  for(const c of regCards(T))if((S.ab||[]).some(a=>a.id===c.id&&!a.got))e.push(`${c.name}은(는) 유학 중이에요`);
+  for(const c of regCards(T))if((S.ab||[]).some(a=>a.id===c.id&&!a.got))e.push(`${c.name}은(는) 유학 중`);
   e.push(...exErr(regCards(T).map(c=>c.id)));
   const cost=regCards(T).reduce((s,c)=>s+c.cost,0);if(cost>COST_CAP)e.push(`1군 코스트 ${cost} / 상한 ${COST_CAP} 초과`);
   return e}
@@ -1323,7 +1332,7 @@ function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN
   const tix=Object.entries(S.tix||{}).filter(([,n])=>n>0),sel=(id,v,lab,opts)=>`<select id="${id}" aria-label="${lab}"><option value="">${lab}</option>${opts.map(([x,n])=>`<option value="${esc(x)}"${String(v)===String(x)?' selected':''}>${esc(n)}</option>`).join('')}</select>`,on=F.y||F.t||F.st||F.h||q;
   if(k==='all')return dexAll(KN,tix,sel,q);
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
-  <p class="note help">한 번 얻은 카드는 합성·분해로 없어져도 도감에 남아요. 세트를 다 모으면 보상이 바로 들어와요. 확정권은 카드팩 화면에서 써요.</p>
+  <p class="note help">한 번 얻은 카드는 도감에 계속 기록. 세트를 다 모으면 보상이 바로 들어와요. 확정권은 카드팩 화면에서 써요.</p>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
   ${k!=='meta'?`<div class="dexf">${YS.length?sel('dexy',F.y,'전체 연도',YS.map(y=>[y,y+'년'])):''}${TS.length?sel('dext',F.t,'전체 구단',TS.map(t=>[t,t])):''}${sel('dexst',F.st,'전체 세트',[['todo','미완성 세트'],['done','완성 세트']])}${sel('dexh',F.h,'모든 카드',[['have','모은 카드만'],['miss','못 모은 카드만']])}<input id="dexq" value="${esc(q)}" placeholder="이름 검색" aria-label="세트 검색">${on?'<button class="ghost" data-a="dexclr">필터 초기화</button>':''}<span class="note" style="margin:0">${L.length}세트</span></div>`:''}
   <div class="dexl">${L.slice(0,lim).map(({s,p})=>{const done=!!S.dexDone[s.id],ids=(s.ids||[]).filter(id=>!F.h||(F.h==='have')===!!dexHas(id));if(s.ids&&!ids.length)return '';
@@ -1357,7 +1366,7 @@ function vShop(){const pk=S.pk||'n',P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.
   ${multi?`<div class="lbl">${pk==='t'?'구단 계보':'연도'} 3개 고르기 <small>(${sel.length}/3)</small></div><div class="chips">${(pk==='t'?LINES:YEARS).map(v=>{const on=sel.includes(v),full=!on&&sel.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${pk==='t'?esc(lname(v)):v}</button>`}).join('')}</div>`:''}
   ${pk==='tl'||pk==='ty'?`<div class="tools"><select id="${pk==='tl'?'tll':'tyl'}" aria-label="구단 계보">${LINES.map(l=>`<option value="${esc(l)}" ${(pk==='tl'?pick.tl:pick.ty.line)===l?'selected':''}>${esc(lname(l))}</option>`).join('')}</select></div>`:''}
   ${pk==='ty'?(()=>{const ys=YEARS_OF(pick.ty.line),a=pick.ty.years;return `<div class="lbl">연도 3개 고르기 <small>(${a.length}/3)</small></div><div class="chips">${ys.map(v=>{const on=a.includes(v),full=!on&&a.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${v}</button>`}).join('')}</div>`})():''}
-  <div class="tools" style="margin-top:12px"><button data-a="pkbuy" ${ok&&afford?'':'disabled'}>${P[2].toLocaleString()}P로 열기</button>${multi&&sel.length<3?`<span class="note">${3-sel.length}개 더 골라 주세요</span>`:''}${!afford?'<span class="note" style="color:var(--bad)">포인트 부족</span>':''}${S.pkMsg?`<span class="note">${esc(S.pkMsg)}</span>`:''}</div>
+  <div class="tools" style="margin-top:12px"><button data-a="pkbuy" ${ok&&afford?'':'disabled'}>${P[2].toLocaleString()}P로 열기</button>${multi&&sel.length<3?`<span class="note">${3-sel.length}개 더 선택</span>`:''}${!afford?'<span class="note" style="color:var(--bad)">포인트 부족</span>':''}${S.pkMsg?`<span class="note">${esc(S.pkMsg)}</span>`:''}</div>
   ${pkOutHTML()}<!-- 개봉 결과는 열기 버튼 바로 아래(오른쪽 상자)에: 목록 아래에 두면 화면 밖이라 안 보임 -->
   ${tix.length?`<div class="lbl" style="margin-top:16px">확정권</div><div class="tools">${tix.map(([k,n])=>`<button class="ghost" data-tix="${k}">${esc(TIXN[k]||k)} ×${n}</button>`).join('')}
    ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+VN[c.v]:''}</option>`).join('')}</select>`:''}</div>`:''}
@@ -1392,19 +1401,19 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   const mis=(ECON.DAILY.missions||[]).map(([id,n,need,pt])=>{const have=Math.min(need,(D.m||{})[id]|0),got=(D.got||{})[id];return `<div class="mis${got?' done':''}"><b>${esc(n)}</b><span class="pill">${have}/${need}</span><small>${pt}P${got?' · 받음':''}</small></div>`}).join('');
   return `<section class="band hub"><div class="box"><h3>${s?`${s.tier?esc(tierName(s.tier)):'시즌 '+s.n} · ${Math.min(s.round+1,s.sched.length)}/${s.sched.length} 라운드`:'시즌 준비 중'}</h3>
   <div class="quick"><a href="#season"><button style="width:100%">주간 리그로</button></a><a href="#years"><button class="ghost" style="width:100%">연도별 리그</button></a><a href="#lineup"><button class="ghost" style="width:100%">라인업 확인</button></a><a href="#shop"><button class="ghost" style="width:100%">카드팩 열기</button></a></div>
-  ${e.length?`<p class="note" style="color:var(--bad)">라인업을 먼저 채워 주세요: ${esc(e[0])}</p>`:''}
+  ${e.length?`<p class="note" style="color:var(--bad)">라인업 미완성: ${esc(e[0])}</p>`:''}
   <div class="lbl">감독</div><p style="margin:0">${m?`${esc(m.n)} · ${MSTY[m.st]} · [${esc(m.sn)}]`:'없음'}</p><div class="lbl">내 덱 효과</div><p style="margin:0">${d.fx.map(x=>`${esc(x.n)} ${x.g}`).join(' · ')||'팀컬러 없음'} · 야수 +${d.bat} · 투수 +${d.pit} · 코스트 ${d.cost}/${COST_CAP}</p></div>
-  <div class="box"><h3>오늘</h3>${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 8px">로그인 없이 하는 중이에요. 이 기기에만 저장돼요. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
+  <div class="box"><h3>오늘</h3>${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 8px">게스트 플레이 중. 이 기기에만 저장. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
   <div class="lbl">쿠폰</div><div class="tools" style="flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}</div></section>
   <section class="band setb"><details><summary><b>구단 설정 · 저장 데이터</b></summary>
   <div class="tools" style="margin-top:10px"><label>구단 이름 <input id="tn" value="${esc(S.team.name)}" maxlength="12"></label></div>
-  <p class="note">이 브라우저에 자동 저장돼요${FBMODE()&&ON.user?' · 로그인 계정에도 동기화돼요':''}. 다른 기기로 옮길 때는 코드를 복사해 붙여 넣으세요.</p>
+  <p class="note">브라우저 자동 저장${FBMODE()&&ON.user?' · 계정 동기화':''}. 다른 기기: 코드 복사 후 붙여넣기.</p>
   <textarea id="sv" rows="3" style="width:100%"></textarea><div class="tools"><button class="ghost" data-a="copy">코드 복사</button><button class="ghost" data-a="load">붙여 넣은 코드 불러오기</button><button class="ghost danger" data-a="reset" style="margin-left:auto">처음부터 다시</button></div></details></section>`}
-async function redeemCoupon(){const el=document.getElementById('cpn'),code=((el&&el.value)||'').trim().toUpperCase();if(!code){S.cpMsg='코드를 넣어 주세요';render();return}
-  const F=window.FB;if(!F){S.cpMsg='쿠폰은 온라인(배포판)에서만 쓸 수 있어요';render();return}
-  if((S.coupons||{})[code]){S.cpMsg='이미 받은 쿠폰이에요';render();return}
+async function redeemCoupon(){const el=document.getElementById('cpn'),code=((el&&el.value)||'').trim().toUpperCase();if(!code){S.cpMsg='코드 입력';render();return}
+  const F=window.FB;if(!F){S.cpMsg='쿠폰은 온라인 전용';render();return}
+  if((S.coupons||{})[code]){S.cpMsg='이미 사용한 쿠폰';render();return}
   S.cpMsg='확인 중…';render();
-  try{const snap=await F.getDoc(F.doc(F.db,'coupons',code)),r=ECON.redeem(S,code,snap.exists()?snap.data():null);S.cpMsg=r.err||(r.text+' 받았어요');save()}catch(e){S.cpMsg='쿠폰을 확인하지 못했어요 ('+(e.code||e.message)+')'}render()}
+  try{const snap=await F.getDoc(F.doc(F.db,'coupons',code)),r=ECON.redeem(S,code,snap.exists()?snap.data():null);S.cpMsg=r.err||(r.text+' 획득');save()}catch(e){S.cpMsg='쿠폰 확인 실패 ('+(e.code||e.message)+')'}render()}
 const nextOpp=()=>{try{const s=S.season;if(!s||s.over)return '';const pr=curPair(s);if(!pr)return '';const o=pr[0]===0?pr[1]:pr[0];return `<a href="#season" class="pill" style="text-decoration:none;color:inherit">다음 경기 vs ${esc(tname(o))}</a>`}catch(e){return ''}};
 const ABMAP='M0 0h0M9 0h0M18 0h0M26 0h0M35 0h0M44 0h0M53 0h0M62 0h0M70 0h0M79 0h0M88 0h0M97 0h0M106 0h0M114 0h0M123 0h0M132 0h0M141 0h0M150 0h0M158 0h0M167 0h0M176 0h0M185 0h0M194 0h0M273 0h0M282 0h0M290 0h0M449 0h0M563 0h0M572 0h0M581 0h0M590 0h0M598 0h0M607 0h0M616 0h0M625 0h0M634 0h0M642 0h0M651 0h0M660 0h0M669 0h0M678 0h0M686 0h0M695 0h0M704 0h0M713 0h0M722 0h0M730 0h0M783 0h0M792 0h0M801 0h0M810 0h0M818 0h0M827 0h0M836 0h0M0 9h0M9 9h0M18 9h0M26 9h0M35 9h0M44 9h0M53 9h0M62 9h0M70 9h0M79 9h0M88 9h0M97 9h0M106 9h0M114 9h0M123 9h0M132 9h0M141 9h0M150 9h0M158 9h0M167 9h0M176 9h0M185 9h0M194 9h0M202 9h0M273 9h0M282 9h0M572 9h0M581 9h0M590 9h0M598 9h0M607 9h0M616 9h0M625 9h0M634 9h0M642 9h0M651 9h0M660 9h0M669 9h0M678 9h0M686 9h0M695 9h0M704 9h0M713 9h0M722 9h0M730 9h0M739 9h0M748 9h0M757 9h0M774 9h0M783 9h0M792 9h0M801 9h0M810 9h0M818 9h0M827 9h0M836 9h0M845 9h0M854 9h0M0 18h0M9 18h0M18 18h0M26 18h0M35 18h0M44 18h0M53 18h0M62 18h0M70 18h0M79 18h0M88 18h0M97 18h0M106 18h0M114 18h0M123 18h0M132 18h0M141 18h0M150 18h0M158 18h0M167 18h0M176 18h0M185 18h0M194 18h0M202 18h0M211 18h0M220 18h0M581 18h0M590 18h0M598 18h0M607 18h0M616 18h0M625 18h0M634 18h0M642 18h0M651 18h0M660 18h0M669 18h0M678 18h0M686 18h0M695 18h0M704 18h0M713 18h0M722 18h0M730 18h0M739 18h0M748 18h0M757 18h0M766 18h0M774 18h0M783 18h0M792 18h0M801 18h0M810 18h0M818 18h0M827 18h0M836 18h0M845 18h0M854 18h0M0 26h0M9 26h0M18 26h0M26 26h0M35 26h0M44 26h0M53 26h0M62 26h0M70 26h0M79 26h0M88 26h0M97 26h0M106 26h0M114 26h0M123 26h0M132 26h0M141 26h0M150 26h0M158 26h0M167 26h0M176 26h0M185 26h0M194 26h0M202 26h0M220 26h0M598 26h0M607 26h0M616 26h0M625 26h0M634 26h0M642 26h0M651 26h0M660 26h0M669 26h0M678 26h0M686 26h0M695 26h0M704 26h0M713 26h0M722 26h0M730 26h0M739 26h0M748 26h0M757 26h0M766 26h0M774 26h0M783 26h0M792 26h0M801 26h0M810 26h0M836 26h0M862 26h0M871 26h0M0 35h0M9 35h0M18 35h0M26 35h0M35 35h0M44 35h0M53 35h0M62 35h0M70 35h0M79 35h0M88 35h0M97 35h0M106 35h0M114 35h0M123 35h0M132 35h0M141 35h0M150 35h0M158 35h0M167 35h0M176 35h0M185 35h0M194 35h0M202 35h0M220 35h0M598 35h0M607 35h0M616 35h0M625 35h0M634 35h0M642 35h0M651 35h0M660 35h0M669 35h0M678 35h0M686 35h0M695 35h0M704 35h0M713 35h0M722 35h0M730 35h0M739 35h0M748 35h0M757 35h0M766 35h0M774 35h0M783 35h0M792 35h0M801 35h0M810 35h0M818 35h0M827 35h0M0 44h0M9 44h0M18 44h0M26 44h0M35 44h0M44 44h0M53 44h0M62 44h0M70 44h0M79 44h0M88 44h0M97 44h0M106 44h0M114 44h0M123 44h0M132 44h0M141 44h0M150 44h0M158 44h0M167 44h0M176 44h0M185 44h0M194 44h0M598 44h0M607 44h0M616 44h0M625 44h0M634 44h0M642 44h0M651 44h0M660 44h0M669 44h0M678 44h0M686 44h0M695 44h0M704 44h0M713 44h0M722 44h0M730 44h0M739 44h0M748 44h0M757 44h0M766 44h0M774 44h0M783 44h0M792 44h0M801 44h0M810 44h0M818 44h0M836 44h0M0 53h0M9 53h0M18 53h0M26 53h0M35 53h0M44 53h0M53 53h0M62 53h0M70 53h0M79 53h0M88 53h0M97 53h0M106 53h0M114 53h0M123 53h0M132 53h0M141 53h0M150 53h0M158 53h0M167 53h0M211 53h0M220 53h0M598 53h0M607 53h0M616 53h0M625 53h0M634 53h0M642 53h0M651 53h0M660 53h0M669 53h0M678 53h0M686 53h0M695 53h0M704 53h0M713 53h0M722 53h0M730 53h0M739 53h0M748 53h0M757 53h0M766 53h0M774 53h0M783 53h0M792 53h0M801 53h0M0 62h0M9 62h0M18 62h0M26 62h0M35 62h0M44 62h0M53 62h0M62 62h0M70 62h0M79 62h0M88 62h0M97 62h0M106 62h0M114 62h0M123 62h0M141 62h0M150 62h0M158 62h0M211 62h0M598 62h0M607 62h0M616 62h0M625 62h0M634 62h0M642 62h0M651 62h0M660 62h0M669 62h0M678 62h0M686 62h0M695 62h0M704 62h0M713 62h0M722 62h0M730 62h0M739 62h0M748 62h0M757 62h0M766 62h0M774 62h0M783 62h0M0 70h0M9 70h0M18 70h0M26 70h0M35 70h0M44 70h0M53 70h0M62 70h0M70 70h0M79 70h0M88 70h0M97 70h0M106 70h0M114 70h0M150 70h0M158 70h0M211 70h0M598 70h0M607 70h0M616 70h0M625 70h0M634 70h0M642 70h0M651 70h0M660 70h0M669 70h0M678 70h0M686 70h0M695 70h0M704 70h0M713 70h0M722 70h0M730 70h0M739 70h0M748 70h0M757 70h0M766 70h0M774 70h0M783 70h0M0 79h0M9 79h0M18 79h0M26 79h0M35 79h0M44 79h0M53 79h0M62 79h0M70 79h0M79 79h0M88 79h0M97 79h0M106 79h0M114 79h0M123 79h0M158 79h0M194 79h0M202 79h0M607 79h0M616 79h0M625 79h0M634 79h0M642 79h0M651 79h0M660 79h0M669 79h0M678 79h0M686 79h0M695 79h0M704 79h0M713 79h0M722 79h0M730 79h0M739 79h0M748 79h0M757 79h0M766 79h0M774 79h0M783 79h0M0 88h0M9 88h0M18 88h0M26 88h0M35 88h0M44 88h0M53 88h0M62 88h0M70 88h0M79 88h0M88 88h0M97 88h0M106 88h0M114 88h0M123 88h0M176 88h0M185 88h0M194 88h0M616 88h0M625 88h0M634 88h0M642 88h0M651 88h0M660 88h0M669 88h0M678 88h0M686 88h0M695 88h0M704 88h0M713 88h0M722 88h0M730 88h0M739 88h0M748 88h0M757 88h0M766 88h0M774 88h0M0 97h0M9 97h0M18 97h0M26 97h0M35 97h0M44 97h0M53 97h0M62 97h0M70 97h0M79 97h0M88 97h0M97 97h0M106 97h0M114 97h0M123 97h0M132 97h0M625 97h0M634 97h0M642 97h0M651 97h0M660 97h0M669 97h0M678 97h0M686 97h0M695 97h0M704 97h0M713 97h0M722 97h0M730 97h0M739 97h0M748 97h0M757 97h0M0 106h0M9 106h0M18 106h0M26 106h0M35 106h0M44 106h0M53 106h0M62 106h0M70 106h0M79 106h0M88 106h0M97 106h0M106 106h0M114 106h0M123 106h0M132 106h0M642 106h0M651 106h0M660 106h0M669 106h0M678 106h0M686 106h0M695 106h0M704 106h0M757 106h0M0 114h0M9 114h0M18 114h0M26 114h0M35 114h0M44 114h0M53 114h0M62 114h0M70 114h0M79 114h0M88 114h0M97 114h0M106 114h0M114 114h0M123 114h0M634 114h0M651 114h0M660 114h0M669 114h0M678 114h0M686 114h0M695 114h0M766 114h0M0 123h0M9 123h0M18 123h0M26 123h0M35 123h0M44 123h0M53 123h0M62 123h0M70 123h0M79 123h0M88 123h0M97 123h0M106 123h0M114 123h0M123 123h0M642 123h0M660 123h0M669 123h0M678 123h0M686 123h0M695 123h0M766 123h0M0 132h0M9 132h0M18 132h0M26 132h0M35 132h0M44 132h0M53 132h0M62 132h0M70 132h0M79 132h0M88 132h0M97 132h0M106 132h0M132 132h0M669 132h0M678 132h0M686 132h0M695 132h0M757 132h0M766 132h0M18 141h0M26 141h0M35 141h0M44 141h0M53 141h0M62 141h0M70 141h0M88 141h0M669 141h0M678 141h0M686 141h0M695 141h0M730 141h0M739 141h0M783 141h0M26 150h0M35 150h0M44 150h0M53 150h0M62 150h0M70 150h0M88 150h0M678 150h0M686 150h0M695 150h0M704 150h0M722 150h0M730 150h0M792 150h0M801 150h0M810 150h0M26 158h0M44 158h0M53 158h0M62 158h0M70 158h0M132 158h0M695 158h0M704 158h0M713 158h0M722 158h0M730 158h0M44 167h0M53 167h0M62 167h0M70 167h0M79 167h0M132 167h0M722 167h0M730 167h0M739 167h0M748 167h0M44 176h0M62 176h0M70 176h0M79 176h0M150 176h0M748 176h0M801 176h0M44 185h0M70 185h0M123 185h0M141 185h0M748 185h0M792 185h0M810 185h0M818 185h0M827 185h0M836 185h0M141 194h0M150 194h0M766 194h0M783 194h0M792 194h0M801 194h0M810 194h0M818 194h0M827 194h0M836 194h0M845 194h0M53 202h0M114 202h0M123 202h0M783 202h0M792 202h0M801 202h0M810 202h0M818 202h0M827 202h0M836 202h0M845 202h0M854 202h0M862 202h0M871 202h0M44 211h0M62 211h0M106 211h0M114 211h0M783 211h0M792 211h0M801 211h0M810 211h0M818 211h0M827 211h0M836 211h0M845 211h0M854 211h0M862 211h0M871 211h0M880 211h0M44 220h0M53 220h0M88 220h0M97 220h0M106 220h0M114 220h0M123 220h0M132 220h0M158 220h0M774 220h0M783 220h0M792 220h0M801 220h0M810 220h0M818 220h0M827 220h0M836 220h0M845 220h0M854 220h0M862 220h0M871 220h0M880 220h0M53 229h0M62 229h0M88 229h0M97 229h0M106 229h0M114 229h0M176 229h0M766 229h0M774 229h0M783 229h0M792 229h0M801 229h0M810 229h0M818 229h0M827 229h0M836 229h0M845 229h0M854 229h0M862 229h0M871 229h0M880 229h0M889 229h0M898 229h0M62 238h0M70 238h0M97 238h0M106 238h0M132 238h0M167 238h0M185 238h0M194 238h0M202 238h0M211 238h0M220 238h0M774 238h0M783 238h0M792 238h0M801 238h0M810 238h0M818 238h0M827 238h0M836 238h0M845 238h0M854 238h0M862 238h0M871 238h0M880 238h0M889 238h0M898 238h0M906 238h0M915 238h0M924 238h0M70 246h0M202 246h0M211 246h0M220 246h0M229 246h0M246 246h0M766 246h0M774 246h0M783 246h0M792 246h0M801 246h0M810 246h0M818 246h0M827 246h0M836 246h0M845 246h0M854 246h0M862 246h0M871 246h0M880 246h0M889 246h0M898 246h0M906 246h0M915 246h0M924 246h0M933 246h0M942 246h0M88 255h0M97 255h0M106 255h0M202 255h0M211 255h0M220 255h0M238 255h0M774 255h0M783 255h0M792 255h0M801 255h0M810 255h0M818 255h0M827 255h0M836 255h0M845 255h0M854 255h0M862 255h0M871 255h0M880 255h0M889 255h0M898 255h0M906 255h0M915 255h0M924 255h0M933 255h0M942 255h0M246 264h0M783 264h0M792 264h0M801 264h0M810 264h0M818 264h0M827 264h0M836 264h0M845 264h0M854 264h0M862 264h0M871 264h0M880 264h0M889 264h0M898 264h0M906 264h0M915 264h0M924 264h0M933 264h0M942 264h0M185 273h0M194 273h0M220 273h0M783 273h0M792 273h0M801 273h0M810 273h0M818 273h0M827 273h0M836 273h0M845 273h0M854 273h0M862 273h0M871 273h0M880 273h0M889 273h0M898 273h0M906 273h0M915 273h0M924 273h0M933 273h0M158 282h0M167 282h0M176 282h0M185 282h0M220 282h0M792 282h0M801 282h0M810 282h0M818 282h0M827 282h0M836 282h0M845 282h0M854 282h0M862 282h0M871 282h0M880 282h0M889 282h0M898 282h0M906 282h0M915 282h0M924 282h0M150 290h0M158 290h0M167 290h0M176 290h0M185 290h0M194 290h0M220 290h0M229 290h0M801 290h0M810 290h0M818 290h0M827 290h0M836 290h0M845 290h0M854 290h0M862 290h0M871 290h0M880 290h0M889 290h0M898 290h0M906 290h0M915 290h0M924 290h0M141 299h0M150 299h0M158 299h0M167 299h0M176 299h0M185 299h0M194 299h0M202 299h0M211 299h0M220 299h0M229 299h0M810 299h0M818 299h0M827 299h0M836 299h0M845 299h0M854 299h0M862 299h0M871 299h0M880 299h0M889 299h0M898 299h0M906 299h0M915 299h0M924 299h0M114 308h0M123 308h0M132 308h0M141 308h0M150 308h0M158 308h0M167 308h0M176 308h0M185 308h0M194 308h0M202 308h0M211 308h0M220 308h0M229 308h0M238 308h0M308 308h0M810 308h0M818 308h0M827 308h0M836 308h0M845 308h0M854 308h0M862 308h0M871 308h0M880 308h0M889 308h0M898 308h0M906 308h0M915 308h0M924 308h0M106 317h0M114 317h0M123 317h0M132 317h0M141 317h0M150 317h0M158 317h0M167 317h0M176 317h0M185 317h0M194 317h0M202 317h0M211 317h0M220 317h0M229 317h0M238 317h0M246 317h0M810 317h0M818 317h0M827 317h0M836 317h0M845 317h0M854 317h0M862 317h0M871 317h0M880 317h0M889 317h0M898 317h0M906 317h0M106 326h0M114 326h0M123 326h0M132 326h0M141 326h0M150 326h0M158 326h0M167 326h0M176 326h0M185 326h0M194 326h0M202 326h0M211 326h0M220 326h0M229 326h0M238 326h0M246 326h0M255 326h0M810 326h0M818 326h0M827 326h0M836 326h0M845 326h0M854 326h0M862 326h0M871 326h0M880 326h0M889 326h0M106 334h0M114 334h0M123 334h0M132 334h0M141 334h0M150 334h0M158 334h0M167 334h0M176 334h0M185 334h0M194 334h0M202 334h0M211 334h0M220 334h0M229 334h0M238 334h0M246 334h0M255 334h0M810 334h0M818 334h0M827 334h0M836 334h0M845 334h0M854 334h0M862 334h0M871 334h0M880 334h0M889 334h0M114 343h0M123 343h0M132 343h0M141 343h0M150 343h0M158 343h0M167 343h0M176 343h0M185 343h0M194 343h0M202 343h0M211 343h0M220 343h0M229 343h0M238 343h0M246 343h0M255 343h0M810 343h0M818 343h0M827 343h0M836 343h0M845 343h0M854 343h0M862 343h0M871 343h0M880 343h0M114 352h0M123 352h0M132 352h0M141 352h0M150 352h0M158 352h0M185 352h0M194 352h0M202 352h0M211 352h0M220 352h0M229 352h0M238 352h0M246 352h0M255 352h0M810 352h0M818 352h0M827 352h0M836 352h0M845 352h0M854 352h0M862 352h0M871 352h0M880 352h0M114 361h0M123 361h0M202 361h0M211 361h0M220 361h0M229 361h0M238 361h0M246 361h0M801 361h0M810 361h0M818 361h0M827 361h0M836 361h0M845 361h0M854 361h0M862 361h0M871 361h0M211 370h0M220 370h0M229 370h0M238 370h0M246 370h0M801 370h0M810 370h0M818 370h0M827 370h0M836 370h0M845 370h0M854 370h0M220 378h0M352 378h0M361 378h0M801 378h0M810 378h0M818 378h0M827 378h0M836 378h0M845 378h0M229 387h0M352 387h0M801 387h0M810 387h0M818 387h0M827 387h0M836 387h0M238 396h0M334 396h0M792 396h0M801 396h0M810 396h0M818 396h0M827 396h0M317 405h0M326 405h0M792 405h0M801 405h0M810 405h0M818 405h0M792 414h0M801 414h0M810 414h0M818 414h0',ABPOS={"d1": [16.2, 18.8, "l"], "d6": [13.8, 31.1, "l"], "d2": [26.2, 86.3, "r"], "d8": [70.8, 32.7, "l"], "d3": [21.5, 19.5, "r"], "d7": [85.8, 36.3, "r"], "d9": [85.5, 46.2, "r"], "d4": [84.0, 35.6, "t"], "d5": [66.7, 21.7, "l"]};
 const abMapHTML=d=>`<div class="abmw"><div class="abmap" role="group" aria-label="유학지 지도"><svg viewBox="0 0 960 416" aria-hidden="true"><path d="${ABMAP}"/></svg>${ABD.map(x=>{const o=abOpen(x),p=ABPOS[x[0]]||[50,50,'r'];return `<button class="abpin ${p[2]}${x[0]===d[0]?' on':''}${o?'':' lk'}" style="left:${p[0]}%;top:${p[1]}%" data-abd="${x[0]}" title="${esc(x[1])} · ${o?x[3]+'시간 · 중복 '+x[4]+'장':'잠김 · '+esc(x[6])}" aria-pressed="${x[0]===d[0]}"><i></i><span>${esc(x[1].replace(/ (윈터리그|여름리그|캠프)$/,''))}</span></button>`}).join('')}</div></div>`;
@@ -1474,7 +1483,7 @@ function bars(c,keys,bonus){return keys.map(k=>{const v=c.r[k],p=k==='sta'?0:(bo
 // 컨디션 1~5 (엔진 COND: 최악·나쁨·보통·좋음·최상) → OVR 앞 화살표. 시안은 선수별 고정 예시값
 const CONDN=['','최악','나쁨','보통','좋음','최상'],CONDA=[0,90,45,0,-45,-90];
 const condOf=c=>{if(!c)return 3;const v=(S.cond||{})[baseId(c.id)]||3;return Math.max(condMin(baseId(c.id)),v)};
-const condI=c=>{const v=condOf(c);return `<i class="cnd cd${v}" title="컨디션 ${CONDN[v]}" aria-label="컨디션 ${CONDN[v]}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h8M8 4.5 11.5 8 8 11.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="rotate(${CONDA[v]} 8 8)"/></svg></i>`};
+const condI=c=>{const v=condOf(c);return `<i class="cnd cd${v}" title="컨디션 ${CONDN[v]}" aria-label="컨디션 ${CONDN[v]}"><svg viewBox="0 0 14 12" aria-hidden="true">${[0,1,2,3,4].map(k=>`<rect x="${k*3}" y="${10-k*2.5}" width="2" height="${2+k*2.5}" ${k<v?'':'class="off"'}/>`).join('')}</svg></i>`};
 const stars=n=>`<i class="stars${n>5?' sn':''}" title="코스트 ${n}" aria-label="코스트 ${n}">${n>5?'★'+n:'★'.repeat(n)}</i>`; // 6 이상은 ★7처럼 숫자로(카드 폭 넘침 방지)
 function card(c,o={}){if(!c)return '';const keys=c.type==='B'?BK:PKEY,d=o.full?deckFx():null,bn=d&&used().includes(c.id)?(c.type==='B'?d.bat:d.pit):o.full?0:null;
  return `<div class="card t-${c.tier}${c.v?' cv-'+c.v:''}${o.dim?' dim':''}${o.full?' big':o.stats?'':' slim'}" style="--tc:${c.col}" ${o.pick?`role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}" aria-label="${esc(c.name)} 카드 크게 보기"`:''}>
@@ -1492,7 +1501,7 @@ function used(){return [...S.lu.map(x=>x[1]),...S.bench,...S.rot,...S.pen].filte
 const tcChip=x=>`<span class="tcc g-${x.g}${x.on?' on':''}"><i>${x.g}</i><b>${esc(x.n)}</b><small>${esc(x.sub)}</small><em>${x.on?`야수 +${x.b} · 투수 +${x.p}`:`${x.cur}/${x.need}`}</em></span>`;
 function meter(t,v,max,sub,over){return `<div class="meter${over?' over':''}"><b>${t}</b><span class="v">${v}</span><div class="track"><i style="width:${Math.min(100,parseFloat(v)/max*100)}%"></i></div><small>${sub}</small></div>`}
 function deckBar(){const d=deckFx();return `<div class="deck">
- ${meter('코스트 (1군 25명 전체)',`${d.cost} / ${COST_CAP}`,COST_CAP,d.cost>COST_CAP?'상한 초과: 등록할 수 없어요':`남은 코스트 ${COST_CAP-d.cost}`,d.cost>COST_CAP)}
+ ${meter('코스트 (1군 25명 전체)',`${d.cost} / ${COST_CAP}`,COST_CAP,d.cost>COST_CAP?'코스트 상한 초과':`남은 코스트 ${COST_CAP-d.cost}`,d.cost>COST_CAP)}
  ${meter('1군 등록',`${d.cnt} / 25`,25,(()=>{const n=exCount(used());return `야수 9 · 벤치 5 · 선발 5 · 불펜 6 · EX 타자 ${n.B}/${EX_MAX.B} · 투수 ${n.P}/${EX_MAX.P}`})())}
  <div class="meter tcm"><b>팀컬러 · 야수 +${d.bat} · 투수 +${d.pit}</b><div class="tcl">${d.fx.map(tcChip).join('')||'<span class="note">아직 없음</span>'}<button class="ghost tcall" data-a="tcall" aria-pressed="${!!S.tcAll}">${S.tcAll?'접기':'고르기'}</button></div></div></div>
  ${S.tcAll?fxPickHTML(used().map(id=>byId[id]).filter(Boolean),S.team.fxsel,'team'):''}`}
@@ -1524,7 +1533,7 @@ function vMgr(){const m=MG.find(x=>x.id===S.mgr),fl=S.mf||'all',list=MG.filter(x
  <div class="box mdet"><div class="tools"><span class="mface big">${mface(m)}</span><div><h2 style="margin:0">${esc(m.n)} 감독</h2><p style="margin:0">${MSTY[m.st]} · ${{L:'레전드',S:'스타',N:'노멀'}[m.g]}</p></div></div>
  <div class="skill"><b>[${esc(m.sn)}]</b> ${esc(m.se)}</div>
  <div class="lbl">작전 경향 (감독이 정함)</div>${MT.map(([k,n,l,r])=>`<div class="tq"><span>${n}</span><span class="tl">${l}</span><span class="tbar" aria-label="${n}: ${l} ${m.tac[k]} / 4 ${r}"><i style="left:${m.tac[k]*25}%"></i></span><span class="tl">${r}</span></div>`).join('')}
- <p class="note help">감독 이름은 KBO 역대 감독의 별명이고, 성향은 게임용 해석이에요. 모든 경기는 고른 감독의 경향대로 작전이 나와요.</p></div></div>`}
+ <p class="note help">감독 이름은 KBO 역대 감독 별명, 성향은 게임용 해석. 모든 경기는 고른 감독의 경향대로 작전이 나와요.</p></div></div>`}
 function mface(m){const hue={small:'#2f7d6d',big:'#c22a2a',speed:'#e8691b',trust:'#23214f',pen:'#0a5fb4',data:'#7b1530'}[m.st];
  let h=0;for(const ch of m.id)h=h*7+ch.charCodeAt(0);const hair=['#1b1d1c','#4a3b30','#8a8a8a','#d0d0d0'][h%4],gl=h%3===0;
  return `<svg viewBox="0 0 80 80" aria-hidden="true"><rect width="80" height="80" rx="40" fill="${hue}"/><path d="M14 80 Q18 60 40 58 Q62 60 66 80Z" fill="#20242a"/><path d="M34 58 L40 70 L46 58" fill="#fff"/>
@@ -1541,20 +1550,20 @@ function tart(cat){const w='rgba(255,255,255,.92)';
  return `<svg viewBox="0 0 120 64" class="tart" aria-hidden="true"><g opacity=".18">${[0,1,2,3,4].map(i=>`<rect x="${i*28-6}" width="10" height="64" transform="skewX(-20)" fill="#fff"/>`).join('')}</g>${cat==='투'?P:cat==='야'?B:C}</svg>`}
 function tcard(x,o={}){const [id,n,cat,tier,cond,fx,pt]=x;return `<button class="tcd c-${cat==='투'?'p':cat==='야'?'b':'c'} tr-${tier}${o.on?' on':''}${o.st?' st-'+o.st:''}" ${o.attr||''}><span class="tcat" title="${TCAT[cat]} 작전">${cat}</span><span class="ttier">${tier}</span><span class="tpt">${pt}P</span>${tart(cat)}<b>${esc(n)}</b><small>${esc(cond)}</small><span>${esc(fx)}</span>${o.rel?`<span class="rel">${rel(x)}</span>`:''}${o.st?`<em>${o.st}</em>`:''}${o.cnt!=null?`<i class="cnt">×${o.cnt}</i>`:''}</button>`}
 function vTcard(){const f=S.tf||'all',list=TCARDS.filter(x=>(S.tq[x[0]]||0)>0&&(f==='all'||x[2]===f||x[3]===f)),cur=S.tsel&&tc(S.tsel);
- return `<div class="tsel2"><div><div class="lbl" style="margin-top:0">다음 대전에 쓸 작전 카드 (1장 · 연습경기는 소모 없음)</div>${cur?tcard(cur,{rel:1,attr:'data-tsel=""',cnt:S.tq[cur[0]]}):'<span class="tcd empty">카드를 고르세요</span>'}</div>
+ return `<div class="tsel2"><div><div class="lbl" style="margin-top:0">다음 대전에 쓸 작전 카드 (1장 · 연습경기는 소모 없음)</div>${cur?tcard(cur,{rel:1,attr:'data-tsel=""',cnt:S.tq[cur[0]]}):'<span class="tcd empty">카드 선택</span>'}</div>
  <div class="tdrawbox"><div class="lbl" style="margin-top:0">작전 카드 뽑기</div><button data-a="tdraw">한 장 뽑기 · 100P</button><p class="note">보유 작전 포인트 1,240P</p>${S.tdraw?`<div class="drawn">${tcard(tc(S.tdraw),{})}<p class="note">NEW</p></div>`:''}</div></div>
  <div class="tools" style="margin-top:16px"><h3 style="margin:0">보유 작전 카드</h3><div class="tabs">${[['all','전체'],['투','투수'],['야','야수'],['공','공통'],['황금','황금']].map(([k,n])=>`<button class="${f===k?'on':''}" data-tf="${k}">${n}</button>`).join('')}</div></div>
  <div class="tpool">${list.map(x=>tcard(x,{on:S.tsel===x[0],rel:1,cnt:S.tq[x[0]],attr:`data-tsel="${x[0]}"`})).join('')||'<p class="note">보유 카드 없음</p>'}</div>
- <p class="note help">작전 카드는 뽑기로 모으고, 대전(친구 리그) 경기마다 한 장을 골라 씁니다. 대전에서 쓴 카드는 한 장 줄어들고, AI와 하는 연습경기에서는 줄지 않아요. 조건이 맞으면 경기 내내 자동으로 발동하고, 상대가 고른 카드와 우열 관계면 한쪽이 무효화, 대립 관계면 둘 다 상쇄됩니다. 투(투수)·야(야수)·공(전원) 분류와 일반·특수·황금 등급이 있어요.</p>`}
+ <p class="note help">작전 카드는 뽑기로 모으고, 대전(친구 리그) 경기마다 한 장을 골라 씁니다. 대전 사용 시 1장 소모, AI 연습경기는 소모 없음. 조건이 맞으면 경기 내내 자동으로 발동하고, 상대가 고른 카드와 우열 관계면 한쪽이 무효화, 대립 관계면 둘 다 상쇄됩니다. 분류: 투수·야수·전원 / 등급: 일반·특수·황금.</p>`}
 function supOn(cid){return S.sup.find(x=>x.cid===cid)}
 function scard(x,o={}){const [id,n,t,fx,g]=x;return `<button class="scd${o.on?' on':''}" ${o.attr||''}><span class="stg">${t==='B'?'타자용':t==='P'?'투수용':'공용'}</span><b>${esc(n)}</b><span>${esc(fx)}</span><small>${g}경기 지속</small>${o.cnt!=null?`<i class="cnt">×${o.cnt}</i>`:''}</button>`}
 function vSup(){const ss=S.ssel&&sp(S.ssel),roster=used().map(id=>by[id]).filter(c=>!ss||ss[2]==='all'||ss[2]===c.type);
- return `<div class="lbl" style="margin-top:0">서포트 받는 선수 ${S.sup.length}/2 · 대전 경기에서만 남은 경기 수가 줄어요</div><div class="sact">${[0,1].map(i=>{const a=S.sup[i];if(!a)return '<div class="sa empty">빈 자리</div>';const c=by[a.cid],x=sp(a.id);
+ return `<div class="lbl" style="margin-top:0">서포트 받는 선수 ${S.sup.length}/2 · 남은 경기 수는 대전에서만 차감</div><div class="sact">${[0,1].map(i=>{const a=S.sup[i];if(!a)return '<div class="sa empty">빈 자리</div>';const c=by[a.cid],x=sp(a.id);
   return `<div class="sa"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><div><b>${esc(c.name)}</b><small>${esc(x[1])} · ${esc(x[3])}</small><span class="left">${a.left}경기 남음</span></div><button class="ghost" data-sdel="${i}" aria-label="서포트 해제">해제</button></div>`}).join('')}</div>
  <div class="tools" style="margin-top:16px"><h3 style="margin:0">보유 서포트 카드</h3></div>
  <div class="spool">${SUPS.filter(x=>(S.sq[x[0]]||0)>0).map(x=>scard(x,{on:S.ssel===x[0],cnt:S.sq[x[0]],attr:`data-ssel="${x[0]}"`})).join('')}</div>
- ${ss?`<div class="box" style="margin-top:12px"><h3>${esc(ss[1])}를 줄 선수 고르기</h3>${S.sup.length>=2?'<p class="note">이번 경기 서포트 자리 2개가 다 찼어요. 먼저 하나를 해제하세요.</p>':`<div class="pick">${roster.map(c=>`<button class="pk" data-sgive="${esc(c.id)}" ${supOn(c.id)?'disabled':''}><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span>${esc(c.name)}</button>`).join('')}</div>`}</div>`:''}
- <p class="note help">서포트 카드는 1군 선수 한 명에게 주면 그 선수가 나오는 다음 2경기 동안 효과가 이어져요. 한 경기에 서포트를 받는 선수는 2명까지예요. 준 카드는 한 장 줄어들고 남은 경기 수는 대전 경기에서만 줄어요. AI와 하는 연습경기에서는 카드도 경기 수도 소모되지 않아요.</p>`}
+ ${ss?`<div class="box" style="margin-top:12px"><h3>${esc(ss[1])}를 줄 선수 고르기</h3>${S.sup.length>=2?'<p class="note">서포트 2자리 가득. 하나 해제 필요.</p>':`<div class="pick">${roster.map(c=>`<button class="pk" data-sgive="${esc(c.id)}" ${supOn(c.id)?'disabled':''}><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span>${esc(c.name)}</button>`).join('')}</div>`}</div>`:''}
+ <p class="note help">1군 선수 1명에게 사용 · 그 선수 출전 2경기 지속. 경기당 서포트 대상 최대 2명. 준 카드 1장 소모, 남은 경기 수는 대전에서만 차감. AI 연습경기: 카드·경기 수 소모 없음.</p>`}
 // 합성: 재료 3개 → 상위 결과. 규칙은 제안안이며 엔진에서 확정
 const SYN={p:{n:'선수',rule:'1군에 없는 선수 카드 3장 → 재료 평균 코스트보다 높은 선수 1장 (평균 +1: 70%, +2: 25%, +3: 5%)'},
  b:{n:'스킬 블록',rule:'보관 중인 같은 종류(타자용·투수용) 블록 2개 → 같은 등급이면 한 단계 위 60% · 같은 등급 40%, 등급이 다르면 높은 쪽 등급. 모양은 새로 정해지고, 오르는 능력치 합은 칸 수 × 등급 배율(C 0.75 · B 1 · A 1.25 · S 1.5)이에요. C·B·A는 능력치 하나, S는 두 가지를 올려요.'},
@@ -1592,11 +1601,11 @@ const isLocked=key=>S.locks.includes(key);
 // 자물쇠 아이콘: 잠김(닫힌 고리) / 풀림(열린 고리)
 const LOCKI=on=>`<svg class="lki" viewBox="0 0 16 18" aria-hidden="true"><path d="${on?'M4 8V5.5a4 4 0 0 1 8 0V8':'M4 8V5.5a4 4 0 0 1 7.6-1.7'}" fill="none" stroke="currentColor" stroke-width="2"/><rect x="1.5" y="8" width="13" height="9" rx="2" fill="currentColor"/><circle cx="8" cy="12.5" r="1.4" fill="#1b1d1c"/></svg>`;
 function toggleLock(key){const i=S.locks.indexOf(key);if(i>=0)S.locks.splice(i,1);else S.locks.push(key)}
-function synCheck(k,m){if(m.length<NEED(k))return `재료를 ${NEED(k)}개 골라 주세요.`;
- if(m.some(x=>isLocked(lkey(k,x))))return '잠긴 카드는 재료로 쓸 수 없어요.';
- if(k==='b'&&new Set(m.map(x=>x.b.t)).size>1)return '타자용과 투수용 블록은 섞을 수 없어요.';
- if(k==='s'&&new Set(m.map(x=>x.x[0])).size>1)return '같은 서포트 카드 3장이 필요해요.';
- if(k==='t'&&new Set(m.map(x=>x.x[3])).size>1)return '같은 등급 작전 카드 3장이 필요해요.';return ''}
+function synCheck(k,m){if(m.length<NEED(k))return `재료 ${NEED(k)}개 선택`;
+ if(m.some(x=>isLocked(lkey(k,x))))return '잠긴 카드는 재료 불가.';
+ if(k==='b'&&new Set(m.map(x=>x.b.t)).size>1)return '타자용·투수용 블록 혼합 불가.';
+ if(k==='s'&&new Set(m.map(x=>x.x[0])).size>1)return '같은 서포트 카드 3장 필요.';
+ if(k==='t'&&new Set(m.map(x=>x.x[3])).size>1)return '같은 등급 작전 카드 3장 필요.';return ''}
 const SYN_LINES=['LG','두산','삼성','KIA','롯데','키움','한화','SK','NC','KT'];
 // 칩 이름: 같은 계보 구단을 함께 보여 줌(제외는 계보 단위라 SK를 고르면 SSG·쌍방울도 빠짐)
 const SYN_LN={LG:'LG·MBC',두산:'두산·OB',KIA:'KIA·해태',키움:'키움·현대 등',한화:'한화·빙그레',SK:'SSG·SK·쌍방울'};
@@ -1627,12 +1636,12 @@ const hm=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floo
 function vAbroad(){const now=Date.now(),d=abd(S.abSel)||ABD[0],cand=OWN.filter(c=>!c.dup&&!c.v&&!used().includes(c.id)&&!abOf(c.id)&&ageOf(c)!=null),pick=by[S.abPick],need=d[4],have=pick?dupsOf(pick).length:0;
  const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&abAge(pick)&&have>=need&&abUsed(pick)<abCap(pick.cost)&&S.pt>=fee;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">유학</h2><span class="pill">진행 중 ${S.ab.filter(a=>!a.got).length}명</span></div>
- <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군에 등록되지 않은 선수를 유학 보내면 정해진 시간 동안 쓸 수 없어요. 시간이 끝나면 결과를 확인해 능력치가 올라요. 재료로 같은 카드(중복)를 써요. 코스트가 낮을수록 효율이 좋아요: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 카드당 상승 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4예요. 시간·확률·상승치는 제안안이에요.</p>
+ <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군 미등록 선수만 · 유학 기간 동안 사용 불가. 시간이 끝나면 결과를 확인해 능력치가 올라요. 재료로 같은 카드(중복)를 써요. 코스트 낮을수록 효율↑: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 카드당 상승 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4예요. </p>
  ${abMapHTML(d)}<div class="abl"><div class="box"><h3 style="margin-top:0">${d[1]}</h3>${abOpen(d)?`<p class="abm" title="${ABR[d[0]][0].map((p,i)=>ABGN[i]+' '+p+'%'+(i<3?' (+'+ABR[d[0]][1][i]+')':'')).join(' · ')}"><span>${d[3]}시간</span><span>대성공 +${ABR[d[0]][1][0]}</span><span${ABR[d[0]][0][3]?' class="risk"':''}>실패 ${ABR[d[0]][0][3]}%</span><span>중복 ${d[4]}장</span><span>${d[5].map(k=>SKN[k]).filter((v,i,a)=>a.indexOf(v)===i).join('·')}</span></p>
   <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">중복 ${have}/${need} · 상승 ${abUsed(pick)}/${abCap(pick.cost)} · 효율 ×${abMul(pick.cost)}</p>
-   <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트 부족</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드는 유학 갈 수 없어요':ageOf(pick)+'세라 유학 갈 수 없어요 (25세 이하 또는 35세 이상)'}</p>`:have<need?'<p class="note" style="color:var(--bad);margin:6px 0 0">중복 카드 부족</p>':''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수 선택</p>'}</div>
+   <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트 부족</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드 유학 불가':ageOf(pick)+'세 · 유학 불가 (25세 이하 또는 35세 이상)'}</p>`:have<need?'<p class="note" style="color:var(--bad);margin:6px 0 0">중복 카드 부족</p>':''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수 선택</p>'}</div>
   <h3>보낼 선수</h3><div class="abc">${cand.sort((a,b)=>abAge(b)-abAge(a)||dupsOf(b).length-dupsOf(a).length||b.ovr-a.ovr).slice(0,24).map(c=>`<button class="abr${c.id===S.abPick?' on':''}${abAge(c)?'':' no'}" data-abpick="${esc(c.id)}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><span><b>${esc(c.name)}</b><small>${c.year} · ${ageOf(c)}세${abAge(c)?'':' · 유학 불가'} · 중복 ${dupsOf(c).length}장</small></span></button>`).join('')}</div>`
-  :`<p class="note">아직 잠겨 있어요. 여는 조건: <b>${d[6]}</b></p>`}</div></div>
+  :`<p class="note">잠김. 여는 조건: <b>${d[6]}</b></p>`}</div></div>
  <h3>유학 중</h3><div class="abq">${S.ab.filter(a=>!a.got).map(a=>{const c=by[a.id],x=abd(a.d),done=now>=a.end,pc=Math.min(100,(now-a.start)/(a.end-a.start)*100);
   return `<div class="abi${done?' done':''}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><div><b>${esc(c.name)}</b> <small>${x[1]}</small><span class="abbar"><i style="width:${pc}%"></i></span>
   ${a.res?`<p class="abres"><b>${a.res.g}</b> ${Object.entries(a.res.st).map(([k,v])=>`${SKN[k]} +${v}`).join(' · ')||(a.res.g==='실패'?'오른 능력 없음':'더 오를 수 없음')}</p><button class="ghost" data-abok="${esc(a.id)}">확인</button>`:done?`<button data-abget="${esc(a.id)}">결과 보기</button>`:`<small>${hm(a.end-now)} 남음 · 돌아오면 알림</small><button class="ghost abrush" data-abrush="${esc(a.id)}" ${S.pt<rushFee(a.end-now)?'disabled':''}>바로 귀국 · ${rushFee(a.end-now).toLocaleString()}P</button>`}</div></div>`}).join('')||'<p class="note">유학 중인 선수 없음</p>'}</div></section>`}
@@ -1647,12 +1656,12 @@ function synList(pool,mk){return `<div class="scroll"><table class="tbl lul synl
 function vSynth(){const k=S.sk||'p',pool=synPoolF(k),mk=new Set(S.mat),m=pool.filter(x=>mk.has(x.key)),err=synCheck(k,m);
  return `<section class="band"><h2>합성</h2><div class="subnav" role="tablist">${Object.entries(SYN).map(([x,v])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-sk="${x}">${v.n}</button>`).join('')}</div>
  <div class="syn${k==='p'?' sticky':''}"><div class="sslots">${[...Array(NEED(k)).keys()].map(i=>m[i]?`<div class="ss${k==='p'?' sm':''}" data-mat="${esc(m[i].key)}" title="빼기">${k==='p'?`<span class="oart" style="--tc:${m[i].c.col}">${photo(m[i].c,0,0)}</span><b>${esc(m[i].c.name)}</b><small>${String(m[i].c.year).slice(2)}' ${esc(m[i].c.team)} · 코스트 ${m[i].c.cost}</small>`:m[i].html}</div>`:'<div class="ss empty">재료</div>').join('<span class="plus">+</span>')}<span class="plus">→</span>
- <div class="ss res">${S.synRes?`<div class="got">${S.synRes}</div>`:`<b>${m.length===NEED(k)&&!err?esc(synPreview(k,m)):'?'}</b><small>${err?esc(err):'예상 결과'}${k==='p'&&m.some(x=>hasBlk(x.c.id))?' · 끼운 스킬 블록도 사라져요':''}</small>`}</div></div>
+ <div class="ss res">${S.synRes?`<div class="got">${S.synRes}</div>`:`<b>${m.length===NEED(k)&&!err?esc(synPreview(k,m)):'?'}</b><small>${err?esc(err):'예상 결과'}${k==='p'&&m.some(x=>hasBlk(x.c.id))?' · 끼운 스킬 블록도 소멸':''}</small>`}</div></div>
  <div class="tools" style="justify-content:center;margin-top:12px"><button data-a="synth" ${err?'disabled':''}>합성하기</button><button class="ghost" data-a="synauto">자동 추천</button><button class="ghost" data-a="synclr">재료 비우기</button><button class="ghost qbtn${S.synHelp?' on':''}" data-a="synhelp" aria-label="합성 방식 설명" aria-pressed="${!!S.synHelp}">?</button></div>
  ${k==='p'?`<div class="tools synex" style="justify-content:center;margin-top:8px;flex-wrap:wrap;gap:4px" title="결과로 안 나왔으면 하는 구단(최대 ${SYN_EX_MAX}개)"><small style="align-self:center">제외 구단(재료·결과 모두)</small>${SYN_LINES.map(l=>{const on=(S.synEx||[]).includes(l);return `<button class="ghost${on?' on':''}" data-synex="${esc(l)}" aria-pressed="${on}" title="${esc(SYN_LN[l]||l)} 계열 전부 제외" style="padding:2px 8px;font-size:12px${on?';text-decoration:line-through':''}">${esc(SYN_LN[l]||l)}</button>`}).join('')}</div>`:''}
  ${S.msg?`<p class="note" style="text-align:center" aria-live="polite">${esc(S.msg)}</p>`:''}${S.synHelp?`<p class="note synrule">${esc(SYN[k].rule)}</p>`:''}</div>
  <h3 style="margin-top:18px">재료로 쓸 수 있는 ${SYN[k].n} <span class="pill">${pool.length}</span></h3>${k==='p'?synFilt()+`<div class="tabs" role="tablist" aria-label="보기 방식" style="margin:6px 0">${[['card','카드'],['list','일람']].map(([v,n])=>`<button role="tab" aria-selected="${(S.synView||'card')===v}" class="${(S.synView||'card')===v?'on':''}" data-a="synview" data-v="${v}">${n}</button>`).join('')}</div>`:''}${k==='p'&&S.synView==='list'?synList(pool,mk):`<div class="mpool">${pool.map(x=>{const lk=isLocked(lkey(k,x));return `<div class="mpw"><div class="mp${mk.has(x.key)?' on':''}${lk?' locked':''}" ${lk?'aria-disabled="true"':`data-mat="${esc(x.key)}" role="button" tabindex="0"`}>${x.html}${lk?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div><button class="ghost lockt" data-lock="${esc(lkey(k,x))}" aria-pressed="${lk}" aria-label="${lk?'잠금 해제':'잠그기'}" title="${lk?'잠금 해제':'잠그기'}">${LOCKI(lk)}</button></div>`}).join('')||'<p class="note">재료 없음</p>'}</div>`}
- <p class="note help">카드 아래 자물쇠로 잠그면 재료·자동 추천에서 빠져요. 재료 선수에 끼운 스킬 블록은 같이 사라져요.</p></section>`}
+ <p class="note help">자물쇠로 잠근 카드는 재료·자동 추천 제외. 재료 선수의 스킬 블록도 함께 소멸.</p></section>`}
 const pick2=a=>a[Math.floor(Math.random()*a.length)];
 // 추천 라인업: 보유 카드로 자동 편성 (능력 우선 / 덱 효과 우선 / 코스트 절약). 코스트 상한 150 안에서
 const bv=c=>c.r.con*.35+c.r.pow*.35+c.r.eye*.2+c.r.spd*.1;
@@ -1678,7 +1687,7 @@ function recPanel(){if(!S.recm)return '';const r=recommend(S.recm),cost=recCost(
  return `<div class="rec box"><div class="tools"><h3 style="margin:0;margin-right:auto">추천 라인업 미리보기</h3>${[['power','능력 우선'],['deck','덱 효과 우선'],['cost','코스트 절약']].map(([k,n])=>`<button class="${S.recm===k?'':'ghost'}" data-rec="${k}">${n}</button>`).join('')}</div>
  ${(()=>{const f=S.recF||RF0,ys=[...new Set(OWN.map(c=>c.year))].sort((a,b)=>b-a),ts=[...new Set(OWN.filter(c=>f.year==='all'||c.year===+f.year).map(c=>c.team))].sort(),o=(v,n,cur)=>`<option value="${esc(v)}"${String(cur)===String(v)?' selected':''}>${esc(n)}</option>`;
   const m=r=>[...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean).filter(id=>by[id]&&recMatch(by[id])).length;
-  return `<div class="tools recf"><span class="note" style="margin:0">조건</span><select id="recy" aria-label="추천 연도">${o('all','전체 연도',f.year)}${ys.map(y=>o(y,y+'년',f.year)).join('')}</select><select id="rect" aria-label="추천 구단">${o('all','전체 구단',f.team)}${ts.map(t=>o(t,t,f.team)).join('')}</select>${recOn()?`<span class="note" style="margin:0">조건에 맞는 선수 ${m(r)}명 · 모자라는 자리는 다른 카드로 채워요</span>`:''}</div>`})()}
+  return `<div class="tools recf"><span class="note" style="margin:0">조건</span><select id="recy" aria-label="추천 연도">${o('all','전체 연도',f.year)}${ys.map(y=>o(y,y+'년',f.year)).join('')}</select><select id="rect" aria-label="추천 구단">${o('all','전체 구단',f.team)}${ts.map(t=>o(t,t,f.team)).join('')}</select>${recOn()?`<span class="note" style="margin:0">조건에 맞는 선수 ${m(r)}명 · 나머지는 다른 카드로 채움</span>`:''}</div>`})()}
  <p class="rsum">타순 ${r.lu.map((x,i)=>`<span><b>${i+1}</b>${PN[x[0]]} ${esc(by[x[1]].name)}</span>`).join('')}</p>
  <p class="rsum">선발 ${r.rot.filter(Boolean).map(id=>`<span>${esc(by[id].name)}</span>`).join('')} · 마무리 <span>${r.pen[0]?esc(by[r.pen[0]].name):'–'}</span></p>
  <p class="note">코스트 ${cost}/${COST_CAP} ${cost>COST_CAP?'· 상한 초과':''} · 새로 들어오는 선수 ${inn.length}명${inn.length?` (${inn.slice(0,4).map(id=>esc(by[id].name)).join(', ')}${inn.length>4?' 외':''})`:''} · 빠지는 선수 ${out.length}명</p>
@@ -1716,7 +1725,7 @@ function luList(pool,ids,dupC,B,rec){const keys=B?BK:PKEY,st=!!S.luStat,f3=v=>v.
  const SH=B?['타율','출루율','타수','안타','홈런','타점','볼넷','도루']:['평균자책','이닝','승','세이브','탈삼진','자책'];
  const SV=c=>{const r=rec&&rec(c);if(!r)return SH.map(()=>E).join('');return (B?[r.ab?f3(r.h/r.ab):'-',f3((r.h+r.bb)/Math.max(1,r.ab+r.bb)),r.ab,r.h,r.hr,r.rbi,r.bb,r.sb]:[r.outs?(r.er*27/r.outs).toFixed(2):'-',`${Math.floor(r.outs/3)}.${r.outs%3}`,r.w,r.sv,r.so,r.er]).map(v=>`<td>${v}</td>`).join('')};
  if(st)return `<div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th>${SH.map(h=>`<th>${h}</th>`).join('')}<th>상태</th></tr></thead><tbody>
- ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b></td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td>${SV(c)}<td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div><p class="note">${S.luStat==='yl'?'연도별 리그':'주간 리그'} 이번 시즌, 내 구단에서 뛴 기록이에요.</p>`;
+ ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b></td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td>${SV(c)}<td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div><p class="note">${S.luStat==='yl'?'연도별 리그':'주간 리그'} 이번 시즌 내 구단 기록.</p>`;
  return `<div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th>${keys.map(k=>`<th>${SKN[k]}</th>`).join('')}<th>장수</th><th>상태</th></tr></thead><tbody>
  ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td><td>${c.cost}</td>${keys.map(k=>`<td>${c.r[k]}</td>`).join('')}<td>${dupC[c.id]?'×'+(dupC[c.id]+1):'1'}</td><td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div>`}
 function presetBar(){const D=S.decks||[],M=S.modeDeck||{},cur=S.deckSel&&D.find(x=>x.id===S.deckSel);
@@ -1724,11 +1733,11 @@ function presetBar(){const D=S.decks||[],M=S.modeDeck||{},cur=S.deckSel&&D.find(
  return `<div class="box presets"><div class="tools"><b style="margin-right:4px">덱 저장</b><select id="decksel" aria-label="저장한 덱">${opt('','저장한 덱 고르기',S.deckSel)}${D.map(d=>opt(d.id,d.name+(deckOk(d)?'':' (없는 카드 있음)'),S.deckSel)).join('')}</select>
  <button data-a="deckload" ${cur?'':'disabled'}>불러오기</button><button class="ghost" data-a="decksave" ${cur?'':'disabled'}>덮어쓰기</button><button class="ghost" data-a="deckdel" ${cur?'':'disabled'}>${S.deckDel?'한 번 더 누르면 삭제':'삭제'}</button>
  <span style="flex:1"></span><input id="deckname" placeholder="새 덱 이름" maxlength="14" style="max-width:150px" value="${esc(S.deckName||'')}"><button data-a="decknew">지금 라인업을 새 덱으로</button></div>
- <div class="tools" style="margin-top:8px"><b style="margin-right:4px">모드별 덱</b>${Object.entries(MODEN).map(([k,n])=>`<label class="mdk">${n} <select data-mdeck="${k}" aria-label="${n}에서 쓸 덱">${opt('','지금 라인업',M[k])}${D.map(d=>opt(d.id,d.name,M[k])).join('')}</select>${M[k]&&!modeDeck(k)?'<small class="bad">카드가 빠져 지금 라인업으로 뛰어요</small>':''}</label>`).join('')}</div></div>`}
+ <div class="tools" style="margin-top:8px"><b style="margin-right:4px">모드별 덱</b>${Object.entries(MODEN).map(([k,n])=>`<label class="mdk">${n} <select data-mdeck="${k}" aria-label="${n}에서 쓸 덱">${opt('','지금 라인업',M[k])}${D.map(d=>opt(d.id,d.name,M[k])).join('')}</select>${M[k]&&!modeDeck(k)?'<small class="bad">카드 누락 · 현재 라인업 사용</small>':''}</label>`).join('')}</div></div>`}
 function deckAct(a){const D=S.decks=S.decks||[],d=D.find(x=>x.id===S.deckSel);
- if(a==='decknew'){const n=(S.deckName||'').trim()||`덱 ${D.length+1}`;const id='d'+Date.now().toString(36);D.push({id,name:n,t:snapT()});S.deckSel=id;S.deckName='';S.msg=`'${n}' 저장했어요`}
- else if(a==='decksave'&&d){d.t=snapT();S.msg=`'${d.name}'에 덮어썼어요`}
- else if(a==='deckload'&&d){const xe=exErr(deckIds(d.t));if(!deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))){S.msg='없는 카드가 있어서 불러올 수 없어요';return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}'을 불러왔어요`+(xe.length?` · ${xe.join(' · ')}. EX를 바꾼 뒤 덮어쓰기해 주세요`:'')}
+ if(a==='decknew'){const n=(S.deckName||'').trim()||`덱 ${D.length+1}`;const id='d'+Date.now().toString(36);D.push({id,name:n,t:snapT()});S.deckSel=id;S.deckName='';S.msg=`'${n}' 저장 완료`}
+ else if(a==='decksave'&&d){d.t=snapT();S.msg=`'${d.name}' 덮어쓰기 완료`}
+ else if(a==='deckload'&&d){const xe=exErr(deckIds(d.t));if(!deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))){S.msg='없는 카드 포함 · 불러오기 불가';return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}' 불러오기 완료`+(xe.length?` · ${xe.join(' · ')}. EX 교체 후 덮어쓰기`:'')}
  else if(a==='deckdel'&&d){if(!S.deckDel){S.deckDel=1;render();return}S.decks=D.filter(x=>x!==d);for(const k in S.modeDeck||{})if(S.modeDeck[k]===d.id)S.modeDeck[k]='';S.deckSel='';S.deckDel=0}
  save();render()}
 // ===== 덱 짜보기: 보유 여부와 관계없이 전체 카드로 25명을 짜 보고 코스트·덱 효과를 확인 =====
@@ -1738,34 +1747,34 @@ const bldIds=()=>{const B=bldInit();return [...B.lu.map(x=>x[1]),...B.bench,...B
 const bldCards=()=>bldIds().map(id=>byId[id]).filter(Boolean);
 function bldSlotGet(k){const [a,i]=k.split(':'),B=bldInit();return a==='lu'?B.lu[+i][1]:B[a][+i]}
 function bldSlotSet(k,id){const [a,i]=k.split(':'),B=bldInit();if(a==='lu')B.lu[+i][1]=id;else B[a][+i]=id}
-function bldPut(id){const c=byId[id],B=bldInit();if(!c)return;if(bldIds().some(x=>byId[x]&&byId[x].pk===c.pk&&byId[x].type===c.type)){S.msg=`${c.name}은(는) 이미 들어 있어요`;return}
- let k=S.bldSel;if(k){const [a]=k.split(':');if((a==='rot'||a==='pen')!==(c.type==='P')){S.msg=c.type==='P'?'투수는 선발·불펜 자리에만 넣을 수 있어요':'타자는 타순·벤치 자리에만 넣을 수 있어요';return}}
+function bldPut(id){const c=byId[id],B=bldInit();if(!c)return;if(bldIds().some(x=>byId[x]&&byId[x].pk===c.pk&&byId[x].type===c.type)){S.msg=`${c.name}은(는) 이미 포함`;return}
+ let k=S.bldSel;if(k){const [a]=k.split(':');if((a==='rot'||a==='pen')!==(c.type==='P')){S.msg=c.type==='P'?'투수는 선발·불펜만 가능':'타자는 타순·벤치만 가능';return}}
  if(!k){const free=a=>B[a].map((v,i)=>v?null:a+':'+i).filter(Boolean);
   if(c.type==='B'){const i=B.lu.findIndex(x=>!x[1]&&canPlay(c,x[0]));k=i>=0?'lu:'+i:free('bench')[0]}
   else k=(c.pos==='SP'?free('rot')[0]||free('pen')[0]:free('pen')[0]||free('rot')[0])}
- if(!k){S.msg='빈 자리가 없어요. 바꿀 자리를 먼저 누르세요';return}bldSlotSet(k,id);S.bldSel=null;S.msg=''}
+ if(!k){S.msg='빈 자리 없음. 바꿀 자리 먼저 선택';return}bldSlotSet(k,id);S.bldSel=null;S.msg=''}
 function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cost=cards.reduce((t,c)=>t+c.cost,0),ex=exCount([...ids]),own=cards.filter(c=>S.owned[c.id]).length,T=teamColor(cards,B.fxsel),F=S.bldF=S.bldF||{};
  const row=(k,lab,sub)=>{const id=bldSlotGet(k),c=byId[id];return `<tr class="${S.bldSel===k?'sel':''}${c&&!S.owned[c.id]?' noown':''}" data-bslot="${k}" role="button" tabindex="0"><td class="l"><b>${lab}</b>${sub?` <small>${sub}</small>`:''}</td>${c?`<td class="l">${esc(c.name)}${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${c.ovr}</td><td>${c.cost}</td><td>${S.owned[c.id]?'보유':'<span class="mute">없음</span>'}</td><td><button class="ghost bx" data-bclr="${k}" aria-label="빼기">×</button></td>`:'<td class="l mute" colspan="6">비어 있음</td>'}</tr>`};
  const pool=(()=>{const q=(F.q||'').trim();let L=CARDS.filter(c=>(!F.y||c.year===+F.y)&&(!F.t||c.team===F.t)&&(!F.p||(F.p==='P'?c.type==='P':F.p==='B'?c.type==='B':c.pos===F.p))&&(!F.own||S.owned[c.id])&&(!q||c.name.includes(q))&&(!F.v||(F.v==='n'?!c.v:c.v===F.v)));
   return L.sort((a,b)=>b.ovr-a.ovr||b.cost-a.cost)})(),lim=S.bldLim||40;
  const YS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a),TS=[...new Set(CARDS.filter(c=>!F.y||c.year===+F.y).map(c=>c.team))].sort(),o=(v,n,cur)=>`<option value="${esc(v)}"${String(cur||'')===String(v)?' selected':''}>${esc(n)}</option>`;
  const full=cards.length===25,allOwn=full&&own===25;
- return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">덱 짜보기</h2><button class="ghost" data-a="bldfrom">지금 라인업 가져오기</button><button class="ghost" data-a="bldclr">${S.bldClr?'한 번 더 누르면 비워요':'모두 비우기'}</button><button data-a="bldapply" ${allOwn?'':'disabled'} title="${allOwn?'':'25명 모두 보유한 카드여야 적용할 수 있어요'}">라인업에 적용</button><button class="ghost" data-a="bldsave" ${full?'':'disabled'}>덱으로 저장</button></div>
+ return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">덱 짜보기</h2><button class="ghost" data-a="bldfrom">지금 라인업 가져오기</button><button class="ghost" data-a="bldclr">${S.bldClr?'한 번 더 누르면 비움':'모두 비우기'}</button><button data-a="bldapply" ${allOwn?'':'disabled'} title="${allOwn?'':'25명 모두 보유해야 적용 가능'}">라인업에 적용</button><button class="ghost" data-a="bldsave" ${full?'':'disabled'}>덱으로 저장</button></div>
  <div class="bsum"><span>코스트 <b class="${cost>COST_CAP?'bad':''}">${cost}</b>/${COST_CAP}</span><span>인원 <b>${cards.length}</b>/25</span><span>보유 <b>${own}</b>/${cards.length}</span><span>EX 타자 <b class="${ex.B>EX_MAX.B?'bad':''}">${ex.B}</b>/${EX_MAX.B} · 투수 <b class="${ex.P>EX_MAX.P?'bad':''}">${ex.P}</b>/${EX_MAX.P}</span><span>덱 효과 야수 <b>+${T.bat}</b> · 투수 <b>+${T.pit}</b></span></div>
  ${fxPickHTML(cards,B.fxsel,'bld')}
  ${S.msg?`<p class="note hint on" aria-live="polite">${esc(S.msg)}</p>`:''}
  <div class="bld"><div class="scroll"><table class="tbl bslots"><thead><tr><th class="l">자리</th><th class="l">선수</th><th>연도·구단</th><th>능력</th><th>코스트</th><th>보유</th><th></th></tr></thead><tbody>
  ${B.lu.map((x,i)=>row('lu:'+i,(i+1)+'번',PFULL[x[0]])).join('')}${B.bench.map((x,i)=>row('bench:'+i,'벤치',i+1)).join('')}${B.rot.map((x,i)=>row('rot:'+i,'선발',i+1)).join('')}${B.pen.map((x,i)=>row('pen:'+i,i===0?'마무리':i===1?'셋업':'중계',i>1?i-1:'')).join('')}</tbody></table></div>
- <div><div class="tools bf"><select data-bf="y" aria-label="연도">${o('','전체 연도',F.y)}${YS.map(y=>o(y,y+'년',F.y)).join('')}</select><select data-bf="t" aria-label="구단">${o('','전체 구단',F.t)}${TS.map(t=>o(t,t,F.t)).join('')}</select><select data-bf="p" aria-label="포지션">${o('','전체 포지션',F.p)}${o('B','타자 전체',F.p)}${o('P','투수 전체',F.p)}${Object.entries(PFULL).map(([k,n])=>o(k,n,F.p)).join('')}</select><select data-bf="v" aria-label="종류">${o('','모든 종류',F.v)}${o('n','일반',F.v)}${Object.entries(VN).map(([k,n])=>o(k,n,F.v)).join('')}</select><input data-bf="q" value="${esc(F.q||'')}" placeholder="이름" aria-label="이름 검색" style="max-width:110px"><label class="mini"><input type="checkbox" data-bf="own" ${F.own?'checked':''}> 보유만</label><span class="note" style="margin:0">${pool.length.toLocaleString()}장${S.bldSel?' · 고른 자리에 넣어요':''}</span></div>
+ <div><div class="tools bf"><select data-bf="y" aria-label="연도">${o('','전체 연도',F.y)}${YS.map(y=>o(y,y+'년',F.y)).join('')}</select><select data-bf="t" aria-label="구단">${o('','전체 구단',F.t)}${TS.map(t=>o(t,t,F.t)).join('')}</select><select data-bf="p" aria-label="포지션">${o('','전체 포지션',F.p)}${o('B','타자 전체',F.p)}${o('P','투수 전체',F.p)}${Object.entries(PFULL).map(([k,n])=>o(k,n,F.p)).join('')}</select><select data-bf="v" aria-label="종류">${o('','모든 종류',F.v)}${o('n','일반',F.v)}${Object.entries(VN).map(([k,n])=>o(k,n,F.v)).join('')}</select><input data-bf="q" value="${esc(F.q||'')}" placeholder="이름" aria-label="이름 검색" style="max-width:110px"><label class="mini"><input type="checkbox" data-bf="own" ${F.own?'checked':''}> 보유만</label><span class="note" style="margin:0">${pool.length.toLocaleString()}장${S.bldSel?' · 고른 자리에 넣기':''}</span></div>
  <div class="scroll"><table class="tbl lul bpool"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th><th>보유</th></tr></thead><tbody>
  ${pool.slice(0,lim).map(c=>`<tr class="${ids.has(c.id)?'use':''}" data-bput="${esc(c.id)}" role="button" tabindex="0"><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td><td>${c.cost}</td><td>${S.owned[c.id]?'보유':''}</td></tr>`).join('')}</tbody></table></div>
  ${pool.length>lim?`<div class="tools" style="justify-content:center;margin-top:8px"><button class="ghost" data-a="bldmore">더 보기 (${(pool.length-lim).toLocaleString()})</button></div>`:''}</div></div></section>`}
 function bldAct(a){const B=bldInit();
  if(a==='bldmore'){S.bldLim=(S.bldLim||40)+40}
  else if(a==='bldclr'){if(!S.bldClr){S.bldClr=1;render();return}S.bld=null;S.bldClr=0;S.bldSel=null;bldInit()}
- else if(a==='bldfrom'){syncTeam();const T=S.team,L=T.lineup||[];B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=[...(T.bench||[]),null,null,null,null,null].slice(0,5);B.rot=[...(T.rot||[]),null,null,null,null,null].slice(0,5);B.pen=[...(T.pen||[]),null,null,null,null,null,null].slice(0,6);B.fxsel=[...(T.fxsel||[])];S.msg='지금 라인업을 가져왔어요'}
- else if(a==='bldapply'){if(bldCards().some(c=>!S.owned[c.id]))return;Object.assign(S.team,{lineup:B.lu.map(([pos,id])=>({id,pos})),bench:[...B.bench],rot:[...B.rot],pen:[...B.pen],fxsel:[...B.fxsel]});pullTeam();S.msg='라인업에 적용했어요';save();go('lineup');return}
- else if(a==='bldsave'){const D=S.decks=S.decks||[],id='d'+Date.now().toString(36);D.push({id,name:'짜본 덱 '+(D.length+1),t:JSON.parse(JSON.stringify({lineup:B.lu.map(([pos,id])=>({id,pos})),bench:B.bench,rot:B.rot,pen:B.pen,fxsel:B.fxsel,mgr:S.team.mgr,tsel:S.team.tsel}))});S.msg=`'짜본 덱 ${D.length}'으로 저장했어요. 라인업 화면 덱 저장에서 볼 수 있어요`}
+ else if(a==='bldfrom'){syncTeam();const T=S.team,L=T.lineup||[];B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=[...(T.bench||[]),null,null,null,null,null].slice(0,5);B.rot=[...(T.rot||[]),null,null,null,null,null].slice(0,5);B.pen=[...(T.pen||[]),null,null,null,null,null,null].slice(0,6);B.fxsel=[...(T.fxsel||[])];S.msg='현재 라인업 불러옴'}
+ else if(a==='bldapply'){if(bldCards().some(c=>!S.owned[c.id]))return;Object.assign(S.team,{lineup:B.lu.map(([pos,id])=>({id,pos})),bench:[...B.bench],rot:[...B.rot],pen:[...B.pen],fxsel:[...B.fxsel]});pullTeam();S.msg='라인업 적용 완료';save();go('lineup');return}
+ else if(a==='bldsave'){const D=S.decks=S.decks||[],id='d'+Date.now().toString(36);D.push({id,name:'짜본 덱 '+(D.length+1),t:JSON.parse(JSON.stringify({lineup:B.lu.map(([pos,id])=>({id,pos})),bench:B.bench,rot:B.rot,pen:B.pen,fxsel:B.fxsel,mgr:S.team.mgr,tsel:S.team.tsel}))});S.msg=`'짜본 덱 ${D.length}' 저장 완료. 라인업 > 덱 저장에서 확인`}
  save();render()}
 function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','라인업'],['mgr','감독'],['tcard','작전 카드'],['sup','서포트 카드']].map(([k,n])=>`<button role="tab" aria-selected="${S.sub===k}" class="${S.sub===k?'on':''}" data-sub="${k}">${n}</button>`).join('')}</div>`;
  if(S.sub==='sup')return `<section class="band">${sub}<h2 style="margin-top:16px">서포트 카드</h2>${vSup()}</section>`;
@@ -1787,7 +1796,7 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  return `<section class="band">${sub}${presetBar()}<div class="tools" style="margin-top:16px"><div class="tabs tb" role="tablist">${[['B','야수'],['P','투수']].map(([k,n])=>`<button role="tab" aria-selected="${S.tb===k}" class="${S.tb===k?'on':''}" data-tb="${k}">${n}</button>`).join('')}</div>${nextOpp()}<button class="ghost" data-rec="${S.recm||'power'}" style="margin-left:auto">추천 라인업</button>${S.undo?'<button class="ghost" data-a="recundo">되돌리기</button>':''}</div>${recPanel()}${deckBar()}
  ${B?`<div class="strip"><div class="sh">야수</div><div class="row scroll">${S.lu.map((x,i)=>oc('lu',i,'',{num:(i+1)+'번',under:posSel(i)})).join('')}<span class="gap"></span>${S.bench.map((x,i)=>oc('bench',i,'벤치',{num:(i+1)+'번'})).join('')}</div></div>`
  :`<div class="strip"><div class="sh">투수</div><div class="row scroll">${S.rot.map((x,i)=>(i?'<span class="arr" aria-hidden="true">›</span>':'')+oc('rot',i,'선발',{num:(i+1)+'번',cls:'sp'})).join('')}<span class="gap"></span>${[2,3,4,5].map((j,n)=>oc('pen',j,'중계',{num:(n+1)+'번',cls:'rp'})).join('')}<span class="gap"></span>${oc('pen',1,'셋업',{cls:'su'})}${oc('pen',0,'마무리',{cls:'cl'})}</div></div>`}
- <p class="note hint${S.sel||S.msg?' on':''}" aria-live="polite">${S.msg?esc(S.msg):S.sel?'바꿀 자리나 넣을 카드를 고르세요. 같은 자리를 다시 누르면 취소돼요.':''}</p><p class="note help">${S.sel?'같은 줄의 다른 자리를 누르면 서로 바뀌고, 아래 보유 카드를 누르면 그 카드가 들어갑니다. 같은 자리를 다시 누르면 선택 해제.':'컴퓨터에서는 보유 카드나 자리를 끌어다 다른 자리에 놓아도 바뀌어요. 카드를 누르면 상세 정보가 뜨고, 거기서 [자리 교체하기]를 누른 다음 다른 자리(타순 교체·벤치 교대)나 보유 카드를 누르면 바뀝니다. 빈 자리는 바로 선택돼요. 수비 위치는 카드 아래 메뉴에서 바꾸고, 메뉴 옆 등급은 그 위치 수비 적성입니다.'}</p></section>
+ <p class="note hint${S.sel||S.msg?' on':''}" aria-live="polite">${S.msg?esc(S.msg):S.sel?'바꿀 자리나 넣을 카드 선택. 같은 자리 다시 누르면 취소.':''}</p><p class="note help">${S.sel?'같은 줄의 다른 자리를 누르면 서로 바뀌고, 아래 보유 카드를 누르면 그 카드가 들어갑니다. 같은 자리를 다시 누르면 선택 해제.':'PC: 카드·자리를 끌어 놓아 교체 가능. 카드를 누르면 상세 정보가 뜨고, 거기서 [자리 교체하기]를 누른 다음 다른 자리(타순 교체·벤치 교대)나 보유 카드를 누르면 바뀝니다. 빈 자리는 바로 선택. 수비 위치는 카드 아래 메뉴에서 바꾸고, 메뉴 옆 등급은 그 위치 수비 적성입니다.'}</p></section>
  <section class="band lu2"><div><div class="tools"><h2 style="margin:0">보유 카드</h2>
  <div class="tabs" role="tablist">${FN.map(([k,n])=>`<button role="tab" aria-selected="${pf===k}" class="${pf===k?'on':''}" data-pf="${k}">${n}</button>`).join('')}</div>
  <select id="sort" aria-label="정렬">${[['ovr','능력 순'],['cost','코스트 높은 순'],['costa','코스트 낮은 순'],['yeard','최신 연도 순'],['year','오래된 연도 순'],['name','이름 순'],...keys.map(k=>['r_'+k,SKN[k]+' 순']),...(B?[['avg','타율 순(리그)'],['hr','홈런 순(리그)'],['rbi','타점 순(리그)'],['sb','도루 순(리그)']]:[['era','평균자책 순(리그)'],['so','탈삼진 순(리그)'],['w','승 순(리그)'],['sv','세이브 순(리그)']])].map(([v,n])=>`<option value="${v}"${S.sort===v?' selected':''}>${n}</option>`).join('')}</select>
@@ -1808,12 +1817,12 @@ function setS(s,id){if(s.k==='lu')S.lu[s.i][1]=id;else S[s.k][s.i]=id}
 const canPos=(c,p)=>!c||p==='DH'||!!(c.ps&&c.ps[p]!=null);
 const posName=(k,i)=>k==='lu'?S.lu[i][0]:null;
 function swapSlots(a,b){const x=getS(a),y=getS(b);if(a.k==='lu'&&b.k==='lu'){[S.lu[a.i],S.lu[b.i]]=[S.lu[b.i],S.lu[a.i]];return}
- if(a.k==='lu'&&!canPos(by[y],S.lu[a.i][0])){S.msg=`${by[y].name}은(는) ${PFULL[S.lu[a.i][0]]}를 볼 수 없어요.`;return}
- if(b.k==='lu'&&!canPos(by[x],S.lu[b.i][0])){S.msg=`${by[x].name}은(는) ${PFULL[S.lu[b.i][0]]}를 볼 수 없어요.`;return}
+ if(a.k==='lu'&&!canPos(by[y],S.lu[a.i][0])){S.msg=`${by[y].name}은(는) ${PFULL[S.lu[a.i][0]]}수비 불가.`;return}
+ if(b.k==='lu'&&!canPos(by[x],S.lu[b.i][0])){S.msg=`${by[x].name}은(는) ${PFULL[S.lu[b.i][0]]}수비 불가.`;return}
  setS(a,y);setS(b,x)}
-function place(id){const s=S.sel;if(!s)return;const c=by[id];if(c.type!==KIND(s.k))return;if(abOf(c.id)){S.msg=`${c.name}은(는) 유학 중이라 쓸 수 없어요.`;return}if(s.k==='lu'&&!canPos(c,S.lu[s.i][0])){S.msg=`${c.name}은(는) ${PFULL[S.lu[s.i][0]]}를 볼 수 없어요. 가능한 위치: ${['DH',...Object.keys(c.ps||{})].map(p=>PFULL[p]).join(', ')}`;return}
+function place(id){const s=S.sel;if(!s)return;const c=by[id];if(c.type!==KIND(s.k))return;if(abOf(c.id)){S.msg=`${c.name}은(는) 유학 중 · 사용 불가.`;return}if(s.k==='lu'&&!canPos(c,S.lu[s.i][0])){S.msg=`${c.name}은(는) ${PFULL[S.lu[s.i][0]]}수비 불가. 가능한 위치: ${['DH',...Object.keys(c.ps||{})].map(p=>PFULL[p]).join(', ')}`;return}
  const cur=getS(s);for(const k of ['lu','bench','rot','pen']){const n=k==='lu'?S.lu.length:S[k].length;for(let i=0;i<n;i++)if(getS({k,i})===id)setS({k,i},cur)}setS(s,id);S.sel=null}
-function setPos(i,p){const c=by[S.lu[i][1]];if(!canPos(c,p))return;const j=S.lu.findIndex(x=>x[0]===p);if(j>=0){const o=by[S.lu[j][1]];if(!canPos(o,S.lu[i][0])){S.msg=`${o.name}은(는) ${PFULL[S.lu[i][0]]}를 볼 수 없어서 위치를 맞바꿀 수 없어요.`;return}S.lu[j][0]=S.lu[i][0]}S.lu[i][0]=p}
+function setPos(i,p){const c=by[S.lu[i][1]];if(!canPos(c,p))return;const j=S.lu.findIndex(x=>x[0]===p);if(j>=0){const o=by[S.lu[j][1]];if(!canPos(o,S.lu[i][0])){S.msg=`${o.name}은(는) ${PFULL[S.lu[i][0]]}수비 불가 · 위치 교환 불가.`;return}S.lu[j][0]=S.lu[i][0]}S.lu[i][0]=p}
 // 구종 그림: 공을 가운데 두고 휘는 방향에 구종을 놓음 (우투수, 투수 시점)
 const PDIR={직구:-90,포심:-90,투심:150,싱커:135,커터:-30,슬라이더:0,커브:45,파워커브:45,슬러브:20,체인지업:120,포크:90,스플리터:90,너클볼:-150,서클체인지업:120,SFF:90};
 function pitchMap(c){const E=Object.entries(c.pt||{}),gc={S:'#e2b23c',A:'#b05ad6',B:'#3d8fd1',C:'#8a9a90',D:'#6b6b6b'};
@@ -1835,8 +1844,8 @@ function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells
   <div class="eq">${S.blocks.filter(b=>b.on===c.id).map(b=>`<div><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))}<small>${Object.entries(b.st).map(([k,v])=>SKN[k]+'+'+v).join(' ')}</small></div>`).join('')||'<div class="none">장착한 스킬 없음</div>'}
   <div class="sup2"><span>SUPPORT CARD</span>${supOn(c.id)?`<b>${esc(sp(supOn(c.id).id)[1])}</b><small>${esc(sp(supOn(c.id).id)[3])} · ${supOn(c.id).left}경기 남음</small>`:'<small>없음</small>'}</div></div></div></div>`}
 function blkInv(c){const sk=skillOf(c.id),sel=S.blocks.find(b=>b.u===S.blkSel),mine=S.blocks.filter(b=>b.t===c.type&&(b.on===c.id||(b.on===null&&(!b.home||b.home.cid===c.id))));
- return `<p class="note help" style="margin-top:0">박힌 블록은 이 선수 안에서만 옮기거나 돌릴 수 있어요. 빼내면 사라져요.</p>
- <div class="tools"><button class="ghost" data-a="rot" ${sel&&!sel.on?'':'disabled'}>선택 블록 회전</button>${sel&&sel.home?'<button class="ghost danger" data-a="blkdel">빼내기 (블록 사라짐)</button>':''}<span class="note" style="margin:0">${sel?'놓을 칸을 누르세요 (끌어다 놓아도 돼요)':'블록을 고르거나 칸으로 끌어다 놓으세요'}</span></div>
+ return `<p class="note help" style="margin-top:0">장착한 블록은 이 선수 안에서만 이동·회전. 빼면 사라짐.</p>
+ <div class="tools"><button class="ghost" data-a="rot" ${sel&&!sel.on?'':'disabled'}>선택 블록 회전</button>${sel&&sel.home?'<button class="ghost danger" data-a="blkdel">빼내기 (블록 사라짐)</button>':''}<span class="note" style="margin:0">${sel?'놓을 칸 선택 (끌어 놓기 가능)':'블록 선택 또는 칸에 끌어 놓기'}</span></div>
  <div class="inv">${mine.map(b=>{const cs=cells(b),h=Math.max(...cs.map(x=>x[0]))+1,w=Math.max(...cs.map(x=>x[1]))+1;
   return `<button class="blk${b.u===S.blkSel?' sel':''}" data-blk="${b.u}" draggable="${b.on?'false':'true'}"><span class="mini" style="grid-template-columns:repeat(${w},12px)">${[...Array(h*w).keys()].map(i=>{const on=cs.some(([r,q])=>r*w+q===i);return `<i class="${on?'cell g-'+b.g:''}" style="${on?'':'visibility:hidden'}"></i>`}).join('')}</span><small><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))}</small><small>${Object.entries(b.st).map(([k,v])=>SKN[k]+'+'+v).join(' ')} · ${b.on?'장착됨':'보관 중'}${S.locks.includes('b'+b.u)?' · 잠금':''}</small></button>`}).join('')||'<p class="note">맞는 블록 없음</p>'}</div>
  <div class="sum">${Object.keys(sk).length?Object.entries(sk).map(([k,v])=>`<span>${SKN[k]} +${v}</span>`).join(''):'<span>장착한 스킬 없음</span>'}</div>`}
@@ -1845,10 +1854,10 @@ function vCard(){const c=by[S.cardId],op=open(c);
  return `<section class="band"><div class="tools"><h2 style="margin:0">카드 상세</h2><select id="cpick" aria-label="카드 선택">${OWN.map(x=>`<option value="${esc(x.id)}" ${x.id===c.id?'selected':''}>${x.year} ${esc(x.team)} ${esc(x.name)}</option>`).join('')}</select>
  <div class="tabs">${[[0,'앞면'],[1,'뒷면']].map(([v,n])=>`<button class="${+S.back===v?'on':''}" data-face="${v}">${n}</button>`).join('')}</div></div>
  <div class="cd"><div data-bigflip="1" style="cursor:pointer" title="눌러서 앞뒤 전환">${S.back?back:card(c,{full:1})}</div>
- <div>${S.back?`<h3>스킬</h3><p>장착한 스킬은 카드 뒷면에 칸으로 보여요. 블록을 넣거나 빼려면 스킬 화면에서 해요.</p><a href="#skill" data-skillgo="${esc(c.id)}"><button>스킬 장착하러 가기</button></a>`
+ <div>${S.back?`<h3>스킬</h3><p>장착한 스킬은 카드 뒷면에 칸으로 보여요. 블록 장착·해제는 스킬 화면에서.</p><a href="#skill" data-skillgo="${esc(c.id)}"><button>스킬 장착하러 가기</button></a>`
  :`<h3>${PFULL[c.pos]} ${stars(c.cost)}</h3>
-  <p class="help" style="margin:0">능력치 막대의 숫자는 덱 효과와 스킬 블록을 더한 값이고, 오른쪽 작은 숫자가 더해진 양이에요. 육성으로 120까지 오르며 100을 넘는 등급은 S+, SS, SS+로 표시합니다.</p>
-  <div class="lbl">덱 효과</div><p style="margin:0">${inUse?`1군 등록 중: ${d.fx.map(x=>`${x.n} ${x.g}`).join(' · ')||'팀컬러 없음'} (${c.type==='B'?'야수 +'+d.bat:'투수 +'+d.pit})`:'1군에 등록하면 현재 덱 효과가 붙어요.'}</p>
+  <p class="help" style="margin:0">막대 숫자 = 덱 효과·스킬 블록 포함, 오른쪽 작은 숫자 = 보너스. 육성으로 120까지 오르며 100을 넘는 등급은 S+, SS, SS+로 표시합니다.</p>
+  <div class="lbl">덱 효과</div><p style="margin:0">${inUse?`1군 등록 중: ${d.fx.map(x=>`${x.n} ${x.g}`).join(' · ')||'팀컬러 없음'} (${c.type==='B'?'야수 +'+d.bat:'투수 +'+d.pit})`:'1군 등록 시 덱 효과 적용.'}</p>
   ${c.type==='P'?`<div class="lbl">구종</div><div class="apt">${Object.entries(c.pt).map(([n,g])=>`<span>${esc(n)}<b>${esc(g)}</b></span>`).join('')}</div>`:''}
   <div class="lbl">이번 시즌</div><p style="margin:0">${S.gp[baseId(S.cardId)]||0}경기 출전 · 컨디션 <b>${CONDN[condOf(by[S.cardId])]}</b></p>`}</div></div></section>`}
 let grab=null;
@@ -1868,7 +1877,7 @@ function restoreLift(){for(const b of S.blocks)if(b.home&&b.u!==S.blkSel){const 
 
 // 선수 비교: 카드 팝업의 [비교하기] → 다른 카드를 누르면 두 장을 나란히 비교
 const effR=c=>{const sk=skillOf(c.id),r={};for(const k in c.r)r[k]=Math.min(120,c.r[k]+(sk[k]||0));return r};
-function cmpBar(){return S.cmpA&&!S.modal?`<div class="cmpbar" role="status"><span>비교: <b>${esc(by[S.cmpA].name)}</b> ${by[S.cmpA].year} · 비교할 카드를 누르세요</span><button class="ghost" data-cmpx="1">취소</button></div>`:''}
+function cmpBar(){return S.cmpA&&!S.modal?`<div class="cmpbar" role="status"><span>비교: <b>${esc(by[S.cmpA].name)}</b> ${by[S.cmpA].year} · 비교할 카드 선택</span><button class="ghost" data-cmpx="1">취소</button></div>`:''}
 function cmpView(a,b){const head=`<div class="mhead"><b>선수 비교</b><button class="ghost" data-cmpre="1">다른 선수 고르기</button><button class="ghost" data-cmpx="1">비교 끝내기</button></div>`;
  if(a.type!==b.type)return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true">${head}<p class="note">타자와 투수는 비교 불가</p></div></div>`;
  const ra=effR(a),rb=effR(b),B=a.type==='B',keys=B?BK:PKEY;
@@ -1929,7 +1938,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[d
  else if(D.skc){S.skc=D.skc;S.blkSel=null}
  else if(D.sft){S.sf={...(S.sf||SF0),ty:D.sft};S.mat=[]}else if(D.sfd){S.sf={...(S.sf||SF0),dup:(S.sf||SF0).dup?0:1};S.mat=[]}else if(D.sk2){S.sk=D.sk2;S.mat=[];S.synRes=null;location.hash='synth';render();return}
  else if(D.sk){S.sk=D.sk;S.mat=[];S.synRes=null}
- else if(D.synex){const E=S.synEx=S.synEx||[],i=E.indexOf(D.synex);if(i>=0)E.splice(i,1);else if(E.length>=SYN_EX_MAX)S.msg=`제외 구단은 ${SYN_EX_MAX}개까지 고를 수 있어요.`;else E.push(D.synex);S.synRes=null;S.mat=(S.mat||[]).filter(id=>{const c=byId[baseId(id)];return !c||!E.includes(c.line)})}
+ else if(D.synex){const E=S.synEx=S.synEx||[],i=E.indexOf(D.synex);if(i>=0)E.splice(i,1);else if(E.length>=SYN_EX_MAX)S.msg=`제외 구단은 ${SYN_EX_MAX}개까지 선택 가능.`;else E.push(D.synex);S.synRes=null;S.mat=(S.mat||[]).filter(id=>{const c=byId[baseId(id)];return !c||!E.includes(c.line)})}
  else if(D.mat){const i=S.mat.indexOf(D.mat);S.synRes=null;if(i>=0)S.mat.splice(i,1);else if(S.mat.length<NEED(S.sk||'p'))S.mat.push(D.mat)}
  else if(D.ssel)S.ssel=S.ssel===D.ssel?null:D.ssel;
  else if(D.sgive){if(S.sup.length<2&&S.ssel){S.sup.push({id:S.ssel,cid:D.sgive,left:SUP_BY[S.ssel][4]});S.sq[S.ssel]--;S.ssel=null}}
@@ -1947,7 +1956,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[d
   if(a==='recclose')S.recm=null;
   if(a==='recundo'&&S.undo){Object.assign(S,JSON.parse(S.undo));S.undo=null}
   if(a==='synhelp')S.synHelp=!S.synHelp;if(a==='tcall')S.tcAll=!S.tcAll;
-  if(a==='synth')doSynth();if(a==='synclr'){S.mat=[];S.synRes=null}if(a==='synauto'){const m=synAuto(S.sk||'p');S.synRes=null;if(m)S.mat=m;else{S.mat=[];S.msg='넣을 수 있는 재료가 부족해요.'}}
+  if(a==='synth')doSynth();if(a==='synclr'){S.mat=[];S.synRes=null}if(a==='synauto'){const m=synAuto(S.sk||'p');S.synRes=null;if(m)S.mat=m;else{S.mat=[];S.msg='재료 부족.'}}
   if(a==='tdraw'){if(ECON.pay(S,100).err)S.msg='포인트 부족';else{const u=Math.random(),g=u<.05?'황금':u<.25?'특수':'일반',x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;S.tdraw=x[0]}}}
  render()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(S.modal||S.dexView)){S.modal=null;S.dexView=null;render()}});
@@ -1992,10 +2001,10 @@ function vCards(){const n=Object.keys(S.owned).length;
   <div class="filters"><input data-f="q" value="${esc(flt.q)}" placeholder="선수 이름" aria-label="선수 이름 검색">${sl('type',[['','타자+투수'],['B','타자'],['P','투수']],'유형')}${sl('tier',[['','모든 등급'],['N','노멀'],['S','스타'],['L','레전드']],'등급')}
   ${sl('line',[['','모든 구단'],...LINES.map(l=>[l,l])],'구단')}${sl('year',[['','모든 연도'],...[...YEARS].reverse().map(y=>[y,y])],'연도')}${sl('sort',[['ovr','능력순'],['cost','코스트순'],['year','연도순']],'정렬')}
   <label class="chk"><input type="checkbox" data-f="all" ${flt.all?'checked':''}> 미보유 카드도 보기</label></div>
-  <p class="mini">${L.length.toLocaleString()}장</p><div class="grid">${L.slice(0,flt.lim).map(c=>cardHTML(c,{dim:!S.owned[c.id]})).join('')||'<p>조건에 맞는 카드가 없어요.</p>'}</div>
+  <p class="mini">${L.length.toLocaleString()}장</p><div class="grid">${L.slice(0,flt.lim).map(c=>cardHTML(c,{dim:!S.owned[c.id]})).join('')||'<p>해당 카드 없음.</p>'}</div>
   ${L.length>flt.lim?`<div class="btns" style="margin-top:16px"><button data-a="more">더 보기</button></div>`:''}</section>`}
 function vGame(){
-  if(!G)return `<section class="hero"><h1>진행 중인 경기가 없어요</h1><p><a href="#season">주간 리그</a>에서 경기장에 입장하세요.</p></section>`;
+  if(!G)return `<section class="hero"><h1>진행 중인 경기 없음</h1><p><a href="#season">주간 리그</a>에서 경기장 입장.</p></section>`;
   const g=G,n=Math.max(9,g.line[0].length),bat=g.half,cur=g.done?null:g.t[bat].lu[g.idx[bat]].c,P=g.done?null:g.pit[1-bat].c,myBat=bat===g.me,B=g.bases;
   const ls=s=>Array.from({length:n},(_,i)=>g.line[s][i]??(i===g.inn-1&&g.half===s&&!g.done?g.hr:''));
   const box=s=>`<table class="tbl"><thead><tr><th class="l">${esc(g.t[s].name)}</th><th>타수</th><th>안타</th><th>홈런</th><th>타점</th><th>득점</th><th>볼넷</th><th>삼진</th><th>보살</th><th>실책</th></tr></thead><tbody>${Object.values(g.bx[s]).map(b=>`<tr><td class="l">${esc(b.c.name)} <small>${PK[b.pos]}</small></td><td>${b.ab}</td><td>${b.h}</td><td>${b.hr}</td><td>${b.rbi}</td><td>${b.r}</td><td>${b.bb}</td><td>${b.k}</td><td>${b.a||0}</td><td>${b.e||0}</td></tr>`).join('')}</tbody></table>
@@ -2188,7 +2197,7 @@ function ylTick(){const L=S&&S.yl;if(!L||L.done)return;if(!L.t0){L.t0=Date.now()
   const g=c.w+c.l+c.d;S.toast=`${L.year} 리그 ${n}라운드 진행${g?` · 내 경기 ${c.w}승 ${c.l}패${c.d?' '+c.d+'무':''}`:''}${ev.length?' · '+ev.join(' · '):''}`;save()}
 function ylNew(y){const teams=[{user:true},...yearKeys(y).map(teamYear)];
   S.yl={year:y,teams,sched:schedYL(teams.length),round:0,st:newSt(teams.length),last:[],post:null,done:false,log:[],t0:Date.now(),steps:0};ylTick()}
-function ylBye(L){L.man=(L.man||0)+1;L.steps=(L.steps||0)+1;if(L.post){S.toast=(seriesGame(L,null),ylAdvance(L)).replace(/^ · /,'')||'진행했어요';save();render();return}lgPlay(L,null);let msg='휴식 라운드를 진행했어요'+midAS(L);if(L.round>=L.sched.length){ylStartPost(L);msg+=(L.titleMsg||'')+ylAdvance(L)}S.toast=msg;save();render()}
+function ylBye(L){L.man=(L.man||0)+1;L.steps=(L.steps||0)+1;if(L.post){S.toast=(seriesGame(L,null),ylAdvance(L)).replace(/^ · /,'')||'진행 완료';save();render();return}lgPlay(L,null);let msg='휴식 라운드 완료'+midAS(L);if(L.round>=L.sched.length){ylStartPost(L);msg+=(L.titleMsg||'')+ylAdvance(L)}S.toast=msg;save();render()}
 function ylStartPost(L){const R=lgStand(L).map(x=>x.i);L.rank=R.indexOf(0)+1;L.titleMsg=titleClose(L,'yl',1);
   if(L.teams.length>=8)L.post={cur:{nm:'준플레이오프',lo:R[3],hi:R[2],need:2,w:[0,0]},q:[{nm:'플레이오프',hi:R[1],need:3},{nm:'한국시리즈',hi:R[0],need:4}]};
   else L.post={cur:{nm:'한국시리즈',lo:R[1],hi:R[0],need:4,w:[0,0]},q:[]};
@@ -2279,7 +2288,7 @@ function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<
   ['멘탈','접전·득점권에서 제구 +(멘탈−70)×0.2']]))}
  ${sec('수비',`<p class="note">포지션마다 수비값이 따로 있어요(대개 80~100, 90이 보통). 포수·유격수·중견수는 1.3배 가중해서 팀 수비를 내요. 팀 수비 +10이면 경기당 실점이 약 0.3점 줄어요.</p>`+T(['항목','계산'],[
   ['실책','타구를 잡은 야수 기준 2.5%, 수비 +10마다 −1.2%p'],['외야 보살','추가 진루하던 주자를 잡을 확률. 외야 수비가 높고 주자가 느릴수록 높아요'],
-  ['도루 저지','포수 수비 +10마다 도루 성공률 −4%p'],['못 맡는 포지션','수비값이 크게 깎여요. 대타·대주자로 들어오면 다음 수비 때 자동으로 교체돼요']]))}
+  ['도루 저지','포수 수비 +10마다 도루 성공률 −4%p'],['못 맡는 포지션','수비값이 크게 깎여요. 대타·대주자는 다음 수비 때 자동 교체']]))}
  ${sec('그 밖의 보정',T(['항목','효과'],[
   ['컨디션','최악 −20% · 나쁨 −10% · 보통 0 · 좋음 +4% · 최상 +8%. 타자는 교타(선구는 절반), 투수는 제구(구위는 절반)에 곱해요'],
   ['덱 효과(팀컬러)','모든 능력치에 +보너스(체력 제외)'],['포수 궁합','투수와 포수의 궁합에 따라 제구(구위는 60%) 보정'],
@@ -2303,7 +2312,7 @@ function cloudPush(now){const F=fb();if(!F||!ON.user)return;clearTimeout(pushT);
 // S.photoTs[id]=올린 시각, S.phPull=마지막으로 클라우드 사진을 받은 시각. ON.ph=클라우드에 있다고 아는 사진(id→dataURL)
 ON.ph=ON.ph||null;
 async function photoSync(){const F=fb();if(!F||!ON.user||!ON.ph||!F.deleteDoc)return;S.photos=S.photos||{};S.photoTs=S.photoTs||{};const col=['users',ON.user.uid,'photos'];
-  for(const id in S.photos){if(ON.ph[id]===S.photos[id])continue;const d=S.photos[id];if(d.length>190000){ON.sync='사진이 커서 기기 연동에서 빠졌어요';continue}
+  for(const id in S.photos){if(ON.ph[id]===S.photos[id])continue;const d=S.photos[id];if(d.length>190000){ON.sync='사진 용량 초과 · 연동 제외';continue}
     if(!S.photoTs[id])S.photoTs[id]=Date.now();
     await F.setDoc(F.doc(F.db,...col,id),{d,ts:S.photoTs[id]});ON.ph[id]=d}
   for(const id in ON.ph)if(!S.photos[id]){await F.deleteDoc(F.doc(F.db,...col,id));delete ON.ph[id];delete S.photoTs[id]}
@@ -2317,7 +2326,7 @@ async function photoPull(){const F=fb();S.photos=S.photos||{};S.photoTs=S.photoT
 async function cloudPull(){const F=fb(),u=ON.user;try{
   const d=await F.getDoc(F.doc(F.db,'users',u.uid));
   if(d.exists()){const c=d.data();if(S.uid!==u.uid||(c.ts||0)>(S.ts||0)){const o=JSON.parse(c.json);const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.photos=ph;S.photoTs=pt;S.phPull=pp;S.uid=u.uid;if(typeof migSpecial==='function')migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];
-      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};ON.sync='클라우드 저장 데이터를 불러왔어요';G=null;packOut=null}else cloudPush(true)}
+      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};ON.sync='클라우드 저장 불러옴';G=null;packOut=null}else cloudPush(true)}
   else{S.uid=u.uid;cloudPush(true)}}catch(e){ON.sync='클라우드 불러오기 실패: '+e.code}
   try{await photoPull();cloudPush(true)}catch(e){ON.sync='사진 불러오기 실패: '+e.code}}
 async function loadLeagues(){const F=fb();try{const q=F.query(F.collection(F.db,'leagues'),F.where('members','array-contains',ON.user.uid));
@@ -2337,12 +2346,12 @@ async function oAct(a,b){const F=fb(),u=ON.user;ON.msg='';
   if(a==='o-logout'){await F.signOut(F.auth);return}
   if(a==='o-save'){cloudPush(true);return}
   if(a==='o-sel'||a==='o-ref'){if(b.dataset.l)ON.cur=b.dataset.l;await loadLeagues()}
-  else if(a==='o-create'){const nm=($('#oln').value||'').trim().slice(0,20);if(!nm){ON.msg='리그 이름을 적어 주세요';return}
+  else if(a==='o-create'){const nm=($('#oln').value||'').trim().slice(0,20);if(!nm){ON.msg='리그 이름 필요';return}
     let code=code6();for(let i=0;i<5&&(await F.getDoc(F.doc(F.db,'leagues',code))).exists();i++)code=code6();
     await F.setDoc(F.doc(F.db,'leagues',code),{name:nm,code,owner:u.uid,members:[u.uid],memberNames:{[u.uid]:S.team.name+' ('+myName()+')'},created:F.serverTimestamp()});
     ON.cur=code;await loadLeagues();ON.msg=`리그를 만들었어요. 친구에게 코드 ${code} 를 알려 주세요.`}
   else if(a==='o-join'){const code=($('#olc').value||'').trim().toUpperCase();const ref=F.doc(F.db,'leagues',code),d=await F.getDoc(ref);
-    if(!d.exists()){ON.msg='그 코드의 리그가 없어요';return}
+    if(!d.exists()){ON.msg='없는 리그 코드';return}
     if(!d.data().members.includes(u.uid))await F.updateDoc(ref,{members:F.arrayUnion(u.uid),['memberNames.'+u.uid]:S.team.name+' ('+myName()+')'});
     ON.cur=code;await loadLeagues();ON.msg=`${d.data().name} 리그에 들어왔어요. 라인업을 등록하면 친구들이 도전할 수 있어요.`}
   else if(a==='o-reg'){const e=validate();if(e.length){ON.msg='라인업 오류: '+e[0];return}
@@ -2362,7 +2371,7 @@ async function oFinish(){const F=fb(),g=G,f=g.friendly;
   S.team.sup=(S.team.sup||[]).map(x=>({...x,left:x.left-1})).filter(x=>x.left>0);
   for(const c of regCards(S.team))S.gp[c.id]=(S.gp[c.id]||0)+1;
   try{await F.addDoc(F.collection(F.db,'leagues',f.lid,'games'),{by:ON.user.uid,a:ON.user.uid,h:f.h,an:S.team.name+' ('+myName()+')',hn:f.hn,sc:g.sc,res:g.res,at:F.serverTimestamp()});
-    S.toast=`친선전 ${res==='w'?'승리':res==='l'?'패배':'무승부'} ${g.sc[0]}:${g.sc[1]} · ${pay} 코인 · 리그 기록에 반영됐어요`;await loadLeague()}
+    S.toast=`친선전 ${res==='w'?'승리':res==='l'?'패배':'무승부'} ${g.sc[0]}:${g.sc[1]} · ${pay} 코인 · 리그 기록 반영`;await loadLeague()}
   catch(e){S.toast='결과 저장 실패: '+(e.code||e.message)}
   G=null;save();location.hash='online';render()}
 function oTable(){const st={};const L=ON.leagues.find(l=>l.id===ON.cur);for(const u of L.members)st[u]={u,w:0,l:0,d:0,rs:0,ra:0};
@@ -2389,7 +2398,7 @@ function vOnline(){
 // ===== 시작 화면: 배포판(Firebase)은 구글 로그인부터 =====
 const FBMODE=()=>!!document.querySelector('script[type=module]');
 function loginView(){return `<section class="login"><div class="logo big">프로호구 매니저<small>KBO 1982–2026 선수카드 매니저</small></div>
-  <p class="note">구글 계정으로 로그인하면 진행 상황이 클라우드에 저장돼서 어느 기기에서든 이어서 할 수 있고, 친구 리그도 할 수 있어요.</p>
+  <p class="note">구글 로그인 시 클라우드 저장 · 기기 간 이어하기 · 친구 리그.</p>
   ${ON.ready||window.FB?`<button class="big gbtn" data-a="o-login">Google로 로그인</button>`:'<p class="note">로그인 준비 중…</p>'}
   ${ON.msg?`<p class="note" style="color:var(--bad)">${esc(ON.msg)}</p>`:''}
   <button class="ghost" data-a="guest">로그인 없이 하기 (이 기기에만 저장)</button></section>`}
@@ -2409,7 +2418,7 @@ function head(k){const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b
   ${S.toast?`<div class="toast">${esc(S.toast)}</div>`:''}`}
 function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}restoreLift();syncTeam();rebuildOwn();
   if(FBMODE()&&!ON.user&&!S.guest){document.body.dataset.bg='field';hdr.innerHTML='';vw.innerHTML=loginView();return}
-  const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=head(k);let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면을 그리지 못했어요</h2><p class="note">${esc(e.message)}</p></section>`}
+  const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=head(k);let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면 오류</h2><p class="note">${esc(e.message)}</p></section>`}
   vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+cmpBar()+modal();S.toast='';
   const sv=$('#sv');if(sv)sv.value=btoa(unescape(encodeURIComponent(JSON.stringify(S,function(kk,v){return this===S&&TRANS.has(kk)?undefined:v}))));if(S.modal||S.dexView)scrollTo(0,y);saveSoon()}
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
@@ -2423,7 +2432,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='tk'){const k=b.dataset.k;tactic(G,k,k==='ph'?$('#phs').value:null);pa(G);render()}
   else if(a==='more'){flt.lim+=240;render()}
   else if(a==='luview'){S.luView=b.dataset.v;if(b.dataset.v==='card')S.luStat='';render()}
-  else if(a==='dism'){const r=ECON.dismantle(S,byId,b.dataset.id,1);S.toast=r.err||(r.shard?`EX 조각 +1 (${r.left}/3)${r.tix?` · 구단 지정 EX 확정권 ${r.tix}장 받았어요`:''}`:`분해 · +${r.pt}P`);rebuildOwn();if(!by[S.modal])S.modal=null;save();render()}
+  else if(a==='dism'){const r=ECON.dismantle(S,byId,b.dataset.id,1);S.toast=r.err||(r.shard?`EX 조각 +1 (${r.left}/3)${r.tix?` · 구단 지정 EX 확정권 ${r.tix}장 획득`:''}`:`분해 · +${r.pt}P`);rebuildOwn();if(!by[S.modal])S.modal=null;save();render()}
   else if(/^bld/.test(a))bldAct(a);
   else if(a==='synview'){S.synView=b.dataset.v;render()}
   else if(a==='lustat'){S.luStat=b.dataset.v;render()}
@@ -2434,7 +2443,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='guest'){S.guest=1;save();render()}
   else if(a==='rmphoto'){delete S.photos[baseId(S.modal)];delete S.photos[S.modal];save();render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
-  else if(a==='load'){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#sv').value.trim()))));if(o&&o.team&&o.season){S=o;ensureUI();save();render()}}catch(e){b.textContent='코드를 읽지 못했어요'}}
+  else if(a==='load'){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#sv').value.trim()))));if(o&&o.team&&o.season){S=o;ensureUI();save();render()}}catch(e){b.textContent='코드 오류'}}
   else if(a==='reset'){if(b.dataset.c){fresh();packOut=null;G=null;render()}else{b.dataset.c=1;b.textContent='한 번 더 누르면 초기화'}}}
 vw.addEventListener('click',e=>{const ra=e.target.closest('[data-a]');if(ra&&!ra.disabled&&(REALA.has(ra.dataset.a)||/^[om]-/.test(ra.dataset.a))){e.stopImmediatePropagation();realClick(ra)}},true);
 vw.addEventListener('change',e=>{const t=e.target;
@@ -2461,8 +2470,8 @@ fetch('cards.json').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i
   LINES=[...new Set(CARDS.map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}
   if(!S)fresh();else{migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];S.blocks=S.blocks||[];S.gp=S.gp||{};S.tq=S.tq||{};S.sq=S.sq||{};S.team.bench=S.team.bench||[]}
-  ensureUI();const lg=ECON.login(S);if(lg)S.toast=`출석 ${lg.streak}일째 · ${rwText(lg)} 받았어요`;
-  render();fbBoot()}).catch(e=>{console.error(e);vw.innerHTML=`<section class="band"><h1>카드 데이터를 불러오지 못했어요</h1><p>${esc(e.message)}</p></section>`});
+  ensureUI();const lg=ECON.login(S);if(lg)S.toast=`출석 ${lg.streak}일째 · +${rwText(lg)}`;
+  render();fbBoot()}).catch(e=>{console.error(e);vw.innerHTML=`<section class="band"><h1>카드 데이터 불러오기 실패</h1><p>${esc(e.message)}</p></section>`});
 })();
 
 </script>

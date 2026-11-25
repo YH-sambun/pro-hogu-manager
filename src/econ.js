@@ -23,7 +23,7 @@ function leagueEnd(tier,rank,firstWin){const base=rank===1?(firstWin?WIN.first:W
 // 단일팀 도전(팀컬러 팀, 난이도 1~10): 첫 클리어 300×난이도 + 난이도 5·10 첫 클리어 확정권. 반복 클리어는 하루 5회까지 40×난이도
 const CHAL={first:300,rep:40,daily:5,firstTix:{5:{star:1},10:{legend:1}}};
 function challenge(diff,first,todayRepeats){if(first)return {pt:CHAL.first*diff,tix:{...(CHAL.firstTix[diff]||{})}};
-  return todayRepeats<CHAL.daily?{pt:CHAL.rep*diff}:{pt:0,note:'오늘 반복 보상은 다 받았어요'}}
+  return todayRepeats<CHAL.daily?{pt:CHAL.rep*diff}:{pt:0,note:'오늘 반복 보상 완료'}}
 
 // 연도별 리그(그 해 실제 구단들과 시즌): 그 연도 첫 우승 3000P+골든글러브 확정권(그 연도 지정 가능), 재우승 500P. 2위 800·3위 500·그 외 200
 // 개인 타이틀: 리그 마감 때 내 선수가 1위인 부문마다 보너스. 주간 리그는 300P×단계 배율, 연도 리그는 300P(반복 상한 적용 대상)
@@ -91,10 +91,10 @@ function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); 
   if(pk.k==='ty'){const Y=(opt.tyYears||[]).map(Number);pool=pool.filter(c=>c.line===opt.line&&Y.includes(c.year))}
   return pool}
 // 카드 팩 뽑기: 포인트 차감 + 천장 + 도감 등록까지. 반환 {cards, dex(새로 완성된 세트), err}
-function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩이 아니에요'};
-  opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개를 골라 주세요'};
-  if(k==='tl'&&!opt.line)return {err:'구단을 골라 주세요'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개와 연도 3개를 골라 주세요'};
-  if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드가 없어요'};
+function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩 아님'};
+  opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개 선택'};
+  if(k==='tl'&&!opt.line)return {err:'구단 선택'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개 · 연도 3개 선택'};
+  if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
   S.pt-=pk.p;const out=[];const sp=k==='sx'?pool.filter(c=>c.v==='GG'||c.v==='AS'):null,nsp=sp&&pool.filter(c=>!c.v);
   for(let i=0;i<pk.cnt;i++)out.push(k==='ty'?pool[Math.floor(rnd()*pool.length)]:sp?wpick(rnd()<.25?sp:nsp):wpick(pool));
   if(sp&&!out.some(c=>c.v==='GG'||c.v==='AS'))out[out.length-1]=wpick(sp);
@@ -106,11 +106,11 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
   return {cards:out,dex:gain(S,out.map(c=>c.id))}}
 // 확정권 쓰기(카드형). pick은 id를 지정
 // arg: pick→카드 id, gg→연도(선택), ex→구단 계보(선택)
-function useTicket(S,CARDS,k,arg){const pickId=arg;if(!(S.tix&&S.tix[k]>0))return {err:'확정권이 없어요'};let c;
-  if(k==='pick'){c=CARDS.find(x=>x.id===pickId&&x.cost>=9);if(!c)return {err:'레전드(9+) 카드를 골라 주세요'}}
+function useTicket(S,CARDS,k,arg){const pickId=arg;if(!(S.tix&&S.tix[k]>0))return {err:'확정권 없음'};let c;
+  if(k==='pick'){c=CARDS.find(x=>x.id===pickId&&x.cost>=9);if(!c)return {err:'레전드(9+) 카드 선택'}}
   else if(tixPool[k]){const all=CARDS.filter(c=>tixPool[k](c)&&(arg==null||(k==='gg'&&c.year===+arg)||(k==='ex'&&c.line===arg)||!['gg','ex'].includes(k))),nw=all.filter(x=>!dexHas(S,x.id));c=wpick(nw.length?nw:all)} // 도감에 없는 카드 우선else return {err:'팩형 확정권은 팩 화면에서 써요'};
-  if(!c)return {err:'고른 조건에 맞는 카드가 없어요'};S.tix[k]--;return {cards:[c],dex:gain(S,[c.id])}}
-function dismantle(S,byId,id,n){n=n||1;const have=S.owned[id]|0;if(have-n<1)return {err:'1장은 남겨야 해요'};
+  if(!c)return {err:'조건에 맞는 카드 없음'};S.tix[k]--;return {cards:[c],dex:gain(S,[c.id])}}
+function dismantle(S,byId,id,n){n=n||1;const have=S.owned[id]|0;if(have-n<1)return {err:'1장은 남겨야 함'};
   S.owned[id]=have-n;if(byId[id].v==='EX'){S.exShard=(S.exShard|0)+n;let tk=0;while(S.exShard>=3){S.exShard-=3;tk++}if(tk){S.tix=S.tix||{};S.tix.ex=(S.tix.ex|0)+tk}return {shard:n,tix:tk,left:S.exShard}} // EX 중복 → EX 조각, 3개마다 EX 확정권(구단 지정 가능)
   const p=byId[id].cost*DISMANTLE*n;S.pt+=p;return {pt:p}}
 
@@ -175,13 +175,13 @@ const studyFee=(d,cost)=>{const x=STUDY_BY[d]||STUDY[0];return Math.round(500*Ma
 function studyRoll(d){const x=STUDY_BY[d]||STUDY[0],N=['대성공','성공','보통','실패'];let u=rnd()*100;
   for(let i=0;i<4;i++)if((u-=x[3][i])<0)return {name:N[i],gain:i<3?x[4][i]:0};return {name:'실패',gain:0}}
 // 유학 가능 여부(경제 쪽 검사): 특수 카드(올스타·골글·EX)는 불가. 나이 조건 등은 UI/엔진에서 추가 검사
-const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 유학 갈 수 없어요'}:{ok:true};
+const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 유학 불가'}:{ok:true};
 const rushFee=msLeft=>Math.max(0,Math.ceil(msLeft/36e5))*RUSH;
 function pay(S,p){if((S.pt||0)<p)return {err:'포인트가 모자라요'};S.pt-=p;return {pt:p}}
 // 쿠폰: Firestore coupons/{코드} 문서를 읽어 data로 넘김. 같은 코드는 한 번만(S.coupons에 기록). exp(만료 시각, ms 또는 Timestamp) 지나면 거절
 function redeem(S,code,data){code=String(code||'').trim().toUpperCase();S.coupons=S.coupons||{};
-  if(!data)return {err:'없는 쿠폰이에요'};if(S.coupons[code])return {err:'이미 쓴 쿠폰이에요'};
-  const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(exp&&Date.now()>exp)return {err:'기간이 지난 쿠폰이에요'};
+  if(!data)return {err:'없는 쿠폰'};if(S.coupons[code])return {err:'이미 사용한 쿠폰'};
+  const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(exp&&Date.now()>exp)return {err:'기간 만료 쿠폰'};
   const rw={pt:+data.pt||0,tix:data.tix||{}};S.coupons[code]=Date.now();grant(S,rw);return {rw,text:rwText(rw)}}
 // 연도 리그 경기 예측 전용 상한: 하루 1,500P (자동 진행 하루 약 60경기 × 평균 60P = 3,600P라 상한 없으면 과함). 주간 리그 예측은 상한 없음
 const PRED_CAP=1500;

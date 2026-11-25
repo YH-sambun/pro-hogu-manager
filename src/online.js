@@ -10,7 +10,7 @@ function cloudPush(now){const F=fb();if(!F||!ON.user)return;clearTimeout(pushT);
 // S.photoTs[id]=올린 시각, S.phPull=마지막으로 클라우드 사진을 받은 시각. ON.ph=클라우드에 있다고 아는 사진(id→dataURL)
 ON.ph=ON.ph||null;
 async function photoSync(){const F=fb();if(!F||!ON.user||!ON.ph||!F.deleteDoc)return;S.photos=S.photos||{};S.photoTs=S.photoTs||{};const col=['users',ON.user.uid,'photos'];
-  for(const id in S.photos){if(ON.ph[id]===S.photos[id])continue;const d=S.photos[id];if(d.length>190000){ON.sync='사진이 커서 기기 연동에서 빠졌어요';continue}
+  for(const id in S.photos){if(ON.ph[id]===S.photos[id])continue;const d=S.photos[id];if(d.length>190000){ON.sync='사진 용량 초과 · 연동 제외';continue}
     if(!S.photoTs[id])S.photoTs[id]=Date.now();
     await F.setDoc(F.doc(F.db,...col,id),{d,ts:S.photoTs[id]});ON.ph[id]=d}
   for(const id in ON.ph)if(!S.photos[id]){await F.deleteDoc(F.doc(F.db,...col,id));delete ON.ph[id];delete S.photoTs[id]}
@@ -24,7 +24,7 @@ async function photoPull(){const F=fb();S.photos=S.photos||{};S.photoTs=S.photoT
 async function cloudPull(){const F=fb(),u=ON.user;try{
   const d=await F.getDoc(F.doc(F.db,'users',u.uid));
   if(d.exists()){const c=d.data();if(S.uid!==u.uid||(c.ts||0)>(S.ts||0)){const o=JSON.parse(c.json);const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.photos=ph;S.photoTs=pt;S.phPull=pp;S.uid=u.uid;if(typeof migSpecial==='function')migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];
-      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};ON.sync='클라우드 저장 데이터를 불러왔어요';G=null;packOut=null}else cloudPush(true)}
+      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};ON.sync='클라우드 저장 불러옴';G=null;packOut=null}else cloudPush(true)}
   else{S.uid=u.uid;cloudPush(true)}}catch(e){ON.sync='클라우드 불러오기 실패: '+e.code}
   try{await photoPull();cloudPush(true)}catch(e){ON.sync='사진 불러오기 실패: '+e.code}}
 async function loadLeagues(){const F=fb();try{const q=F.query(F.collection(F.db,'leagues'),F.where('members','array-contains',ON.user.uid));
@@ -44,12 +44,12 @@ async function oAct(a,b){const F=fb(),u=ON.user;ON.msg='';
   if(a==='o-logout'){await F.signOut(F.auth);return}
   if(a==='o-save'){cloudPush(true);return}
   if(a==='o-sel'||a==='o-ref'){if(b.dataset.l)ON.cur=b.dataset.l;await loadLeagues()}
-  else if(a==='o-create'){const nm=($('#oln').value||'').trim().slice(0,20);if(!nm){ON.msg='리그 이름을 적어 주세요';return}
+  else if(a==='o-create'){const nm=($('#oln').value||'').trim().slice(0,20);if(!nm){ON.msg='리그 이름 필요';return}
     let code=code6();for(let i=0;i<5&&(await F.getDoc(F.doc(F.db,'leagues',code))).exists();i++)code=code6();
     await F.setDoc(F.doc(F.db,'leagues',code),{name:nm,code,owner:u.uid,members:[u.uid],memberNames:{[u.uid]:S.team.name+' ('+myName()+')'},created:F.serverTimestamp()});
     ON.cur=code;await loadLeagues();ON.msg=`리그를 만들었어요. 친구에게 코드 ${code} 를 알려 주세요.`}
   else if(a==='o-join'){const code=($('#olc').value||'').trim().toUpperCase();const ref=F.doc(F.db,'leagues',code),d=await F.getDoc(ref);
-    if(!d.exists()){ON.msg='그 코드의 리그가 없어요';return}
+    if(!d.exists()){ON.msg='없는 리그 코드';return}
     if(!d.data().members.includes(u.uid))await F.updateDoc(ref,{members:F.arrayUnion(u.uid),['memberNames.'+u.uid]:S.team.name+' ('+myName()+')'});
     ON.cur=code;await loadLeagues();ON.msg=`${d.data().name} 리그에 들어왔어요. 라인업을 등록하면 친구들이 도전할 수 있어요.`}
   else if(a==='o-reg'){const e=validate();if(e.length){ON.msg='라인업 오류: '+e[0];return}
@@ -69,7 +69,7 @@ async function oFinish(){const F=fb(),g=G,f=g.friendly;
   S.team.sup=(S.team.sup||[]).map(x=>({...x,left:x.left-1})).filter(x=>x.left>0);
   for(const c of regCards(S.team))S.gp[c.id]=(S.gp[c.id]||0)+1;
   try{await F.addDoc(F.collection(F.db,'leagues',f.lid,'games'),{by:ON.user.uid,a:ON.user.uid,h:f.h,an:S.team.name+' ('+myName()+')',hn:f.hn,sc:g.sc,res:g.res,at:F.serverTimestamp()});
-    S.toast=`친선전 ${res==='w'?'승리':res==='l'?'패배':'무승부'} ${g.sc[0]}:${g.sc[1]} · ${pay} 코인 · 리그 기록에 반영됐어요`;await loadLeague()}
+    S.toast=`친선전 ${res==='w'?'승리':res==='l'?'패배':'무승부'} ${g.sc[0]}:${g.sc[1]} · ${pay} 코인 · 리그 기록 반영`;await loadLeague()}
   catch(e){S.toast='결과 저장 실패: '+(e.code||e.message)}
   G=null;save();location.hash='online';render()}
 function oTable(){const st={};const L=ON.leagues.find(l=>l.id===ON.cur);for(const u of L.members)st[u]={u,w:0,l:0,d:0,rs:0,ra:0};
