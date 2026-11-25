@@ -551,7 +551,7 @@ const bldCards=()=>bldIds().map(id=>byId[id]).filter(Boolean);
 const bldStart=()=>{const B=bldInit();return [...B.lu.map(x=>x[1]),...B.rot,...B.pen].filter(Boolean).map(id=>byId[id]).filter(Boolean)};
 function bldSlotGet(k){const [a,i]=k.split(':'),B=bldInit();return a==='lu'?B.lu[+i][1]:B[a][+i]}
 function bldSlotSet(k,id){const [a,i]=k.split(':'),B=bldInit();if(a==='lu')B.lu[+i][1]=id;else B[a][+i]=id}
-function bldPut(id){const c=byId[id],B=bldInit();if(!c)return;if(bldIds().some(x=>byId[x]&&byId[x].pk===c.pk&&byId[x].type===c.type)){S.msg=`${c.name}은(는) 이미 포함`;return}
+function bldPut(id){const c=byId[id],B=bldInit();if(!c)return;const selId=S.bldSel?bldSlotGet(S.bldSel):null;if(bldIds().some(x=>x!==selId&&byId[x]&&byId[x].pk===c.pk&&byId[x].type===c.type)){S.msg=`${c.name}은(는) 이미 포함 · 바꾸려면 그 선수 자리를 먼저 선택`;return}
  let k=S.bldSel;if(k){const [a]=k.split(':');if((a==='rot'||a==='pen')!==(c.type==='P')){S.msg=c.type==='P'?'투수는 선발·불펜만 가능':'타자는 타순·벤치만 가능';return}}
  if(!k){const free=a=>B[a].map((v,i)=>v?null:a+':'+i).filter(Boolean);
   if(c.type==='B'){const i=B.lu.findIndex(x=>!x[1]&&canPlay(c,x[0]));k=i>=0?'lu:'+i:free('bench')[0]}
