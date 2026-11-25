@@ -14,6 +14,13 @@ const GRADE=v=>v>=115?'SS+':v>=110?'SS':v>=100?'S+':v>=90?'S':v>=80?'A':v>=70?'B
 const COND=[null,{n:'최악',m:-.2},{n:'나쁨',m:-.1},{n:'보통',m:0},{n:'좋음',m:.04},{n:'최상',m:.08}];
 const baseId=id=>String(id).replace(/~\d+$/,''); // 보유 중복 카드 id는 '기본id~k'('#k'는 동명이인 접미사라 따로 씀)
 // EX 제한(2026-11-24, SJ): 1군 25명 중 EX는 타자 1명·투수 1명까지
+// 이름 붙은 라이벌 덱 효과(계보 키 기준)
+const RIVALS=[['롯데','NC','낙동강 더비'],['SK','KT','통신사 더비'],['두산','LG','잠실 더비'],['삼성','롯데','클래식 시리즈'],['KIA','삼성','영호남 더비']];
+// 묶음 계보 덱 효과: 엘롯기 = LG·롯데·KIA(각 4명 이상). 구도 인천 = 삼미·청보·태평양·현대·우리·히어로즈·넥센·키움(키움 계보) + 쌍방울·SK·SSG(SK 계보)
+// [이름, 계보들, 계보별 최소 인원]. 합계 20명 이상
+const LINE_UNIONS=[['구도 인천',['키움','SK'],1],['엘롯기',['LG','롯데','KIA'],4]];
+// 시대 덱 효과: [이름, 계보, 시작 연도, 끝 연도, 필요 인원(주전 20명 중)]. 비밀번호 8888577 = 롯데 2001~2007 순위(8·8·8·8·5·7·7)
+const ERA_SETS=[['비밀번호 8888577','롯데',2001,2007,15]];
 const CH_WILD=1; // 커리어하이: 연도 무관으로 단일연도 인원에 넣을 수 있는 장수
 const EX_MAX={B:1,P:1},exCount=ids=>{const n={B:0,P:0};for(const id of ids){const c=byId[baseId(id)];if(c&&c.v==='EX')n[c.type]++}return n},
   exErr=ids=>{const n=exCount(ids),e=[];if(n.B>EX_MAX.B)e.push(`EX 타자는 ${EX_MAX.B}명까지 쓸 수 있어요(지금 ${n.B}명)`);if(n.P>EX_MAX.P)e.push(`EX 투수는 ${EX_MAX.P}명까지 쓸 수 있어요(지금 ${n.P}명)`);return e},
@@ -100,28 +107,25 @@ function teamColor(cards,sel){
     return yr+' '+(Object.entries(m).sort((a,b)=>b[1]-a[1])[0]||[l])[0]};
   const lname=l=>{const m={};for(const c of cards)if(c.line===l)m[c.team]=(m[c.team]||0)+1;return (Object.entries(m).sort((a,b)=>b[1]-a[1])[0]||[l])[0]};
   const mk=(fam,g,name,d,b,p)=>({fam,g,name,d,b,p,key:name+'|'+d,n:`${name} ${g} (${d})`});
-  // 연도 계열
-  let Y=null;const [y1,n1]=yk[0]||[];
-  if(n1>=25)Y=mk('Y','S','단일연도',tname(y1),8,6);else if(n1>=20)Y=mk('Y','A','단일연도',tname(y1),5,4);else if(n1>=12)Y=mk('Y','B','단일연도',tname(y1),3,2);
+  // 2026-11-25(SJ): 덱 효과는 1군 주전 20명(타순 9·선발 5·불펜 6) 기준. 계열 구분 없이 달성한 효과(all) 중 등급(S·A·B)별로 하나씩, 최대 3개(sel=고른 key, 없으면 그 등급 최고 자동)
   const byLine={};for(const [k,n] of yk){const l=k.split(' ')[1];(byLine[l]=byLine[l]||[]).push([k,n])}
-  for(const l in byLine){const a=byLine[l];if(a.length>=2&&a[0][1]>=8&&a[1][1]>=8&&a[0][1]+a[1][1]>=25&&(!Y||Y.b<5))Y=mk('Y','A','연도 듀얼',`${a[0][0].split(' ')[0]}+${a[1][0].split(' ')[0]} ${lname(l)}`,5,4)}
-  // 구단 계열
-  let F=null;const [l1,m1]=ln[0]||[];
-  if(m1>=25)F=mk('F','A','단일구단',lname(l1),5+(cost>=140?2:0),3+(cost>=140?2:0));else if(m1>=15)F=mk('F','B','단일구단',lname(l1),3,2);
-  if(!F&&ln.length>=2&&ln[0][1]>=10&&ln[1][1]>=10&&ln[0][1]+ln[1][1]>=25)F=mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2);
-  if((!F||F.b<3)&&rg[0]&&rg[0][1]>=25)F=mk('F','B','지역',rg[0][0],3,2);
-  // 인연 계열: 같은 고교 동문(투타 겸업 등 같은 선수는 한 명으로 셈), 없으면 같은 대학
+  const [l1,m1]=ln[0]||[],lc=Object.fromEntries(ln);
   const uniq=f=>{const m={};for(const c of cards){const k=f(c);if(!k)continue;(m[k]=m[k]||new Set()).add(c.pk)}return Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])};
-  const hs=uniq(c=>c.hs),un=uniq(c=>c.un);let E=null;
-  if(hs[0]&&hs[0][1]>=6)E=mk('E','A','고교 동문',hs[0][0],3,2);else if(hs[0]&&hs[0][1]>=4)E=mk('E','B','고교 동문',hs[0][0],2,1);
-  if(!E&&un[0]&&un[0][1]>=5)E=mk('E','B','대학 동문',un[0][0],2,1);
-  // 2026-11-24(SJ): 계열 구분 없이 달성한 효과(all) 중 등급(S·A·B)별로 하나씩, 최대 3개를 고름. sel=고른 효과 key 배열(없거나 못 쓰는 등급은 그 등급 최고 효과 자동)
+  const hs=uniq(c=>c.hs),un=uniq(c=>c.un),nv=v=>cards.filter(c=>c.v===v).length;
   const all=[];const add=x=>{if(x&&!all.some(y=>y.key===x.key))all.push(x)};
-  {const yy=yk[0];if(yy){const n=yy[1];if(n>=25)add(mk('Y','S','단일연도',tname(yy[0]),8,6));else if(n>=20)add(mk('Y','A','단일연도',tname(yy[0]),5,4));else if(n>=12)add(mk('Y','B','단일연도',tname(yy[0]),3,2))}}
-  for(const l in byLine){const a=byLine[l];if(a.length>=2&&a[0][1]>=8&&a[1][1]>=8&&a[0][1]+a[1][1]>=25)add(mk('Y','A','연도 듀얼',`${a[0][0].split(' ')[0]}+${a[1][0].split(' ')[0]} ${lname(l)}`,5,4))}
-  if(m1>=25)add(mk('F','A','단일구단',lname(l1),5+(cost>=140?2:0),3+(cost>=140?2:0)));else if(m1>=15)add(mk('F','B','단일구단',lname(l1),3,2));
-  if(ln.length>=2&&ln[0][1]>=10&&ln[1][1]>=10&&ln[0][1]+ln[1][1]>=25)add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
-  if(rg[0]&&rg[0][1]>=25)add(mk('F','B','지역',rg[0][0],3,2));
+  {const yy=yk[0];if(yy){const n=yy[1];if(n>=20)add(mk('Y','S','단일연도',tname(yy[0]),8,6));else if(n>=16)add(mk('Y','A','단일연도',tname(yy[0]),5,4));else if(n>=10)add(mk('Y','B','단일연도',tname(yy[0]),3,2))}}
+  for(const l in byLine){const a=byLine[l];if(a.length>=2&&a[0][1]>=7&&a[1][1]>=7&&a[0][1]+a[1][1]>=20)add(mk('Y','A','연도 듀얼',`${a[0][0].split(' ')[0]}+${a[1][0].split(' ')[0]} ${lname(l)}`,5,4))}
+  if(m1>=20)add(mk('F','A','단일구단',lname(l1),5+(cost>=125?2:0),3+(cost>=125?2:0)));else if(m1>=12)add(mk('F','B','단일구단',lname(l1),3,2));
+  // 이름 붙은 라이벌(A): 두 구단 각 8명 이상, 합계 20명 이상. 그 외 두 구단 조합은 일반 라이벌 듀얼(B)
+  for(const [a,b,n] of RIVALS)if((lc[a]||0)>=8&&(lc[b]||0)>=8&&lc[a]+lc[b]>=20)add(mk('F','A',n,`${lname(a)}+${lname(b)}`,5,4));
+  if(ln.length>=2&&ln[0][1]>=8&&ln[1][1]>=8&&ln[0][1]+ln[1][1]>=20&&!all.some(x=>x.fam==='F'&&x.g==='A'&&x.name!=='단일구단'))add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
+  if(rg[0]&&rg[0][1]>=20)add(mk('F','B','지역',rg[0][0],3,2));
+  // 묶음 계보(A): 여러 계보를 합쳐 20명 이상(각 계보 1명 이상)
+  for(const [n,ls,mn] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=20&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,ls.map(lname).join('+'),5,4))}
+  for(const [n,l,y0,y1,need] of ERA_SETS){const k=cards.filter(c=>c.line===l&&c.year>=y0&&c.year<=y1).length;if(k>=need)add(mk('Y','A',n,`${y0}~${y1} ${lname(l)} ${k}명`,5,4))}
+  // 올스타덱·골든글러브덱: 연도·구단이 섞여도 특별 카드 장수로
+  {const n=nv('AS');if(n>=12)add(mk('E','A','올스타덱',`올스타 ${n}명`,5,4));else if(n>=8)add(mk('E','B','올스타덱',`올스타 ${n}명`,3,2))}
+  {const n=nv('GG');if(n>=8)add(mk('E','A','골든글러브덱',`골든글러브 ${n}명`,5,4));else if(n>=5)add(mk('E','B','골든글러브덱',`골든글러브 ${n}명`,3,2))}
   if(hs[0]&&hs[0][1]>=6)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=4)add(mk('E','B','고교 동문',hs[0][0],2,1));
   if(un[0]&&un[0][1]>=5)add(mk('E','B','대학 동문',un[0][0],2,1));
   const S2=new Set(sel||[]);for(const g of ['S','A','B']){const c=all.filter(x=>x.g===g);if(!c.length)continue;fx.push(c.find(x=>S2.has(x.key))||c.sort((a,b)=>(b.b+b.p)-(a.b+a.p))[0])}
@@ -273,7 +277,7 @@ function simTeam(T,cond){
   const all=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);
   const M=mgrOf(T),tac=M?{...M.t}:{...TAC_DEF},fx=M?M.fx:{};
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
-  const AS=T.abSt||{},tc=teamColor(all,T.fxsel),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
+  const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
     const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
     const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+bon+(sk.def||0)])):null;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;return {...c,r,ps,rawr:raw}};
   const LC=T.lineup.map(x=>byId[x.id]);
@@ -441,4 +445,4 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};

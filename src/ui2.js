@@ -83,7 +83,7 @@ const tc=id=>TC_BY[id];
 const sp=id=>SUP_BY[id];
 const AJ={yt:ADJ.team,ln:ADJ.line,hs:ADJ.hs,un:ADJ.un,rg:ADJ.reg};
 // 덱 효과: 엔진 teamColor 결과를 시안 칩 모양으로
-function deckFx(){const all=used().map(id=>byId[id]).filter(Boolean),T=teamColor(all,S.team.fxsel);
+function deckFx(){const all=used().map(id=>byId[id]).filter(Boolean),T=teamColor(starters(S.team),S.team.fxsel);
   const fx=T.fx.map(f=>({cat:f.fam,g:f.g,n:f.name,sub:f.d,b:f.b,p:f.p,on:1,cur:1,need:1}));
   return {L:fx,fx,bat:T.bat,pit:T.pit,cost:T.cost,cnt:all.length}}
 const TCOLC=FX_FAM;
@@ -775,7 +775,7 @@ const abd=id=>ABD.find(d=>d[0]===id),abOpen=d=>!d[2]||(ABU[d[2]]?ABU[d[2]][0]():
 ABD.forEach(d=>{if(d[2]&&ABU[d[2]])d[6]=ABU[d[2]][1]});
 // ===== 기존 화면 (주간·연도·친구 리그, 경기장, 보유 카드) =====
 const cardHTML=(c,o={})=>card(c,{stats:1,pick:1,dim:o.dim});
-function fxHTML(T){const tc=teamColor(regCards(T),T.fxsel);return tc.fx.length?`<span class="fxchips">${tc.fx.map(f=>`<span class="fxc fx-${f.g}" title="${f.g}등급 덱 효과"><i>${f.g}</i>${esc(f.name)} · ${esc(f.d)} <b>야수 +${f.b} / 투수 +${f.p}</b></span>`).join('')}</span>`:`덱 효과 없음 · 가장 많은 연도·구단 ${esc(tc.top.year?tc.top.year[0]:'-')} ${tc.top.year?tc.top.year[1]:0}명 (12명부터)`}
+function fxHTML(T){const tc=teamColor(starters(T),T.fxsel);return tc.fx.length?`<span class="fxchips">${tc.fx.map(f=>`<span class="fxc fx-${f.g}" title="${f.g}등급 덱 효과"><i>${f.g}</i>${esc(f.name)} · ${esc(f.d)} <b>야수 +${f.b} / 투수 +${f.p}</b></span>`).join('')}</span>`:`덱 효과 없음 · 가장 많은 연도·구단 ${esc(tc.top.year?tc.top.year[0]:'-')} ${tc.top.year?tc.top.year[1]:0}명 (12명부터)`}
 function vCards(){const n=Object.keys(S.owned).length;
   const q=flt.q.trim();let L=(flt.all?CARDS:own()).filter(c=>(!flt.type||c.type===flt.type)&&(!flt.tier||c.tier===flt.tier)&&(!flt.line||c.line===flt.line)&&(!flt.year||c.year===+flt.year)&&(!q||c.name.includes(q)));
   L=[...L].sort(flt.sort==='year'?(a,b)=>a.year-b.year||b.ovr-a.ovr:flt.sort==='cost'?(a,b)=>b.cost-a.cost||b.ovr-a.ovr:(a,b)=>b.ovr-a.ovr);

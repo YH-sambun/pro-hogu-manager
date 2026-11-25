@@ -89,7 +89,7 @@ const tixPool={ch:c=>c.v==='CH',star:c=>c.cost>=6&&!c.mx,gg:c=>c.v==='GG',ex:c=>
 const DISMANTLE=30;
 
 function wpick(pool){const tot=pool.reduce((s,c)=>s+W[c.cost],0);let u=rnd()*tot;for(const c of pool)if((u-=W[c.cost])<0)return c;return pool[pool.length-1]}
-function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); // EX는 팩에서 안 나옴(확정권·도감 전용). 올스타(AS)·GG는 일반 확률로 섞임
+function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'&&c.v!=='RN'&&!c.mx); // 영구결번(RN·mx)은 미션 전용 // EX는 팩에서 안 나옴(확정권·도감 전용). 올스타(AS)·GG는 일반 확률로 섞임
   if(pk.k==='p')pool=pool.filter(c=>c.cost>=4);
   if(pk.k==='c1')pool=pool.filter(c=>c.cost===1);
   const arr=(a,b)=>(Array.isArray(a)?a:a!=null?[a]:b!=null?[b]:[]).slice(0,3);
