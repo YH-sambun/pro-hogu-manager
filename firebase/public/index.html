@@ -646,6 +646,12 @@ body.xl .eqp,body.xl .eqslot,body.xl .eqi{background:#fff!important;border:1px s
 body.xl .cnd{background:#999!important}
 .bshare{margin-top:8px;gap:6px}.bshare b{margin-right:2px}.bshare #bldimp{max-width:200px}.bshare .bcode{max-width:260px;font-size:12px;font-family:ui-monospace,monospace}
 .natw{margin:6px 0 4px}.natw summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center;margin-bottom:8px}.natw summary::-webkit-details-marker{display:none}.msgrid.nat .msrn span{opacity:.5}.msgrid.nat .msrn span.got{opacity:1}
+.fixbtn{margin:10px 0 12px}.lg .vs .btns.fixbtn{margin:10px 0 12px}
+.ylf{margin:8px 0}.ylgrid{gap:6px!important}
+.lg .yly,.yly{display:grid;grid-template-columns:auto auto;gap:0 8px;align-items:center;min-width:110px;text-align:left;padding:6px 10px}.yly b{font:700 18px var(--fh)}.yly em{font-style:normal;font-size:11px;font-weight:700;justify-self:end}.yly small{grid-column:1/-1;font-size:11px;opacity:.75}
+.yly.won{background:color-mix(in srgb,var(--gold) 22%,var(--board));border:1px solid var(--gold);color:var(--ink)}.yly.won em{color:var(--gold)}
+.yly.todo{background:var(--board);border:1px dashed var(--line);color:var(--ink)}.yly.todo em{color:var(--mute)}
+body.xl .yly.won{background:#e6f2ea!important}body.xl .yly.todo{background:#fff!important}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2594,7 +2600,7 @@ function fatHTML(L){const T=teamOf(0,L),F=fatOf(L,0),P=[...(T.rot||[]).map(id=>[
 function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),H=teamOf(pr[1],L);
   const spA=byId[fatSP(A,fatOf(L,pr[0]))],spH=byId[fatSP(H,fatOf(L,pr[1]))],sp=t=>t===A?spA:spH,cost=regCards(T).reduce((x,c)=>x+c.cost,0);
   return `<div class="mu"><div class="side"><small>원정 · 평균 ${teamOvr(A)}</small><h2>${esc(tname(pr[0],L))}</h2>${sp(A)?cardHTML(sp(A),{cond:pr[0]===0?S.cond[sp(A).id]:0}):''}</div>
-   <div class="vs"><small class="mlab">${label}</small><b>VS</b>${predHTML(L)}${fatHTML(L)}<div class="btns"><button class="big" data-a="${aS}" ${e.length?'disabled':''}>하이라이트 보기</button><button data-a="${aA}" ${e.length?'disabled':''}>결과만 보기</button></div>
+   <div class="vs"><small class="mlab">${label}</small><b>VS</b><div class="btns fixbtn"><button class="big" data-a="${aS}" ${e.length?'disabled':''}>하이라이트 보기</button><button data-a="${aA}" ${e.length?'disabled':''}>결과만 보기</button></div>${predHTML(L)}${fatHTML(L)}
    ${e.length?`<p class="warn">${esc(e[0])} · <a href="#lineup">라인업 수정</a></p>`:''}</div>
    <div class="side"><small>홈 · 평균 ${teamOvr(H)}</small><h2>${esc(tname(pr[1],L))}</h2>${sp(H)?cardHTML(sp(H),{cond:pr[1]===0?S.cond[sp(H).id]:0}):''}</div></div>`}
 function ladderHTML(s){return `<div class="btns" style="flex-wrap:wrap;margin-top:8px" aria-label="리그 단계">${TIERS.map((t,i)=>`<span class="chip" style="padding:3px 8px;border-radius:10px;border:1px solid ${i+1===s.tier?'#e07a45':'#555'};${i+1===s.tier?'background:#e07a45;color:#111;font-weight:700':i+1<=(S.lgBest||1)?'':'opacity:.5'}">${i+1}. ${t.n}</span>`).join('')}</div>`}
@@ -2610,15 +2616,18 @@ function vYears(){const L=S.yl,won=S.ylWon||{};ranked();
     const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`;
     return `<section class="hero"><h1>${L.year} 리그 참가 중</h1><p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p>
      <p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p>
-     ${pr?`<p class="mini">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatOf(L,0))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}<div class="btns">${pr?`<button class="big" data-a="m-start">하이라이트 보기</button><button data-a="m-auto">결과만 보기</button>`:`<button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button>`}</div>
+     <div class="btns fixbtn">${pr?`<button class="big" data-a="m-start">하이라이트 보기</button><button data-a="m-auto">결과만 보기</button>`:`<button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button>`}</div>
+     ${pr?`<p class="mini">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatOf(L,0))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
           ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
      <div class="btns" style="margin-top:10px"><button data-a="m-quit" class="ghost">이 리그 포기</button></div></section>
      ${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${lastHTML(L)}${tableHTML(L,L.post?'정규시즌 최종 순위':'순위표')}${titleHTML(L)}${asHTML(L)}`}
   const Y=YL_YEARS(),res=L&&L.done?`<section class="band"><h3>${L.year} 리그 결과</h3><p>정규시즌 ${L.rank}위 · 우승 <b>${esc(tname(L.champ,L))}</b>${L.champ===0?' (우승)':''}</p>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>${tableHTML(L,'정규시즌 최종 순위')}${titleHTML(L)}${asHTML(L)}`:'';
   return `<section class="hero"><h1>연도별 리그</h1><p class="mini" title="그해 실제 구단들과 팀당 144경기 + 포스트시즌. 08~23시 15분마다 자동 진행(약 2~3일). 숫자는 구단 수·평균 전력">144경기 · 15분마다 자동 · 우승 ${Object.keys(won).length}/${Y.length}</p>
-   <div class="btns" style="flex-wrap:wrap">${Y.map(y=>{const ks=yearKeys(y),o=Math.round(ks.reduce((s,k)=>s+YOVR[k],0)/ks.length);return `<button data-a="m-join" data-y="${y}" class="${won[y]?'big':''}" title="${ks.length}개 구단">${y}${won[y]?' ★':''} <small>${ks.length}팀·${o}</small></button>`}).join('')}</div></section>${res}`}
+   <div class="tabs ylf" role="tablist" aria-label="우승 여부">${[['all','전체 '+Y.length],['not','미우승 '+Y.filter(y=>!won[y]).length],['won','우승 '+Y.filter(y=>won[y]).length]].map(([k,n])=>`<button role="tab" aria-selected="${(S.ylF||'all')===k}" class="${(S.ylF||'all')===k?'on':''}" data-a="m-ylf" data-v="${k}">${n}</button>`).join('')}</div>
+   <div class="btns ylgrid" style="flex-wrap:wrap">${Y.filter(y=>S.ylF==='won'?won[y]:S.ylF==='not'?!won[y]:true).map(y=>{const ks=yearKeys(y),o=Math.round(ks.reduce((s,k)=>s+YOVR[k],0)/ks.length);return `<button data-a="m-join" data-y="${y}" class="yly ${won[y]?'won':'todo'}" title="${ks.length}개 구단${won[y]?` · 우승 ${won[y]}회`:' · 아직 우승 못 함'}"><b>${y}</b>${won[y]?`<em>우승${won[y]>1?' ×'+won[y]:''}</em>`:'<em class="no">미우승</em>'}<small>${ks.length}팀·${o}</small></button>`}).join('')}</div></section>${res}`}
 function mAct(a,b){
   if(a==='m-stand'){S.showStand=!S.showStand;render();return}
+  if(a==='m-ylf'){S.ylF=b.dataset.v;render();return}
   if(a==='m-pred'){const L=location.hash==='#years'?S.yl:S.season;if(L){L.pk=b.dataset.k;save();render()}return}
   if(a==='m-start')startGame(false,'yl');else if(a==='m-auto')startGame(true,'yl');else if(a==='m-bye'){if(S.yl&&!S.yl.done)ylBye(S.yl)}
   else if(a==='m-join'){ylNew(+b.dataset.y);render()}

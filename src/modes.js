@@ -248,9 +248,11 @@ function vYears(){const L=S.yl,won=S.ylWon||{};ranked();
      ${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${lastHTML(L)}${tableHTML(L,L.post?'정규시즌 최종 순위':'순위표')}${titleHTML(L)}${asHTML(L)}`}
   const Y=YL_YEARS(),res=L&&L.done?`<section class="band"><h3>${L.year} 리그 결과</h3><p>정규시즌 ${L.rank}위 · 우승 <b>${esc(tname(L.champ,L))}</b>${L.champ===0?' (우승)':''}</p>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>${tableHTML(L,'정규시즌 최종 순위')}${titleHTML(L)}${asHTML(L)}`:'';
   return `<section class="hero"><h1>연도별 리그</h1><p class="mini" title="그해 실제 구단들과 팀당 144경기 + 포스트시즌. 08~23시 15분마다 자동 진행(약 2~3일). 숫자는 구단 수·평균 전력">144경기 · 15분마다 자동 · 우승 ${Object.keys(won).length}/${Y.length}</p>
-   <div class="btns" style="flex-wrap:wrap">${Y.map(y=>{const ks=yearKeys(y),o=Math.round(ks.reduce((s,k)=>s+YOVR[k],0)/ks.length);return `<button data-a="m-join" data-y="${y}" class="${won[y]?'big':''}" title="${ks.length}개 구단">${y}${won[y]?' ★':''} <small>${ks.length}팀·${o}</small></button>`}).join('')}</div></section>${res}`}
+   <div class="tabs ylf" role="tablist" aria-label="우승 여부">${[['all','전체 '+Y.length],['not','미우승 '+Y.filter(y=>!won[y]).length],['won','우승 '+Y.filter(y=>won[y]).length]].map(([k,n])=>`<button role="tab" aria-selected="${(S.ylF||'all')===k}" class="${(S.ylF||'all')===k?'on':''}" data-a="m-ylf" data-v="${k}">${n}</button>`).join('')}</div>
+   <div class="btns ylgrid" style="flex-wrap:wrap">${Y.filter(y=>S.ylF==='won'?won[y]:S.ylF==='not'?!won[y]:true).map(y=>{const ks=yearKeys(y),o=Math.round(ks.reduce((s,k)=>s+YOVR[k],0)/ks.length);return `<button data-a="m-join" data-y="${y}" class="yly ${won[y]?'won':'todo'}" title="${ks.length}개 구단${won[y]?` · 우승 ${won[y]}회`:' · 아직 우승 못 함'}"><b>${y}</b>${won[y]?`<em>우승${won[y]>1?' ×'+won[y]:''}</em>`:'<em class="no">미우승</em>'}<small>${ks.length}팀·${o}</small></button>`}).join('')}</div></section>${res}`}
 function mAct(a,b){
   if(a==='m-stand'){S.showStand=!S.showStand;render();return}
+  if(a==='m-ylf'){S.ylF=b.dataset.v;render();return}
   if(a==='m-pred'){const L=location.hash==='#years'?S.yl:S.season;if(L){L.pk=b.dataset.k;save();render()}return}
   if(a==='m-start')startGame(false,'yl');else if(a==='m-auto')startGame(true,'yl');else if(a==='m-bye'){if(S.yl&&!S.yl.done)ylBye(S.yl)}
   else if(a==='m-join'){ylNew(+b.dataset.y);render()}
