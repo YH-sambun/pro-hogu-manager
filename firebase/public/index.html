@@ -615,6 +615,12 @@ body.xl a{color:#0563c1}
 .pity .pbar i{height:8px;background:rgba(255,255,255,.14)}.pity .pbar i.on{background:var(--gold)}.pity .pbar i.last{background:color-mix(in srgb,#ff4b3a 45%,transparent)}.pity .pbar i.last.on{background:#ff4b3a}
 .pkb .pity{grid-column:1/-1;width:100%}.pity.sm .pbar i{height:5px}
 body.xl .pity .pbar i{background:#eee!important;border:1px solid #ccc!important;height:8px!important}body.xl .pity .pbar i.on{background:#217346!important}
+body.xl .card.xcell{display:grid!important;gap:1px;padding:3px 6px!important;text-align:left;cursor:pointer}
+body.xl .card.xcell .x1{display:flex!important;justify-content:space-between;gap:6px}body.xl .card.xcell .x1 b{font-weight:700!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}body.xl .card.xcell .x1 em{font-style:normal;font-weight:700!important;font-variant-numeric:tabular-nums}
+body.xl .card.xcell .x2{color:#666!important;font-size:11px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.xl .card.xcell.dim .x1,body.xl .card.xcell.dim .x2{color:#aaa!important}
+body.xl .card.xcell:hover{background:#e6f2ea!important}
+body.xl .stars.xs{font-size:11px!important;color:#666!important;letter-spacing:0!important;font-family:var(--fb)!important}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1121,6 +1127,7 @@ function yearLeague(rank,firstWin){if(rank===1)return firstWin?{pt:3000,tix:{gg:
 const W=[0,30,22,18,12,8,5,3,1.6,.8,.35];
 const PACKS=[
  {k:'n', n:'일반 팩',     p:500, cnt:5,d:'5장 · 전체 무작위 · 1장은 3코스트 이상'},
+ {k:'c1',n:'1코스트 팩',  p:200, cnt:5,d:'5장 · 1코스트 카드만 · 합성 재료·도감 채우기용 · 10팩 안에 1코 올스타·골글 확정'},
  {k:'p', n:'프리미엄 팩', p:1800,cnt:5,d:'5장 · 4코스트 이상 · 1장은 스타(6+) · 20팩 안에 레전드(9+) 확정'},
  {k:'t', n:'구단 묶음 팩', p:800, cnt:5,d:'5장 · 고른 구단 계보 3개 · 1장은 3코스트 이상'},
  {k:'y', n:'연도 묶음 팩', p:800, cnt:5,d:'5장 · 고른 연도 3개 · 1장은 3코스트 이상'},
@@ -1131,7 +1138,14 @@ const PACKS=[
  {k:'tc',n:'작전 카드 팩',p:600, cnt:3,d:'작전 카드 3장 (일반75/특수20/황금5) · 1장은 특수 이상'},
  {k:'t1',n:'작전 카드 1장',p:100,cnt:1,d:'작전 카드 1장'},
  {k:'sp',n:'서포트 카드 팩',p:500,cnt:3,d:'서포트 카드 3장'}];
-const PITY={p:20};
+// 천장: 팩 k를 연속 n팩 열 동안 조건(f)에 맞는 결과가 없으면 n번째 팩 하나를 확정으로 바꿈. 확정이 나오면(자연이든 천장이든) 카운트 0
+// 카드 팩은 buyCards가 처리. 블록·작전·서포트 팩은 UI가 뽑은 뒤 pityTick(S,k,hit) 호출 → true면 결과 하나를 확정 등급으로 바꿀 것
+const isSp=c=>c.v==='GG'||c.v==='AS';
+const PITY={p:{n:20,label:'레전드(9+)',f:c=>c.cost>=9},n:{n:10,label:'스타(6+)',f:c=>c.cost>=6},c1:{n:10,label:'1코 올스타·골글',f:isSp},
+  t:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},y:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},tl:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},ty:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},
+  sx:{n:10,label:'9코 이상 골글·올스타',f:c=>c.cost>=9&&isSp(c)},b:{n:10,label:'S급 블록'},tc:{n:10,label:'황금 작전'},t1:{n:30,label:'황금 작전'},sp:{n:10,label:'강화(+) 서포트'}};
+function pityTick(S,k,hit){const P=PITY[k];if(!P)return false;S.pity=S.pity||{};if(hit){S.pity[k]=0;return false}
+  const n=(S.pity[k]|0)+1;if(n>=P.n){S.pity[k]=0;return true}S.pity[k]=n;return false}
 // 작전 카드 팩 등급(일반75/특수20/황금5), 3장 중 1장은 특수 이상 보장. 반환 등급 배열 → 해당 등급 TCARDS에서 뽑기
 function tcGrades(n){n=n||3;const g=()=>{const u=rnd();return u<.05?'황금':u<.25?'특수':'일반'};const o=[];for(let i=0;i<n;i++)o.push(g());if(o.every(x=>x==='일반'))o[n-1]=rnd()<.2?'황금':'특수';return o}
 const FLOOR={n:3,t:3,y:3,tl:3,p:6};
@@ -1147,6 +1161,7 @@ const DISMANTLE=30;
 function wpick(pool){const tot=pool.reduce((s,c)=>s+W[c.cost],0);let u=rnd()*tot;for(const c of pool)if((u-=W[c.cost])<0)return c;return pool[pool.length-1]}
 function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); // EX는 팩에서 안 나옴(확정권·도감 전용). 올스타(AS)·GG는 일반 확률로 섞임
   if(pk.k==='p')pool=pool.filter(c=>c.cost>=4);
+  if(pk.k==='c1')pool=pool.filter(c=>c.cost===1);
   const arr=(a,b)=>(Array.isArray(a)?a:a!=null?[a]:b!=null?[b]:[]).slice(0,3);
   if(pk.k==='t'){const L=arr(opt.lines,opt.line);pool=pool.filter(c=>L.includes(c.line))}
   if(pk.k==='y'){const Y=arr(opt.years,opt.year).map(Number);pool=pool.filter(c=>Y.includes(c.year))}
@@ -1155,7 +1170,7 @@ function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); 
   if(pk.k==='ty'){const Y=(opt.tyYears||[]).map(Number);pool=pool.filter(c=>c.line===opt.line&&Y.includes(c.year))}
   return pool}
 // 카드 팩 뽑기: 포인트 차감 + 천장 + 도감 등록까지. 반환 {cards, dex(새로 완성된 세트), err}
-function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩 아님'};
+function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','c1','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩 아님'};
   opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개 선택'};
   if(k==='tl'&&!opt.line)return {err:'구단 선택'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개 · 연도 3개 선택'};
   if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
@@ -1165,8 +1180,7 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
   if(k==='ty'){const Y=opt.tyYears.map(Number),miss=SETS.filter(s=>s.kind==='team'&&s.line===opt.line&&Y.includes(s.year)).flatMap(s=>s.ids.filter(id=>!dexHas(S,id)));if(miss.length){const id=miss[Math.floor(rnd()*miss.length)];out[0]=pool.find(c=>c.id===id)||out[0]}}
   // 바닥 보장: 일반·구단·연도 팩은 3코스트 이상 1장, 프리미엄 팩은 스타(6+) 1장 (팩에 없으면 마지막 장을 바꿈)
   const fl=FLOOR[k];if(fl&&!out.some(c=>c.cost>=fl)){const fp=pool.filter(c=>c.cost>=fl);if(fp.length)out[out.length-1]=wpick(fp)}
-  if(k==='p'){S.pity=S.pity||{};const n=(S.pity.p|0)+1;
-    if(out.some(c=>c.cost>=9))S.pity.p=0;else if(n>=PITY.p){out[out.length-1]=wpick(pool.filter(c=>c.cost>=9));S.pity.p=0}else S.pity.p=n}
+  {const P=PITY[k];if(P&&P.f){const fp=pool.filter(P.f);if(fp.length&&pityTick(S,k,out.some(P.f)))out[out.length-1]=k==='ty'?fp[Math.floor(rnd()*fp.length)]:wpick(fp)}}
   return {cards:out,dex:gain(S,out.map(c=>c.id))}}
 // 확정권 쓰기(카드형). pick은 id를 지정
 // arg: pick→카드 id, gg→연도(선택), ex→구단 계보(선택)
@@ -1261,7 +1275,7 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
     for(const s of SETS)if(s.kind==='meta'&&setProgress(S,s).have>=s.need[1])S.dexDone[s.id]=-1}
   S.dexDone=S.dexDone||{};return S}
 
-const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
+const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,pityTick,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
   DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);
@@ -1533,8 +1547,8 @@ function bars(c,keys,bonus){return keys.map(k=>{const v=c.r[k],p=k==='sta'?0:(bo
 const CONDN=['','최악','나쁨','보통','좋음','최상'],CONDA=[0,90,45,0,-45,-90];
 const condOf=c=>{if(!c)return 3;const v=(S.cond||{})[baseId(c.id)]||3;return Math.max(condMin(baseId(c.id)),v)};
 const condI=c=>{const v=condOf(c);return `<i class="cnd cd${v}" title="컨디션 ${CONDN[v]}" aria-label="컨디션 ${CONDN[v]}"><svg viewBox="0 0 14 12" aria-hidden="true">${[0,1,2,3,4].map(k=>`<rect x="${k*3}" y="${10-k*2.5}" width="2" height="${2+k*2.5}" ${k<v?'':'class="off"'}/>`).join('')}</svg></i>`};
-const stars=n=>{const k=Math.max(0,Math.min(5,n-5)),m=Math.min(n,5);return `<i class="stars" title="코스트 ${n}" aria-label="코스트 ${n}">${k?`<b>${'★'.repeat(k)}</b>`:''}${'★'.repeat(m-k)}</i>`}; // 6 이상: 5칸 중 (n-5)칸을 붉게
-function card(c,o={}){if(!c)return '';const keys=c.type==='B'?BK:PKEY,d=o.full?deckFx():null,bn=d&&used().includes(c.id)?(c.type==='B'?d.bat:d.pit):o.full?0:null;
+const stars=n=>{if(S&&S.work)return `<i class="stars xs">코스트 ${n}</i>`;const k=Math.max(0,Math.min(5,n-5)),m=Math.min(n,5);return `<i class="stars" title="코스트 ${n}" aria-label="코스트 ${n}">${k?`<b>${'★'.repeat(k)}</b>`:''}${'★'.repeat(m-k)}</i>`}; // 6 이상: 5칸 중 (n-5)칸을 붉게
+function card(c,o={}){if(!c)return '';if(S.work&&!o.full)return `<div class="card xcell${o.dim?' dim':''}" ${o.pick?`role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}" aria-label="${esc(c.name)} 카드 크게 보기"`:''}><span class="x1"><b>${esc(c.name)}</b><em>${c.ovr}</em></span><span class="x2">${PFULL[c.pos]||c.pos} · 코스트 ${c.cost} · ${c.year} ${esc(c.team)}${c.v?' · '+esc(VN[c.v]||c.v):''}${o.inUse?' · 1군':''}${S.locks&&S.locks.includes(c.id)?' · 잠김':''}</span></div>`;const keys=c.type==='B'?BK:PKEY,d=o.full?deckFx():null,bn=d&&used().includes(c.id)?(c.type==='B'?d.bat:d.pit):o.full?0:null;
  return `<div class="card t-${c.tier}${c.v?' cv-'+c.v:''}${o.dim?' dim':''}${o.full?' big':o.stats?'':' slim'}" style="--tc:${c.col}" ${o.pick?`role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}" aria-label="${esc(c.name)} 카드 크게 보기"`:''}>
  <div class="art">${photo(c,o.full,o.full)}${c.v?`<span class="fxo fx-${c.v}" aria-hidden="true"></span>`:''}<span class="ovr">${condI(c)}${c.ovr}</span><span class="tag">${PFULL[c.pos]}${c.tw?' · 겸업':''}${HAND[c.h]?` · ${HAND[c.h]}`:''}</span>${c.v?`<span class="vb v-${c.v}">${VN[c.v]}</span>`:''}${planeB(c,'plb')}${o.inUse?'<span class="use">1군</span>':''}${abOf(c.id)?'<span class="use abu">유학 중</span>':''}${S.locks&&S.locks.includes(c.id)?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div>
  <div class="plate"><b><em>${esc(c.name)}</em>${stars(c.cost)}</b><span>${c.year} ${esc(c.team)}${ageOf(c)!=null?` · <i class="age${abAge(c)?' ab':''}" title="${abAge(c)?'유학 가능':abWhy(c)}">${ageOf(c)}세</i>`:''}</span></div>

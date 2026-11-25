@@ -57,6 +57,7 @@ function yearLeague(rank,firstWin){if(rank===1)return firstWin?{pt:3000,tix:{gg:
 const W=[0,30,22,18,12,8,5,3,1.6,.8,.35];
 const PACKS=[
  {k:'n', n:'일반 팩',     p:500, cnt:5,d:'5장 · 전체 무작위 · 1장은 3코스트 이상'},
+ {k:'c1',n:'1코스트 팩',  p:200, cnt:5,d:'5장 · 1코스트 카드만 · 합성 재료·도감 채우기용 · 10팩 안에 1코 올스타·골글 확정'},
  {k:'p', n:'프리미엄 팩', p:1800,cnt:5,d:'5장 · 4코스트 이상 · 1장은 스타(6+) · 20팩 안에 레전드(9+) 확정'},
  {k:'t', n:'구단 묶음 팩', p:800, cnt:5,d:'5장 · 고른 구단 계보 3개 · 1장은 3코스트 이상'},
  {k:'y', n:'연도 묶음 팩', p:800, cnt:5,d:'5장 · 고른 연도 3개 · 1장은 3코스트 이상'},
@@ -67,7 +68,14 @@ const PACKS=[
  {k:'tc',n:'작전 카드 팩',p:600, cnt:3,d:'작전 카드 3장 (일반75/특수20/황금5) · 1장은 특수 이상'},
  {k:'t1',n:'작전 카드 1장',p:100,cnt:1,d:'작전 카드 1장'},
  {k:'sp',n:'서포트 카드 팩',p:500,cnt:3,d:'서포트 카드 3장'}];
-const PITY={p:20};
+// 천장: 팩 k를 연속 n팩 열 동안 조건(f)에 맞는 결과가 없으면 n번째 팩 하나를 확정으로 바꿈. 확정이 나오면(자연이든 천장이든) 카운트 0
+// 카드 팩은 buyCards가 처리. 블록·작전·서포트 팩은 UI가 뽑은 뒤 pityTick(S,k,hit) 호출 → true면 결과 하나를 확정 등급으로 바꿀 것
+const isSp=c=>c.v==='GG'||c.v==='AS';
+const PITY={p:{n:20,label:'레전드(9+)',f:c=>c.cost>=9},n:{n:10,label:'스타(6+)',f:c=>c.cost>=6},c1:{n:10,label:'1코 올스타·골글',f:isSp},
+  t:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},y:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},tl:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},ty:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},
+  sx:{n:10,label:'9코 이상 골글·올스타',f:c=>c.cost>=9&&isSp(c)},b:{n:10,label:'S급 블록'},tc:{n:10,label:'황금 작전'},t1:{n:30,label:'황금 작전'},sp:{n:10,label:'강화(+) 서포트'}};
+function pityTick(S,k,hit){const P=PITY[k];if(!P)return false;S.pity=S.pity||{};if(hit){S.pity[k]=0;return false}
+  const n=(S.pity[k]|0)+1;if(n>=P.n){S.pity[k]=0;return true}S.pity[k]=n;return false}
 // 작전 카드 팩 등급(일반75/특수20/황금5), 3장 중 1장은 특수 이상 보장. 반환 등급 배열 → 해당 등급 TCARDS에서 뽑기
 function tcGrades(n){n=n||3;const g=()=>{const u=rnd();return u<.05?'황금':u<.25?'특수':'일반'};const o=[];for(let i=0;i<n;i++)o.push(g());if(o.every(x=>x==='일반'))o[n-1]=rnd()<.2?'황금':'특수';return o}
 const FLOOR={n:3,t:3,y:3,tl:3,p:6};
@@ -83,6 +91,7 @@ const DISMANTLE=30;
 function wpick(pool){const tot=pool.reduce((s,c)=>s+W[c.cost],0);let u=rnd()*tot;for(const c of pool)if((u-=W[c.cost])<0)return c;return pool[pool.length-1]}
 function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); // EX는 팩에서 안 나옴(확정권·도감 전용). 올스타(AS)·GG는 일반 확률로 섞임
   if(pk.k==='p')pool=pool.filter(c=>c.cost>=4);
+  if(pk.k==='c1')pool=pool.filter(c=>c.cost===1);
   const arr=(a,b)=>(Array.isArray(a)?a:a!=null?[a]:b!=null?[b]:[]).slice(0,3);
   if(pk.k==='t'){const L=arr(opt.lines,opt.line);pool=pool.filter(c=>L.includes(c.line))}
   if(pk.k==='y'){const Y=arr(opt.years,opt.year).map(Number);pool=pool.filter(c=>Y.includes(c.year))}
@@ -91,7 +100,7 @@ function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'); 
   if(pk.k==='ty'){const Y=(opt.tyYears||[]).map(Number);pool=pool.filter(c=>c.line===opt.line&&Y.includes(c.year))}
   return pool}
 // 카드 팩 뽑기: 포인트 차감 + 천장 + 도감 등록까지. 반환 {cards, dex(새로 완성된 세트), err}
-function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩 아님'};
+function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','c1','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩 아님'};
   opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개 선택'};
   if(k==='tl'&&!opt.line)return {err:'구단 선택'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개 · 연도 3개 선택'};
   if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
@@ -101,8 +110,7 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
   if(k==='ty'){const Y=opt.tyYears.map(Number),miss=SETS.filter(s=>s.kind==='team'&&s.line===opt.line&&Y.includes(s.year)).flatMap(s=>s.ids.filter(id=>!dexHas(S,id)));if(miss.length){const id=miss[Math.floor(rnd()*miss.length)];out[0]=pool.find(c=>c.id===id)||out[0]}}
   // 바닥 보장: 일반·구단·연도 팩은 3코스트 이상 1장, 프리미엄 팩은 스타(6+) 1장 (팩에 없으면 마지막 장을 바꿈)
   const fl=FLOOR[k];if(fl&&!out.some(c=>c.cost>=fl)){const fp=pool.filter(c=>c.cost>=fl);if(fp.length)out[out.length-1]=wpick(fp)}
-  if(k==='p'){S.pity=S.pity||{};const n=(S.pity.p|0)+1;
-    if(out.some(c=>c.cost>=9))S.pity.p=0;else if(n>=PITY.p){out[out.length-1]=wpick(pool.filter(c=>c.cost>=9));S.pity.p=0}else S.pity.p=n}
+  {const P=PITY[k];if(P&&P.f){const fp=pool.filter(P.f);if(fp.length&&pityTick(S,k,out.some(P.f)))out[out.length-1]=k==='ty'?fp[Math.floor(rnd()*fp.length)]:wpick(fp)}}
   return {cards:out,dex:gain(S,out.map(c=>c.id))}}
 // 확정권 쓰기(카드형). pick은 id를 지정
 // arg: pick→카드 id, gg→연도(선택), ex→구단 계보(선택)
@@ -197,7 +205,7 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
     for(const s of SETS)if(s.kind==='meta'&&setProgress(S,s).have>=s.need[1])S.dexDone[s.id]=-1}
   S.dexDone=S.dexDone||{};return S}
 
-const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
+const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,pityTick,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
   DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);
