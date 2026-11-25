@@ -2137,11 +2137,26 @@ function recHTML(c){const f3=v=>v.toFixed(3).replace(/^0/,''),rows=[['주간 리
   return bat||pit?`<li><span>${n}</span> ${[bat,pit].filter(Boolean).join(' / ')}</li>`:''}).join('');
  return `<div class="mrec"><b>이번 시즌 개인 기록</b>${rows?`<ul>${rows}</ul>`:'<p class="note" style="margin:4px 0 0">출전 기록 없음</p>'}</div>`}
 // 덱 짜보기 카드 상세(SJ 2026-11-25): 보유와 상관없이 그 덱의 덱 효과를 받은 수치로 보여줌
-function bldModal(){const c=byId[S.bmodal];if(!c)return '';const T=teamColor(bldStart(),bldInit().fxsel,(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean)),ids=bldIds();
+// 덱 짜보기 가정(SJ 2026-11-25): 유학·스킬·장비를 붙였다고 치고 능력치를 봄. 보유 카드·실제 장착과 무관, 덱 짜보기 안에서만
+const simOf=id=>((bldInit().sim||{})[id])||null;
+function simAdd(c){const x=simOf(c.id);if(!x)return {};const a={},put=(k,v)=>{if(v)a[k]=(a[k]||0)+v};
+ for(const k in x.ab)put(k,x.ab[k]);const m=SK_MUL[c.v]||1;for(const k in x.sk)put(k,Math.round(x.sk[k]*m*10)/10);
+ for(const sl in x.eq){const [kind,g]=x.eq[sl].split(':'),b=ECON.eqBonus({k:kind,g,line:null},c);if(b)put(b.stat,b.v)}return a}
+function simCard(c){const a=simAdd(c);if(!Object.keys(a).length)return c;const r={...c.r};for(const k in a)if(r[k]!=null)r[k]=Math.min(120,r[k]+a[k]);return {...c,r}}
+function simPanel(c){const x=simOf(c.id)||{ab:{},sk:{},eq:{}},keys=c.type==='B'?BK:PKEY,ab=abAge(c),cap=abCap(c.cost),sel=(g,k,max,cur)=>`<select data-sim="${g}" data-k="${k}" aria-label="${SKN[k]} ${g==='ab'?'유학':'스킬'}">${Array.from({length:max+1},(_,i)=>`<option value="${i}"${(cur|0)===i?' selected':''}>${i?'+'+i:'-'}</option>`).join('')}</select>`;
+ const EQK=Object.entries(ECON.EQ_KIND).filter(([k,v])=>v[0]===c.type),slots=ECON.EQ_SLOTS[c.type];
+ const eqSel=sl=>`<select data-sim="eq" data-k="${sl}" aria-label="${EQSN[sl]} 장비"><option value="">${EQSN[sl]} 없음</option>${EQK.filter(([k,v])=>v[1]===sl).map(([k,v])=>['일반','희귀','전설'].map(g=>`<option value="${k}:${g}"${x.eq[sl]===k+':'+g?' selected':''}>${g} ${v[2]}</option>`).join('')).join('')}</select>`;
+ const a=simAdd(c);
+ return `<details class="simp"${simOf(c.id)?' open':''}><summary>가정해 보기 · 유학·스킬·장비 (덱 짜보기 안에서만)${Object.keys(a).length?' · '+Object.entries(a).map(([k,v])=>SKN[k]+' +'+v).join(' '):''}</summary>
+ <div class="scroll"><table class="tbl"><thead><tr><th class="l">능력</th>${keys.map(k=>`<th>${SKN[k]}</th>`).join('')}</tr></thead><tbody>
+ <tr><td class="l">유학${ab?` <small>(최대 +${cap})</small>`:' <small>불가</small>'}</td>${keys.map(k=>`<td>${ab?sel('ab',k,cap,x.ab[k]):'-'}</td>`).join('')}</tr>
+ <tr><td class="l">스킬${(SK_MUL[c.v]||1)!==1?` <small>×${SK_MUL[c.v]}</small>`:''}</td>${keys.map(k=>`<td>${sel('sk',k,12,x.sk[k])}</td>`).join('')}</tr></tbody></table></div>
+ <div class="tools" style="margin-top:6px">${slots.map(eqSel).join('')}</div><p class="note" style="margin:4px 0 0">유학은 카드 연도 기준 25세 이하·35세 이상만, 코스트가 낮을수록 상한이 커요. 장비는 저코스트일수록 보너스가 커요(같은 구단 장비 +10%는 빼고 계산).</p></details>`}
+function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0),T=teamColor(bldStart(),bldInit().fxsel,(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean)),ids=bldIds();
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b><span class="pill">${S.owned[c.id]?'보유':'미보유'} · 덱 짜보기 덱 효과 야수 +${T.bat} · 투수 +${T.pit}</span>${S.bmslot?'<button data-bswap="1">자리 교체하기</button>':''}<button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',`${esc(lname(c.line))} 계보`].filter(Boolean).join(' · ')}</p>
- <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1,dfx:{bat:T.bat,pit:T.pit},dids:ids})}</div><div class="face f-back">${backFace(c,0)}</div></div></div></div>`}
+ <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1,dfx:{bat:T.bat,pit:T.pit},dids:ids})}</div><div class="face f-back">${backFace(c0,0)}</div></div>${simPanel(c0)}</div></div>`}
 function modal(){if(S.dexView)return dexViewModal();if(S.bmodal)return bldModal();const c=by[S.modal];if(!c)return '';if(S.cmpA&&S.cmpA!==c.id)return cmpView(by[S.cmpA],c);
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button>${(S.owned[baseId(c.id)]|0)>1?`<button class="ghost" data-a="dism" data-id="${esc(baseId(c.id))}" title="${c.v==='EX'?'EX 조각 3개 = 구단 지정 EX 확정권 1장':'코스트 × 30P'}">중복 1장 분해 · ${c.v==='EX'?`EX 조각 ${(S.exShard|0)}/3`:'+'+(c.cost*ECON.DISMANTLE)+'P'}</button>`:''}<button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
@@ -2799,6 +2814,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.fxg){fxSet(t.dataset.fxs,t.dataset.fxg,t.value);return}
   if(t.dataset.bf){S.bldF=S.bldF||{};S.bldF[t.dataset.bf]=t.type==='checkbox'?t.checked:t.value;if(t.dataset.bf==='y'||t.dataset.bf==='y2')S.bldF.t='';S.bldLim=40;render();return}
   if(t.dataset.lf){S.lf=S.lf||{};S.lf[t.dataset.lf]=t.value;render();return}
+  if(t.dataset.sim){const B=bldInit(),id=S.bmodal;B.sim=B.sim||{};const x=B.sim[id]=B.sim[id]||{ab:{},sk:{},eq:{}};const g=t.dataset.sim,k=t.dataset.k;if(t.value&&t.value!=='0')x[g][k]=g==='eq'?t.value:+t.value;else delete x[g][k];if(!Object.keys(x.ab).length&&!Object.keys(x.sk).length&&!Object.keys(x.eq).length)delete B.sim[id];save();render();return}
   if(t.id==='decksel'){S.deckSel=t.value;S.deckDel=0;render();return}
   if(t.id==='deckname'){S.deckName=t.value;return}
   if(t.dataset.mdeck){S.modeDeck=S.modeDeck||{};S.modeDeck[t.dataset.mdeck]=t.value;save();render();return}
