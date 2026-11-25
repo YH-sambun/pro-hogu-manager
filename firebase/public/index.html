@@ -1338,7 +1338,7 @@ function gain(S,ids){S.dex=S.dex||{};S.dexDone=S.dexDone||{};const touched=new S
 
 
 // 출석·일일 미션 (현질 대신 꾸준히 들어오면 목돈이 생기게). 날짜는 기기 현지 날짜 'YYYY-MM-DD'
-const DAILY={login:200,streak7:{tix:{prem:1}},missions:[['g3','아무 경기 3판',3,100],['w1','AI 리그 1승',1,100],['p1','카드 팩 1개 열기',1,100]]};
+const DAILY={login:200,streak7:{tix:{prem:1,abr:1}},missions:[['g3','아무 경기 3판',3,100],['w1','AI 리그 1승',1,100],['p1','카드 팩 1개 열기',1,100]]};
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function login(S,day){day=day||today();S.daily=S.daily||{};const D=S.daily;if(D.day===day)return null;
   const prev=D.day?Math.round((new Date(day)-new Date(D.day))/864e5):0;D.streak=prev===1?(D.streak|0)+1:1;D.day=day;D.m={};D.got={};
@@ -1400,7 +1400,7 @@ function cardEq(S,cardId,byId){const o={},c=byId[cardId];for(const it of S.eq||[
 // 구단 계보마다 챕터 1개, 미션 ★1~★5. 미션 3개 → 그 구단 EX 확정권, 5개 → 영구결번 카드(v:'RN', mx) 1장 + 전설 장비. 챕터 재완료는 없음
 // 챕터 3개 완료 → 레전드 선택권, 전부 → 명예의 전당 보상(첫 완료 기준 S.msFin). 진행 기록 S.ms[챕터id]={cyc,m1:시각,...,mid,fin}
 // 제출 미션은 기본적으로 중복만 소모(1장은 남김). S.opt.submitLast=true면 마지막 1장도 제출 가능(도감 기록은 유지)
-const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['m2',2,'그 구단 주전 세트 1개 완성',{pt:2000,tix:{star:1},eq:'일반'}],
+const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['m2',2,'그 구단 주전 세트 1개 완성',{pt:2000,tix:{star:1,abr:1},eq:'일반'}],
   ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,exShard:1,eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 주간 리그 4단계 이상 우승',{pt:4000,tix:{gg:1},eq:'희귀'}],
   ['m5',5,'그 구단 레전드(9+) 카드 3장 보유',{pt:5000,tix:{legend:1},eq:'희귀'}]];
 const MS_META=[[3,'챕터 3개 완료',{pt:10000,tix:{pick:1}}],['all','모든 챕터 완료 · 명예의 전당',{pt:50000,tix:{pick:2}}]];
