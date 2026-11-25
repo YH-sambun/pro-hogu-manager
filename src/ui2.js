@@ -4,7 +4,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['luAna','ntcView','verMsg','ntcHide','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['luAna','ntcView','verMsg','ntcHide','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','eqMore','eqSlot','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -955,11 +955,12 @@ setTimeout(()=>{if(!ON.ready){ON.ready=1;if(S)render()}},8000);
 const EQSN={bat:'배트',glove:'글러브',spike:'스파이크',rosin:'로진',ball:'공인구',shoe:'투수화'},EQGC={일반:'g1',희귀:'g2',전설:'g3'};
 function eqHTML(c){if(!ECON.EQ_SLOTS)return '';const id=baseId(c.id),K=ECON.EQ_KIND,EQ=S.eq||[],slots=ECON.EQ_SLOTS[c.type]||[];
   const on=slots.map(sl=>EQ.find(x=>x.on===id&&K[x.k][1]===sl));
-  const mine=EQ.filter(x=>K[x.k][0]===c.type&&x.on!==id).map(x=>({x,b:ECON.eqBonus(x,c)})).sort((a,b)=>(b.b?b.b.v:0)-(a.b?a.b.v:0));
-  const tot=ECON.cardEq(S,id,byId);
-  return `<div class="eqp"><div class="eqh"><b>장비</b><small>${Object.keys(tot).length?Object.entries(tot).map(([k,v])=>`${SKN[k]} +${v}`).join(' · '):'장착 없음'} · 코스트 낮을수록 효과 큼</small></div>
-  <div class="eqs">${slots.map((sl,i)=>{const it=on[i],b=it&&ECON.eqBonus(it,c);return `<div class="eqslot${it?' on '+EQGC[it.g]:''}"><small>${EQSN[sl]}</small>${it?`<b>${esc(ECON.eqName(it))}</b><em>${b?SKN[b.stat]+' +'+b.v:''}</em><button class="ghost" data-a="eqoff" data-u="${esc(it.u)}">빼기</button>`:'<span class="mute">비어 있음</span>'}</div>`}).join('')}</div>
-  ${mine.length?`<div class="eql">${mine.map(({x,b})=>`<div class="eqi ${EQGC[x.g]}"><span><b>${esc(ECON.eqName(x))}</b><small>${EQSN[K[x.k][1]]}${x.on&&byId[x.on]?` · ${esc(byId[x.on].name)} 장착 중`:''}</small></span><em>${b?`이 카드에 끼우면 ${SKN[b.stat]} +${b.v}`:''}</em><button data-a="eqon" data-u="${esc(x.u)}" data-id="${esc(id)}">끼우기</button></div>`).join('')}</div>`:`<p class="note" style="margin:6px 0 0">${c.type==='B'?'타자':'투수'}용 장비 없음 · 미션 보상으로 획득</p>`}</div>`}
+  const tot=ECON.cardEq(S,id,byId),op=S.eqSlot&&S.eqSlot.id===id?S.eqSlot.sl:null; // SJ 2026-11-26: 슬롯을 눌러야 그 슬롯 추천 장비가 펼쳐짐(목록이 길어 스크롤을 막던 문제)
+  const mine=op?EQ.filter(x=>K[x.k][0]===c.type&&K[x.k][1]===op&&x.on!==id).map(x=>({x,b:ECON.eqBonus(x,c)})).sort((a,b)=>(b.b?b.b.v:0)-(a.b?a.b.v:0)||(a.x.on?1:0)-(b.x.on?1:0)):[];
+  const top=mine.slice(0,S.eqMore?99:3);
+  return `<div class="eqp"><div class="eqh"><b>장비</b><small>${Object.keys(tot).length?Object.entries(tot).map(([k,v])=>`${SKN[k]} +${v}`).join(' · '):'장착 없음'} · 칸을 누르면 추천 장비</small></div>
+  <div class="eqs">${slots.map((sl,i)=>{const it=on[i],b=it&&ECON.eqBonus(it,c);return `<div class="eqslot${it?' on '+EQGC[it.g]:''}${op===sl?' sel':''}" role="button" tabindex="0" data-a="eqsl" data-sl="${esc(sl)}" data-id="${esc(id)}" aria-expanded="${op===sl}"><small>${EQSN[sl]} ${op===sl?'▲':'▼'}</small>${it?`<b>${esc(ECON.eqName(it))}</b><em>${b?SKN[b.stat]+' +'+b.v:''}</em><button class="ghost" data-a="eqoff" data-u="${esc(it.u)}">빼기</button>`:'<span class="mute">비어 있음</span>'}</div>`}).join('')}</div>
+  ${op?(mine.length?`<div class="eql">${top.map(({x,b},j)=>`<div class="eqi ${EQGC[x.g]}"><span><b>${j===0?'추천 · ':''}${esc(ECON.eqName(x))}</b><small>${x.on&&byId[x.on]?`${esc(byId[x.on].name)} 장착 중`:'미장착'}</small></span><em>${b?`${SKN[b.stat]} +${b.v}`:''}</em><button data-a="eqon" data-u="${esc(x.u)}" data-id="${esc(id)}">끼우기</button></div>`).join('')}${mine.length>3&&!S.eqMore?`<button class="ghost" data-a="eqmore">${mine.length-3}개 더 보기</button>`:''}</div>`:`<p class="note" style="margin:6px 0 0">${EQSN[op]} 장비 없음 · 미션 보상으로 획득</p>`):''}</div>`}
 // ===== 미션 챕터 =====
 let msSig='';
 function msTick(){if(!ECON.missionCheck||!(ECON.CHAPTERS||[]).length)return;const sig=Object.keys(S.owned).length+'|'+Object.values(S.owned).reduce((a,b)=>a+(b|0),0)+'|'+Object.keys(S.dexDone||{}).length;if(sig===msSig)return;msSig=sig;const out=ECON.missionCheck(S);if(out.length){S.toast='미션 달성 · '+out.map(x=>`${x.ch?msLn(x.ch)+' ':''}${x.what}${x.card&&byId[x.card]?' '+byId[x.card].name:''}${x.rw&&rwText(x.rw)?' +'+rwText(x.rw):''}`).join(' / ');save()}}
@@ -1018,7 +1019,7 @@ function render(){if(!S)return;RERR='';SAFE(ensureUI);SAFE(xlSet);SAFE(msTick);i
 addEventListener('hashchange',()=>{S&&(S.modal=null,S.bmodal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -1048,7 +1049,9 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='msclose'){S.msSub=null;render()}
   else if(a==='msopt'){S.opt=S.opt||{};S.opt.submitLast=!S.opt.submitLast;save();render()}
   else if(a==='msgo'){const m=S.msSub;if(!m)return;const ids=Object.entries(m.sel).flatMap(([id,n])=>Array(n).fill(id));if(!ids.length){S.msMsg='카드 선택';render();return}const r=ECON.missionSubmit(S,m.line,ids);if(r.err){S.msMsg=r.err;render();return}S.toast=`${r.used}장 제출 · ${r.have}장 누적`+(r.out&&r.out.length?' · '+r.out.map(x=>x.what+(x.rw?' '+rwText(x.rw):'')).join(' · '):'');S.msSub=null;msTick();save();render()}
-  else if(a==='eqon'){const r=ECON.equip(S,b.dataset.u,b.dataset.id,byId);S.toast=r.err||'';save();render()}
+  else if(a==='eqsl'){const sl=b.dataset.sl,id=b.dataset.id;S.eqSlot=S.eqSlot&&S.eqSlot.id===id&&S.eqSlot.sl===sl?null:{id,sl};S.eqMore=0;render()}
+  else if(a==='eqmore'){S.eqMore=1;render()}
+  else if(a==='eqon'){const r=ECON.equip(S,b.dataset.u,b.dataset.id,byId);S.toast=r.err||'';if(!r.err)S.eqSlot=null;save();render()}
   else if(a==='eqoff'){ECON.unequip(S,b.dataset.u);save();render()}
   else if(a==='luana'){if(b.dataset.k){S.tb=b.dataset.k;S.luAna=true}else S.luAna=!S.luAna;render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
