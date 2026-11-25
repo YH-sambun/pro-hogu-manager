@@ -541,13 +541,16 @@ function lineChart(L,links){const W=360,H=170,px=i=>24+i*(W-40)/8,lo=Math.min(50
  <polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round"/>
  ${L.map((x,i)=>{const c=by[S.lu[i][1]];return `<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="${x.ok?4.5:6}" fill="${!x.ok?'var(--bad)':x.adj?'#5aa9ff':'var(--gold)'}" stroke="#1b1d1c" stroke-width="1.5"><title>${i+1}번 ${c?esc(c.name):''} ${x.v}${x.ok?'':' (적성 밖 -10%)'}${x.adj?' (인접 +'+x.adj+')':''}</title></circle><text x="${pts[i][0]}" y="${pts[i][1]-9}" class="ltv">${x.v}</text>
  <text x="${pts[i][0]}" y="${H-16}" class="ltx">${i+1}</text><text x="${pts[i][0]}" y="${H-4}" class="ltn">${c?esc(c.name):''}</text>`}).join('')}</svg>`}
-function luList(pool,ids,dupC,B,rec){const keys=B?BK:PKEY,st=!!S.luStat,f3=v=>v.toFixed(3).replace(/^0/,''),E='<td class="mute">-</td>';
+function luList(pool,ids,dupC,B,rec){const keys=B?BK:PKEY,st=!!S.luStat,f3=v=>v.toFixed(3).replace(/^0/,''),E='-';
  const SH=B?['타율','출루율','타수','안타','홈런','타점','볼넷','도루']:['평균자책','이닝','승','세이브','탈삼진','자책'];
- const SV=c=>{const r=rec&&rec(c);if(!r)return SH.map(()=>E).join('');return (B?[r.ab?f3(r.h/r.ab):'-',f3((r.h+r.bb)/Math.max(1,r.ab+r.bb)),r.ab,r.h,r.hr,r.rbi,r.bb,r.sb]:[r.outs?(r.er*27/r.outs).toFixed(2):'-',`${Math.floor(r.outs/3)}.${r.outs%3}`,r.w,r.sv,r.so,r.er]).map(v=>`<td>${v}</td>`).join('')};
- if(st)return `<div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th>${SH.map(h=>`<th>${h}</th>`).join('')}<th>상태</th></tr></thead><tbody>
- ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b></td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td>${SV(c)}<td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div><p class="note">${S.luStat==='yl'?'연도별 리그':'주간 리그'} 이번 시즌 내 구단 기록.</p>`;
- return `<div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th>${keys.map(k=>`<th>${SKN[k]}</th>`).join('')}<th>장수</th><th>상태</th></tr></thead><tbody>
- ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td><td>${c.cost}</td>${keys.map(k=>`<td>${c.r[k]}</td>`).join('')}<td>${dupC[c.id]?'×'+(dupC[c.id]+1):'1'}</td><td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div>`}
+ const SV=c=>{const r=rec&&rec(c);if(!r)return SH.map(()=>E);return B?[r.ab?f3(r.h/r.ab):'-',f3((r.h+r.bb)/Math.max(1,r.ab+r.bb)),r.ab,r.h,r.hr,r.rbi,r.bb,r.sb]:[r.outs?(r.er*27/r.outs).toFixed(2):'-',`${Math.floor(r.outs/3)}.${r.outs%3}`,r.w,r.sv,r.so,r.er]};
+ // 폰(좁은 화면): 선수·포지션·능력 + 고른 묶음(3칸)만 보이고 나머지 칸은 숨김 (SJ 2026-11-26)
+ const H=st?SH:['코스트',...keys.map(k=>SKN[k]),'장수'],G=[];for(let k=0;k<H.length;k+=3)G.push([k,Math.min(H.length,k+3)]);const gi=Math.min(G.length-1,Math.max(0,(S.luCol|0))),[g0,g1]=G[gi];
+ const oc=(k,v,h)=>`<${h?'th':'td'} class="o${k>=g0&&k<g1?' sel':''}${v==='-'&&!h?' mute':''}">${v}</${h?'th':'td'}>`;
+ const vals=c=>st?SV(c):[c.cost,...keys.map(k=>c.r[k]),dupC[c.id]?'×'+(dupC[c.id]+1):'1'];
+ return `<div class="lucolw"><label>보이는 기록 <select id="lucol" aria-label="보이는 기록">${G.map(([a,b],x)=>`<option value="${x}"${x===gi?' selected':''}>${H.slice(a,b).join(' · ')}</option>`).join('')}</select></label></div>
+ <div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th class="yc">연도·구단</th><th>포지션</th><th>능력</th>${H.map((h,k)=>oc(k,h,1)).join('')}<th>상태</th></tr></thead><tbody>
+ ${pool.map(c=>`<tr class="${ids.has(c.id)?'use':''}" role="button" tabindex="0" draggable="true" data-drag="c:${esc(c.id)}" data-pick="${esc(c.id)}"><td class="l"><b>${esc(c.name)}</b>${!st&&c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}<small class="mo">${String(c.year).slice(2)}' ${esc(c.team)}</small></td><td class="yc">${c.year} ${esc(c.team)}</td><td><span class="pf">${PFULL[c.pos]||c.pos}</span><span class="pa">${c.pos}</span></td><td><b>${c.ovr}</b></td>${vals(c).map((v,k)=>oc(k,v)).join('')}<td>${ids.has(c.id)?'1군':''}</td></tr>`).join('')}</tbody></table></div>${st?`<p class="note">${S.luStat==='yl'?'연도별 리그':'주간 리그'} 이번 시즌 내 구단 기록.</p>`:''}`}
 // 저장 덱 표시(SJ 2026-11-25): 없는 카드가 있으면 가상덱(감상·목표용)으로 보유 장수 표시
 const deckMgr=d=>{const m=MG.find(x=>x.id===(d.t.mgr||S.team.mgr));return m?m.n:''};
 const deckTag=d=>{const ids=deckIds(d.t),own=ids.filter(id=>S.owned[id]).length;return own<ids.length?` · 가상 (보유 ${own}/${ids.length})`:deckOk(d)?'':' (지금 사용 불가)'};
@@ -1070,6 +1073,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='tll'){S.pkSel.tl=t.value;render();return}
   if(t.id==='tyl'){S.pkSel.ty={line:t.value,years:[]};render();return}
   if(t.id==='dexq'){S.dexQ=t.value;S.dexLim=0;render();return}
+  if(t.id==='lucol'){S.luCol=+t.value;render();return}
   if(t.id==='pksel'){S.pk=t.value;S.pkMsg='';S.pkOut=null;render();return}
   if(t.id==='abq'){S.abQ=t.value;S.abLim=0;render();return}
   if(/^dex(y|t|st|h|p|v)$/.test(t.id)){S.dexF=S.dexF||{};S.dexF[t.id.slice(3)]=t.value;if(t.id==='dexy')S.dexF.t='';S.dexLim=0;render();return}
