@@ -479,6 +479,7 @@ body[data-bg=cage] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),
 body[data-bg=fungo] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-fungo.jpg),url(img/bg-field.jpg)}
 body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-catch.jpg),url(img/bg-field.jpg)}
 .toast{flex-basis:100%}#hdr:empty{display:none}
+.gmvp{margin:0 0 10px;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--gold) 18%,transparent);border-left:4px solid var(--gold)}.gmvp b{color:var(--gold);margin-right:6px}body.xl .gmvp{background:#fff4ce!important;border-left-color:#e0c060!important}body.xl .gmvp b{color:#222!important}
 #hdr .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;margin:0;max-width:min(92vw,680px);box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none;animation:tst 6s forwards}@keyframes tst{0%,85%{opacity:1}100%{opacity:0}}
 /* 그림이 보이게: 막은 옅게, 글자 있는 묶음에만 반투명 바탕 */
 #hdr{background:rgba(6,14,10,.62);border-radius:0 0 16px 16px;padding:14px 18px 12px;border-bottom:0;backdrop-filter:blur(3px)}
@@ -1541,6 +1542,13 @@ function diamond(g){const on=i=>g.bases[i]?'on':'';return `<svg viewBox="0 -12 2
   <path d="M100 150 L30 80 L100 10 L170 80 Z" class="turf"/><circle cx="100" cy="82" r="9" class="mound"/>
   <rect x="160" y="70" width="20" height="20" transform="rotate(45 170 80)" class="base ${on(0)}"/><rect x="90" y="0" width="20" height="20" transform="rotate(45 100 10)" class="base ${on(1)}"/>
   <rect x="20" y="70" width="20" height="20" transform="rotate(45 30 80)" class="base ${on(2)}"/><path d="M92 142h16v8l-8 8-8-8z" class="plate"/></svg>`}
+// 경기 MVP(SJ 2026-11-25): 이긴 팀(무승부면 양 팀)에서 타격·투구 점수 최고 1명
+function gameMVP(g){if(!g||!g.bx||!g.px)return null;const sides=g.res===0||g.res===1?[g.res]:[0,1];let best=null;
+  for(const s of sides){for(const b of Object.values(g.bx[s])){const v=b.h+b.hr*2+b.rbi*1.2+b.r*.8+b.bb*.4+(b.sb||0)*.6+(b.a||0)*.5-(b.e||0)*.8-b.k*.15;
+      if(!best||v>best.v)best={v,s,txt:`${b.c.name} (${g.t[s].name}) · ${b.ab}타수 ${b.h}안타${b.hr?` ${b.hr}홈런`:''}${b.rbi?` ${b.rbi}타점`:''}${b.r?` ${b.r}득점`:''}${b.sb?` ${b.sb}도루`:''}`}}
+    for(const p of g.px[s]){const v=p.outs/3*1.1+p.k*.4-p.r*1.4-p.h*.3-p.bb*.3+(p.outs>=27?2:0);
+      if(!best||v>best.v)best={v,s,txt:`${p.c.name} (${g.t[s].name}) · ${Math.floor(p.outs/3)}${p.outs%3?'.'+p.outs%3:''}이닝 ${p.r}실점 ${p.k}탈삼진`}}}
+  return best&&best.txt}
 function logHTML(g){const HK=['i','r','hr','c','h','e'];let gr=[];for(const x of g.log){if(g.hl&&!HK.includes(x.k)&&!/보살|실책|저지/.test(x.txt))continue;if(x.k==='i'||!gr.length)gr.push([]);gr[gr.length-1].push(x)}if(g.hl)gr=gr.filter(a=>a.length>1||a[0].k!=='i');
   return gr.reverse().slice(0,30).map(a=>{const h=a[0].k==='i'?a[0]:null,rest=(h?a.slice(1):a).reverse();return (h?`<li class="i">${esc(h.txt)}</li>`:'')+rest.map(x=>`<li class="${x.k}">${esc(x.txt)}</li>`).join('')}).join('')}
 // ===== 엔진·econ 연결 =====
@@ -2358,7 +2366,7 @@ function vGame(){
   <div class="gfield">${diamond(g)}<div class="outs">아웃 ${[0,1,2].map(i=>`<i class="${i<g.outs?'on':''}"></i>`).join('')}</div>
    <div class="duel">${cur?`<div><small>타자</small><b>${esc(cur.name)}</b><span>${yy(cur.year)} ${esc(cur.team)} · 교타 ${Math.round(cur.r.con)} 장타 ${Math.round(cur.r.pow)}</span></div><div><small>투수</small><b>${esc(P.name)}</b><span>${g.pit[1-bat].bf}타자 상대 · 구위 ${Math.round(P.r.stu)} 제구 ${Math.round(P.r.ctl)}</span></div>`:`<div><b class="final">${g.res<0?'무승부':esc(g.t[g.res].name)+' 승리'}</b></div>`}</div></div>
   ${tk}<div class="btns gb">${g.done?`<button class="big" data-a="fin">${g.friendly?'친선전 결과 저장':'결과 반영하고 다음 라운드'}</button>`:`<button class="big" data-a="pa">다음 타석</button><button data-a="inn">이닝 끝까지</button><button data-a="end">경기 끝까지</button>`}</div></section>
-  <section class="band cols2"><div><h3>${g.hl?'하이라이트 <small>득점·홈런·보살·실책·교체</small>':'문자 중계'}</h3><ol class="glog">${logHTML(g)}</ol></div><div><details open><summary>박스스코어</summary>${box(0)}${box(1)}</details></div></section>`}
+  <section class="band cols2"><div><h3>${g.hl?'하이라이트 <small>득점·홈런·보살·실책·교체</small>':'문자 중계'}</h3>${g.done&&gameMVP(g)?`<p class="gmvp"><b>경기 MVP</b> ${esc(gameMVP(g))}</p>`:''}<ol class="glog">${logHTML(g)}</ol></div><div><details open><summary>박스스코어</summary>${box(0)}${box(1)}</details></div></section>`}
 // ===== 게임 모드: 주간 승급 리그 · 연도별 리그 =====
 // 주간 리그: 실제 1주(월 0시~일 24시, KST) 동안 AI 9팀과 27경기. 1위로 마치면 다음 주에 한 단계 승급(10단계).
 // 연도별 리그: 그해 실제 구단들 사이에 내 구단이 들어가 정규시즌(팀당 3번씩) + 포스트시즌. 한국시리즈 우승이 목표.
@@ -2534,7 +2542,7 @@ function statsHTML(L){const P=Object.values(L.ps||{}).filter(r=>r.t===0);if(!P.l
   ${Bt.map(r=>`<tr><td class="l">${nm(r)}</td><td>${r.ab?f3(r.h/r.ab):'-'}</td><td>${f3((r.h+r.bb)/Math.max(1,r.ab+r.bb))}</td><td>${r.ab}</td><td>${r.h}</td><td>${r.hr}</td><td>${r.rbi}</td><td>${r.sb}</td><td>${r.bb}</td><td>${r.a||0}</td><td>${r.e||0}</td></tr>`).join('')}</tbody></table>
   <table class="tbl"><thead><tr><th class="l">투수</th><th>평균자책</th><th>이닝</th><th>승</th><th>세이브</th><th>탈삼진</th><th>실점</th></tr></thead><tbody>
   ${Pt.map(r=>`<tr><td class="l">${nm(r)}</td><td>${(r.er*27/r.outs).toFixed(2)}</td><td>${Math.floor(r.outs/3)}.${r.outs%3}</td><td>${r.w}</td><td>${r.sv}</td><td>${r.so}</td><td>${r.er}</td></tr>`).join('')}</tbody></table></div></details></section>`}
-const hlOf=(g,pr)=>({a:pr[0],h:pr[1],sc:g.sc,log:g.log.filter(x=>HLK.includes(x.k)||/보살|실책|저지/.test(x.txt)).map(x=>`${x.inn}회${x.half?'말':'초'} ${x.txt}`).slice(-14)});
+const hlOf=(g,pr)=>({a:pr[0],h:pr[1],sc:g.sc,log:(gameMVP(g)?['경기 MVP · '+gameMVP(g)]:[]).concat(g.log.filter(x=>HLK.includes(x.k)||/보살|실책|저지/.test(x.txt)).map(x=>`${x.inn}회${x.half?'말':'초'} ${x.txt}`).slice(-14))});
 function ylStep(L){let res=null,msg='';
   if(!L.post){res=lgPlay(L,null);msg+=midAS(L);if(L.round>=L.sched.length){const inP=ylStartPost(L);msg+=` · 정규시즌 ${L.rank}위${L.titleMsg||''}${inP?' · 포스트시즌 진출':' · 포스트시즌 진출 실패'}`+ylAdvance(L)}}
   else{res=seriesGame(L,null);msg+=ylAdvance(L)}

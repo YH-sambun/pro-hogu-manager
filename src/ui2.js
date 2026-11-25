@@ -73,6 +73,13 @@ function diamond(g){const on=i=>g.bases[i]?'on':'';return `<svg viewBox="0 -12 2
   <path d="M100 150 L30 80 L100 10 L170 80 Z" class="turf"/><circle cx="100" cy="82" r="9" class="mound"/>
   <rect x="160" y="70" width="20" height="20" transform="rotate(45 170 80)" class="base ${on(0)}"/><rect x="90" y="0" width="20" height="20" transform="rotate(45 100 10)" class="base ${on(1)}"/>
   <rect x="20" y="70" width="20" height="20" transform="rotate(45 30 80)" class="base ${on(2)}"/><path d="M92 142h16v8l-8 8-8-8z" class="plate"/></svg>`}
+// 경기 MVP(SJ 2026-11-25): 이긴 팀(무승부면 양 팀)에서 타격·투구 점수 최고 1명
+function gameMVP(g){if(!g||!g.bx||!g.px)return null;const sides=g.res===0||g.res===1?[g.res]:[0,1];let best=null;
+  for(const s of sides){for(const b of Object.values(g.bx[s])){const v=b.h+b.hr*2+b.rbi*1.2+b.r*.8+b.bb*.4+(b.sb||0)*.6+(b.a||0)*.5-(b.e||0)*.8-b.k*.15;
+      if(!best||v>best.v)best={v,s,txt:`${b.c.name} (${g.t[s].name}) · ${b.ab}타수 ${b.h}안타${b.hr?` ${b.hr}홈런`:''}${b.rbi?` ${b.rbi}타점`:''}${b.r?` ${b.r}득점`:''}${b.sb?` ${b.sb}도루`:''}`}}
+    for(const p of g.px[s]){const v=p.outs/3*1.1+p.k*.4-p.r*1.4-p.h*.3-p.bb*.3+(p.outs>=27?2:0);
+      if(!best||v>best.v)best={v,s,txt:`${p.c.name} (${g.t[s].name}) · ${Math.floor(p.outs/3)}${p.outs%3?'.'+p.outs%3:''}이닝 ${p.r}실점 ${p.k}탈삼진`}}}
+  return best&&best.txt}
 function logHTML(g){const HK=['i','r','hr','c','h','e'];let gr=[];for(const x of g.log){if(g.hl&&!HK.includes(x.k)&&!/보살|실책|저지/.test(x.txt))continue;if(x.k==='i'||!gr.length)gr.push([]);gr[gr.length-1].push(x)}if(g.hl)gr=gr.filter(a=>a.length>1||a[0].k!=='i');
   return gr.reverse().slice(0,30).map(a=>{const h=a[0].k==='i'?a[0]:null,rest=(h?a.slice(1):a).reverse();return (h?`<li class="i">${esc(h.txt)}</li>`:'')+rest.map(x=>`<li class="${x.k}">${esc(x.txt)}</li>`).join('')}).join('')}
 // ===== 엔진·econ 연결 =====
@@ -890,7 +897,7 @@ function vGame(){
   <div class="gfield">${diamond(g)}<div class="outs">아웃 ${[0,1,2].map(i=>`<i class="${i<g.outs?'on':''}"></i>`).join('')}</div>
    <div class="duel">${cur?`<div><small>타자</small><b>${esc(cur.name)}</b><span>${yy(cur.year)} ${esc(cur.team)} · 교타 ${Math.round(cur.r.con)} 장타 ${Math.round(cur.r.pow)}</span></div><div><small>투수</small><b>${esc(P.name)}</b><span>${g.pit[1-bat].bf}타자 상대 · 구위 ${Math.round(P.r.stu)} 제구 ${Math.round(P.r.ctl)}</span></div>`:`<div><b class="final">${g.res<0?'무승부':esc(g.t[g.res].name)+' 승리'}</b></div>`}</div></div>
   ${tk}<div class="btns gb">${g.done?`<button class="big" data-a="fin">${g.friendly?'친선전 결과 저장':'결과 반영하고 다음 라운드'}</button>`:`<button class="big" data-a="pa">다음 타석</button><button data-a="inn">이닝 끝까지</button><button data-a="end">경기 끝까지</button>`}</div></section>
-  <section class="band cols2"><div><h3>${g.hl?'하이라이트 <small>득점·홈런·보살·실책·교체</small>':'문자 중계'}</h3><ol class="glog">${logHTML(g)}</ol></div><div><details open><summary>박스스코어</summary>${box(0)}${box(1)}</details></div></section>`}
+  <section class="band cols2"><div><h3>${g.hl?'하이라이트 <small>득점·홈런·보살·실책·교체</small>':'문자 중계'}</h3>${g.done&&gameMVP(g)?`<p class="gmvp"><b>경기 MVP</b> ${esc(gameMVP(g))}</p>`:''}<ol class="glog">${logHTML(g)}</ol></div><div><details open><summary>박스스코어</summary>${box(0)}${box(1)}</details></div></section>`}
 /*MODES*/
 /*ONLINE*/
 // ===== 시작 화면: 배포판(Firebase)은 구글 로그인부터 =====
