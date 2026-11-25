@@ -740,7 +740,7 @@ function restoreLift(){for(const b of S.blocks)if(b.home&&b.u!==S.blkSel){const 
 
 // 선수 비교: 카드 팝업의 [비교하기] → 다른 카드를 누르면 두 장을 나란히 비교
 const effR=c=>{const sk=skillOf(c.id),r={};for(const k in c.r)r[k]=Math.min(120,c.r[k]+(sk[k]||0));return r};
-function cmpBar(){return S.cmpA&&!S.modal?`<div class="cmpbar" role="status"><span>비교: <b>${esc(by[S.cmpA].name)}</b> ${by[S.cmpA].year} · 비교할 카드 선택</span><button class="ghost" data-cmpx="1">취소</button></div>`:''}
+function cmpBar(){if(S.cmpA&&!by[S.cmpA])S.cmpA=null;return S.cmpA&&!S.modal?`<div class="cmpbar" role="status"><span>비교: <b>${esc(by[S.cmpA].name)}</b> ${by[S.cmpA].year} · 비교할 카드 선택</span><button class="ghost" data-cmpx="1">취소</button></div>`:''}
 function cmpView(a,b){const head=`<div class="mhead"><b>선수 비교</b><button class="ghost" data-cmpre="1">다른 선수 고르기</button><button class="ghost" data-cmpx="1">비교 끝내기</button></div>`;
  if(a.type!==b.type)return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true">${head}<p class="note">타자와 투수는 비교 불가</p></div></div>`;
  const ra=effR(a),rb=effR(b),B=a.type==='B',keys=B?BK:PKEY;
@@ -975,11 +975,12 @@ function xlBar(k){const ref=XLC[(k.length*3)%XLC.length]+(k.charCodeAt(0)%40+2);
 const THEMES={LG:['#c30452','#ff8fb8'],두산:['#1a1748','#ff6b72'],삼성:['#074ca1','#8ab8ff'],KIA:['#d8001f','#ff9a9a'],롯데:['#041e42','#ff7b84'],키움:['#6d0a1d','#f0c27b'],한화:['#f26a00','#ffb36b'],SSG:['#ce0e2d','#f6d36b'],NC:['#2b4a80','#d9b48a'],KT:['#1f1f1f','#ff5a4f']};
 function themeSet(){const r=document.documentElement.style,t=THEMES[S.theme];if(t){r.setProperty('--clay',t[0]);r.setProperty('--clay2',`color-mix(in srgb,${t[0]} 80%,#000)`);r.setProperty('--gold',t[1])}else['--clay','--clay2','--gold'].forEach(k=>r.removeProperty(k))}
 function xlSet(){themeSet();const on=!!S.work;document.body.classList.toggle('xl',on);document.title=on?'업무 현황.xlsx':'프로호구 매니저'}
-function render(){if(!S)return;ensureUI();xlSet();msTick();if(S.season&&!G){weekTick();ylTick()}restoreLift();syncTeam();rebuildOwn();
+const SAFE=(f,d)=>{try{return f()}catch(e){console.error('[render]',e);RERR=RERR||(e&&e.message)||String(e);return d}};let RERR='';
+function render(){if(!S)return;RERR='';SAFE(ensureUI);SAFE(xlSet);SAFE(msTick);if(S.season&&!G){SAFE(weekTick);SAFE(ylTick)}SAFE(restoreLift);SAFE(syncTeam);SAFE(rebuildOwn);
   if(FBMODE()&&!ON.user&&!S.guest){document.body.dataset.bg='field';hdr.innerHTML='';vw.innerHTML=loginView();return}
-  const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=head(k);let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면 오류</h2><p class="note">${esc(e.message)}</p></section>`}
-  vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+cmpBar()+modal();S.toast='';
-  const sv=$('#sv');if(sv)sv.value=btoa(unescape(encodeURIComponent(JSON.stringify(S,function(kk,v){return this===S&&TRANS.has(kk)?undefined:v}))));if(S.modal||S.dexView)scrollTo(0,y);saveSoon()}
+  const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=SAFE(()=>head(k),'');let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면 오류</h2><p class="note">${esc(e.message)}</p></section>`}
+  vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+SAFE(cmpBar,'')+SAFE(()=>modal(),'');if(RERR)vw.insertAdjacentHTML('afterbegin',`<p class="warn" style="margin:8px 0">화면 일부 오류 · ${esc(RERR)} (이 문구를 캡처해 알려 주세요)</p>`);S.toast='';
+  SAFE(()=>{const sv=$('#sv');if(sv)sv.value=btoa(unescape(encodeURIComponent(JSON.stringify(S,function(kk,v){return this===S&&TRANS.has(kk)?undefined:v}))));});if(S.modal||S.dexView)scrollTo(0,y);saveSoon()}
 addEventListener('hashchange',()=>{S&&(S.modal=null,S.bmodal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
