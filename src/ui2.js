@@ -268,8 +268,8 @@ function numArt(c,full){const n=c.no!=null&&c.no!==''?String(c.no):'',t=n||POSA[
  return `<span class="numart${full?' big':''}${n?'':' nopos'}" style="--tc:${c.col||'#555'}" aria-hidden="true"><i class="na-st"></i><b>${esc(t)}</b><small>${esc(c.team)}</small></span>`}
 // 사진 출처(CC 라이선스 표시 의무): 카드 위가 아니라 팝업 아래 한 줄로
 const credLine=c=>c.img&&!(S.photos||{})[c.id]?`<span class="pcr">사진 <a href="${esc(c.img.u)}" target="_blank" rel="noopener">${esc(c.img.a)}</a> · ${esc(c.img.l)}</span>`:'';
-function bars(c,keys,bonus){return keys.map(k=>{const v=c.r[k],p=k==='sta'?0:(bonus||0),sk=(skillOf(c.id)[k]||0),t=Math.min(120,v+p+sk);
- return `<div class="sr"><span>${SKN[k]}</span><span class="bar"><i class="${t>=90?'e':t>=80?'h':''}" style="width:${t/120*100}%"></i></span><em>${t}</em>${bonus!=null?`<small>${p+sk?'+'+(p+sk):''}</small>`:''}</div>`}).join('')}
+function bars(c,keys,bonus){const EQ=ECON.cardEq?ECON.cardEq(S,baseId(c.id),byId):{};return keys.map(k=>{const v=c.r[k],p=k==='sta'?0:(bonus||0),sk=(skillOf(c.id)[k]||0),eq=EQ[k]||0,add=p+sk+eq,t=Math.min(120,v+add),tip=[p?`덱 효과 +${p}`:'',sk?`스킬 +${sk}`:'',eq?`장비 +${eq}`:''].filter(Boolean).join(' · ');
+ return `<div class="sr"${tip?` title="${tip}"`:''}><span>${SKN[k]}</span><span class="bar"><i class="${t>=90?'e':t>=80?'h':''}" style="width:${Math.min(v,120)/120*100}%"></i>${add>0?`<b class="bb" style="width:${Math.min(add,120-Math.min(v,120))/120*100}%"></b>`:''}</span><em>${t}</em><small class="${add>0?'up':''}">${add>0?'(+'+add+')':''}</small></div>`}).join('')}
 // 컨디션 1~5 (엔진 COND: 최악·나쁨·보통·좋음·최상) → OVR 앞 화살표. 시안은 선수별 고정 예시값
 const CONDN=['','최악','나쁨','보통','좋음','최상'],CONDA=[0,90,45,0,-45,-90];
 const condOf=c=>{if(!c)return 3;const v=(S.cond||{})[baseId(c.id)]||3;return Math.max(condMin(baseId(c.id)),v)};
@@ -290,10 +290,11 @@ function posSel(i){const [p,id]=S.lu[i],c=by[id];return `<select class="psel fit
 function used(){return [...S.lu.map(x=>x[1]),...S.bench,...S.rot,...S.pen].filter(Boolean)}
 const tcChip=x=>`<span class="tcc g-${x.g}${x.on?' on':''}"><i>${x.g}</i><b>${esc(x.n)}</b><small>${esc(x.sub)}</small><em>${x.on?`야수 +${x.b} · 투수 +${x.p}`:`${x.cur}/${x.need}`}</em></span>`;
 function meter(t,v,max,sub,over,cls){return `<div class="meter${over?' over':''}${cls?' '+cls:''}"><b>${t}</b><span class="v">${v}</span><div class="track"><i style="width:${Math.min(100,parseFloat(v)/max*100)}%"></i></div><small>${sub}</small></div>`}
+function tcRow(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr)||MG[0];return `<div class="strip tcr"><div class="sh">팀컬러</div><div class="tcrow"><div class="tcl"><span class="tcsum">야수 +${d.bat} · 투수 +${d.pit}</span>${d.fx.map(tcChip).join('')||'<span class="note">아직 없음</span>'}<button class="ghost tcall" data-a="tcall" aria-pressed="${!!S.tcAll}">${S.tcAll?'접기':'고르기'}</button></div><button class="mgt" data-sub="mgr" title="감독 바꾸기"><span class="mface">${mface(m)}</span><b>${esc(m.n)}</b><small>감독</small></button></div></div>`}
 function deckBar(){const d=deckFx();return `<div class="deck">
  ${meter('1군 등록',`${d.cnt} / 25`,25,(()=>{const n=exCount(used());return `야수 9 · 벤치 5 · 선발 5 · 불펜 6 · EX 타자 ${n.B}/${EX_MAX.B} · 투수 ${n.P}/${EX_MAX.P} · ${wildTxt(starters(S.team))}`})(),false,'reg')}
  ${meter('코스트 (1군 25명 전체)',`${d.cost} / ${COST_CAP}`,COST_CAP,d.cost>COST_CAP?'코스트 상한 초과':`남은 코스트 ${COST_CAP-d.cost}`,d.cost>COST_CAP)}
- <div class="meter tcm"><b>팀컬러 · 야수 +${d.bat} · 투수 +${d.pit}</b><div class="tcl">${d.fx.map(tcChip).join('')||'<span class="note">아직 없음</span>'}<button class="ghost tcall" data-a="tcall" aria-pressed="${!!S.tcAll}">${S.tcAll?'접기':'고르기'}</button></div></div></div>
+ </div>
  ${S.tcAll?fxPickHTML(starters(S.team),S.team.fxsel,'team'):''}`}
 // 덱 효과 고르기: 조건을 채운 효과 중 등급(S·A·B)마다 1개, 최대 3개. sel은 효과 key 배열
 function fxPickHTML(cards,sel,scope){const T=teamColor(cards,sel,scope==='bld'?(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean):(S.bench||[]).map(id=>byId[id]).filter(Boolean)),A=T.all||[],on=new Set(T.fx.map(x=>x.key));
@@ -653,7 +654,7 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  const SIDE=B?[['line','타선 분석'],['field','수비 위치']]:[['bat','배터리 분석']],side=SIDE.some(x=>x[0]===S.side)?S.side:SIDE[0][0];
  return `<section class="band">${sub}<div class="tools" style="margin-top:12px"><div class="tabs tb" role="tablist">${[['B','야수'],['P','투수']].map(([k,n])=>`<button role="tab" aria-selected="${S.tb===k}" class="${S.tb===k?'on':''}" data-tb="${k}">${n}</button>`).join('')}</div>${nextOpp()}<button class="ghost" data-a="luana" style="margin-left:auto">${B?'타선 분석':'배터리 분석'}</button><button class="ghost" data-rec="${S.recm||'power'}">추천 라인업</button>${S.undo?'<button class="ghost" data-a="recundo">되돌리기</button>':''}</div>${recPanel()}
  ${`<div class="strip"><div class="sh">야수</div><div class="row scroll">${S.lu.map((x,i)=>oc('lu',i,'',{num:(i+1)+'번',under:posSel(i)})).join('')}<span class="gap"></span>${S.bench.map((x,i)=>oc('bench',i,'벤치',{num:(i+1)+'번'})).join('')}</div></div>`
- +`<div class="strip pit"><div class="sh">투수</div><div class="row scroll">${S.rot.map((x,i)=>(i?'<span class="arr" aria-hidden="true">›</span>':'')+oc('rot',i,'선발',{num:(i+1)+'번',cls:'sp'})).join('')}<span class="gap"></span>${[2,3,4,5].map((j,n)=>oc('pen',j,'중계',{num:(n+1)+'번',cls:'rp'})).join('')}<span class="gap"></span>${oc('pen',1,'셋업',{cls:'su'})}${oc('pen',0,'마무리',{cls:'cl'})}</div></div>`}
+ +`<div class="strip pit"><div class="sh">투수</div><div class="row scroll">${S.rot.map((x,i)=>(i?'<span class="arr" aria-hidden="true">›</span>':'')+oc('rot',i,'선발',{num:(i+1)+'번',cls:'sp'})).join('')}<span class="gap"></span>${[2,3,4,5].map((j,n)=>oc('pen',j,'중계',{num:(n+1)+'번',cls:'rp'})).join('')}<span class="gap"></span>${oc('pen',1,'셋업',{cls:'su'})}${oc('pen',0,'마무리',{cls:'cl'})}</div></div>`+tcRow()}
  ${deckBar()}<details class="pdet"${S.pdetOpen?' open':''}><summary>덱 저장 · 모드별 덱</summary>${presetBar()}</details>
  <p class="note hint${S.sel||S.msg?' on':''}" aria-live="polite">${S.msg?esc(S.msg):S.sel?'바꿀 자리나 넣을 카드 선택. 같은 자리 다시 누르면 취소.':''}</p><p class="note help">${S.sel?'같은 줄의 다른 자리를 누르면 서로 바뀌고, 아래 보유 카드를 누르면 그 카드가 들어갑니다. 같은 자리를 다시 누르면 선택 해제.':'PC: 카드·자리를 끌어 놓아 교체 가능. 카드를 누르면 상세 정보가 뜨고, 거기서 [자리 교체하기]를 누른 다음 다른 자리(타순 교체·벤치 교대)나 보유 카드를 누르면 바뀝니다. 빈 자리는 바로 선택. 수비 위치는 카드 아래 메뉴에서 바꾸고, 메뉴 옆 등급은 그 위치 수비 적성입니다.'}</p></section>
  <section class="band lu2 one"><div><div class="tools"><h2 style="margin:0">보유 카드</h2>
