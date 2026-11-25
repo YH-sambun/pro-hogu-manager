@@ -643,6 +643,8 @@ body.xl .eqp,body.xl .eqslot,body.xl .eqi{background:#fff!important;border:1px s
 .fx-CH{background:linear-gradient(115deg,transparent 30%,rgba(200,150,255,.35) 45%,transparent 60%);mix-blend-mode:screen}
 .v-RN{background:#1b1d1c;color:#ffd27a;outline:1px solid #ffd27a}.card.cv-RN{border-color:#ffd27a}
 .fx-RN{background:linear-gradient(180deg,rgba(255,210,122,.28),transparent 35%,transparent 70%,rgba(255,210,122,.22));box-shadow:inset 0 0 0 3px rgba(255,210,122,.65)}
+.msh em.cyc{background:#7a2fb0;color:#fff}
+.msrn{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:0 0 6px}.msrn small{color:var(--mute);font-size:11px;margin-right:4px}.msrn span{font-size:12px;border:1px dashed var(--line);border-radius:4px;padding:1px 6px;opacity:.6;cursor:pointer}.msrn span.got{opacity:1;border:1px solid var(--gold);color:var(--gold)}.msrn span i{font-style:normal;font-weight:700;margin-right:3px}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2636,7 +2638,7 @@ function eqHTML(c){if(!ECON.EQ_SLOTS)return '';const id=baseId(c.id),K=ECON.EQ_K
 let msSig='';
 function msTick(){if(!ECON.missionCheck||!(ECON.CHAPTERS||[]).length)return;const sig=Object.keys(S.owned).length+'|'+Object.values(S.owned).reduce((a,b)=>a+(b|0),0)+'|'+Object.keys(S.dexDone||{}).length;if(sig===msSig)return;msSig=sig;const out=ECON.missionCheck(S);if(out.length){S.toast='미션 달성 · '+out.map(x=>`${x.ch?msLn(x.ch)+' ':''}${x.what}${x.card&&byId[x.card]?' '+byId[x.card].name:''}${x.rw&&rwText(x.rw)?' +'+rwText(x.rw):''}`).join(' / ');save()}}
 const msLn=l=>SYN_LN[l]||l;
-function msSubHTML(){const m=S.msSub;if(!m)return '';const last=!!(S.opt&&S.opt.submitLast),st=((S.ms||{})['ch:'+m.line])||{},room=5-(st.sub|0);
+function msSubHTML(){const m=S.msSub;if(!m)return '';const last=!!(S.opt&&S.opt.submitLast),st=((S.ms||{})['ch:'+m.line])||{},chx=(ECON.CHAPTERS||[]).find(c=>c.line===m.line),need=chx?ECON.msProg(S,chx,'m3').need:5,room=need-(st.sub|0);
   const L=Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&c.line===m.line&&c.cost>=7).map(c=>({c,n:S.owned[c.id]|0,can:Math.max(0,(S.owned[c.id]|0)-(last?0:1))})).sort((a,b)=>b.can-a.can||b.c.cost-a.c.cost);
   const tot=Object.values(m.sel).reduce((a,b)=>a+b,0);
   return `<div class="modal"><div class="mbox"><div class="mhead"><b>${esc(msLn(m.line))} · 7코스트 이상 제출</b><span class="pill">${tot}/${room}</span><button class="ghost" data-a="msclose">닫기</button></div>
@@ -2645,13 +2647,14 @@ function msSubHTML(){const m=S.msSub;if(!m)return '';const last=!!(S.opt&&S.opt.
   ${L.map(({c,n,can})=>{const k=m.sel[c.id]|0;return `<tr class="${can?'':'use'}"><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${c.cost}</td><td>${n}</td><td>${can}</td><td>${can?`<button class="ghost" data-msn="${esc(c.id)}" data-d="-1" ${k?'':'disabled'}>−</button> <b>${k}</b> <button class="ghost" data-msn="${esc(c.id)}" data-d="1" ${k<can&&tot<room?'':'disabled'}>+</button>`:'-'}</td></tr>`}).join('')||'<tr><td colspan="6">해당 카드 없음</td></tr>'}</tbody></table></div>
   <div class="tools" style="margin-top:10px"><button data-a="msgo" ${tot?'':'disabled'}>${tot}장 제출</button>${S.msMsg?`<span class="note" style="color:var(--bad)">${esc(S.msMsg)}</span>`:''}</div></div></div>`}
 function vMission(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section class="band"><h2>미션</h2><p class="note">미션 데이터 없음</p></section>`;
-  const fin=CH.filter(c=>(S.ms||{})[c.id]&&S.ms[c.id].fin).length,last=!!(S.opt&&S.opt.submitLast);
+  const fin=CH.filter(c=>(S.msFin||{})[c.id]).length,last=!!(S.opt&&S.opt.submitLast);
   return `<section class="band ms"><div class="mhead"><h2 style="margin:0;margin-right:auto">미션</h2><span class="pill">챕터 완료 ${fin}/${CH.length}</span><label class="chk"><input type="checkbox" data-msopt="1" ${last?'checked':''}> 제출 때 마지막 1장도 허용</label></div>
   <div class="msmeta">${ECON.MS_META.map(([k,name,rw])=>{const need=k==='all'?CH.length:k,done=(S.msMeta||{})[k];return `<div class="${done?'done':''}"><b>${esc(name)}</b><span>${Math.min(fin,need)}/${need}</span><small>${esc(rwText(rw))}</small></div>`}).join('')}</div>
-  <div class="msgrid">${CH.map(ch=>{const st=(S.ms||{})[ch.id]||{},n=ECON.MS_DEF.filter(m=>st[m[0]]).length;
-    return `<div class="msch${st.fin?' fin':''}"><div class="msh"><b>${esc(msLn(ch.line))}</b><span class="msn">${n}/5</span>${st.fin?'<em>완료</em>':st.mid?'<em class="mid">3개 달성</em>':''}</div>
-    <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc(desc.replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${mid==='m3'?' · EX 조각 1':''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
-    <p class="note msr">3개 → EX 확정권 · 5개 → ${ch.mx.length?'미션 전용 EX':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
+  <div class="msgrid">${CH.map(ch=>{const st=(S.ms||{})[ch.id]||{},n=ECON.MS_DEF.filter(m=>st[m[0]]).length,cyc=ECON.msCyc?ECON.msCyc(S,ch):0,left=ch.mx.filter(id=>!(S.owned[id]>0)).length,done=(S.msFin||{})[ch.id]&&!left;
+    return `<div class="msch${done?' fin':''}"><div class="msh"><b>${esc(msLn(ch.line))}</b>${cyc?`<em class="cyc">${cyc+1}회차</em>`:''}<span class="msn">${n}/5</span>${done?'<em>완료</em>':st.mid?'<em class="mid">3개 달성</em>':''}</div>
+    ${ch.mx.length?`<div class="msrn"><small>영구결번 ${ch.mx.length-left}/${ch.mx.length}${left&&(S.msFin||{})[ch.id]?` · 남은 ${left}장`:''}</small>${ch.mx.map(id=>{const c=byId[id];return c?`<span class="${S.owned[id]>0?'got':''}" ${S.owned[id]>0?`data-pick="${esc(id)}" role="button" tabindex="0"`:`data-dexv="${esc(id)}" role="button" tabindex="0"`}>${c.no?`<i>${esc(c.no)}</i>`:''}${esc(c.name)}</span>`:''}).join('')}</div>`:''}
+    <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${mid==='m3'?' · EX 조각 1':''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
+    <p class="note msr">3개 → EX 확정권 · 5개 → 전설 장비 + ${ch.mx.length?'영구결번 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
 // ===== 화면 전환 =====
 const ROUTES={mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,lineup:vLineup,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
 const LEG=new Set(['season','years','online','game','cards']);
@@ -2701,7 +2704,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='mssub'){S.msSub={line:b.dataset.line,sel:{}};S.msMsg='';render()}
   else if(a==='msclose'){S.msSub=null;render()}
   else if(a==='msopt'){S.opt=S.opt||{};S.opt.submitLast=!S.opt.submitLast;save();render()}
-  else if(a==='msgo'){const m=S.msSub;if(!m)return;const ids=Object.entries(m.sel).flatMap(([id,n])=>Array(n).fill(id));if(!ids.length){S.msMsg='카드 선택';render();return}const r=ECON.missionSubmit(S,m.line,ids);if(r.err){S.msMsg=r.err;render();return}S.toast=`${r.used}장 제출 · ${r.have}/5`+(r.out&&r.out.length?' · '+r.out.map(x=>x.what+(x.rw?' '+rwText(x.rw):'')).join(' · '):'');S.msSub=null;msTick();save();render()}
+  else if(a==='msgo'){const m=S.msSub;if(!m)return;const ids=Object.entries(m.sel).flatMap(([id,n])=>Array(n).fill(id));if(!ids.length){S.msMsg='카드 선택';render();return}const r=ECON.missionSubmit(S,m.line,ids);if(r.err){S.msMsg=r.err;render();return}S.toast=`${r.used}장 제출 · ${r.have}장 누적`+(r.out&&r.out.length?' · '+r.out.map(x=>x.what+(x.rw?' '+rwText(x.rw):'')).join(' · '):'');S.msSub=null;msTick();save();render()}
   else if(a==='eqon'){const r=ECON.equip(S,b.dataset.u,b.dataset.id,byId);S.toast=r.err||'';save();render()}
   else if(a==='eqoff'){ECON.unequip(S,b.dataset.u);save();render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
