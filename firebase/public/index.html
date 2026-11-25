@@ -668,9 +668,11 @@ const baseId=id=>String(id).replace(/~\d+$/,''); // 보유 중복 카드 id는 '
 // EX 제한(2026-11-24, SJ): 1군 25명 중 EX는 타자 1명·투수 1명까지
 // 이름 붙은 라이벌 덱 효과(계보 키 기준)
 const RIVALS=[['롯데','NC','낙동강 더비'],['SK','KT','통신사 더비'],['두산','LG','잠실 더비'],['삼성','롯데','클래식 시리즈'],['KIA','삼성','영호남 더비']];
-// 묶음 계보 덱 효과: 엘롯기 = LG·롯데·KIA(각 4명 이상). 구도 인천 = 삼미·청보·태평양·현대·우리·히어로즈·넥센·키움(키움 계보) + 쌍방울·SK·SSG(SK 계보)
+// FA 이적 인연 덱 효과(A): 그 선수 카드(아무 시즌) 1장 이상 + 두 계보 각 8명 이상·합계 20명 이상(주전 20명). [선수, 계보A, 계보B]
+const FA_LINKS=[['강민호','롯데','삼성'],['최형우','삼성','KIA'],['김현수','두산','LG'],['양의지','두산','NC'],['손아섭','롯데','NC'],['정근우','SK','한화'],['이용규','KIA','한화'],['박석민','삼성','NC'],['차우찬','삼성','LG'],['황재균','롯데','KT'],['민병헌','두산','롯데'],['채은성','LG','한화'],['박건우','두산','NC'],['나성범','NC','KIA'],['유강남','LG','롯데'],['홍성흔','두산','롯데'],['심정수','키움','삼성'],['박진만','키움','삼성'],['안치홍','KIA','롯데'],['오재일','두산','삼성'],['최주환','두산','SK'],['박해민','삼성','LG'],['정우람','SK','한화'],['손승락','키움','롯데'],['정수근','두산','롯데'],['김주찬','롯데','KIA'],['장원준','롯데','두산']];
+// 묶음 계보 덱 효과: 엘롯기 = LG·롯데·KIA(각 4명 이상). 구도 인천 = 삼미·청보·태평양·현대·우리·히어로즈·넥센·키움(키움 계보) + 쌍방울·SK·SSG(SK 계보). 흥참동(흥행 참패 동맹) = SK·KT·키움·NC 계보(각 3명 이상)
 // [이름, 계보들, 계보별 최소 인원]. 합계 20명 이상
-const LINE_UNIONS=[['구도 인천',['키움','SK'],1],['엘롯기',['LG','롯데','KIA'],4]];
+const LINE_UNIONS=[['구도 인천',['키움','SK'],1,'인천 연고 구단'],['엘롯기',['LG','롯데','KIA'],4,'LG·롯데·KIA'],['흥참동',['SK','KT','키움','NC'],3,'SSG·KT·키움·NC']];
 // 시대 덱 효과: [이름, 계보, 시작 연도, 끝 연도, 필요 인원(주전 20명 중)]. 비밀번호 8888577 = 롯데 2001~2007 순위(8·8·8·8·5·7·7)
 const ERA_SETS=[['비밀번호 8888577','롯데',2001,2007,15]];
 const CH_WILD=1; // 커리어하이: 연도 무관으로 단일연도 인원에 넣을 수 있는 장수
@@ -771,11 +773,12 @@ function teamColor(cards,sel){
   for(const l in byLine){const a=byLine[l];if(a.length>=2&&a[0][1]>=7&&a[1][1]>=7&&a[0][1]+a[1][1]>=20)add(mk('Y','A','연도 듀얼',`${a[0][0].split(' ')[0]}+${a[1][0].split(' ')[0]} ${lname(l)}`,5,4))}
   if(m1>=20)add(mk('F','A','단일구단',lname(l1),5+(cost>=125?2:0),3+(cost>=125?2:0)));else if(m1>=12)add(mk('F','B','단일구단',lname(l1),3,2));
   // 이름 붙은 라이벌(A): 두 구단 각 8명 이상, 합계 20명 이상. 그 외 두 구단 조합은 일반 라이벌 듀얼(B)
+  {const nm=new Set(cards.map(c=>c.name));for(const [p,a,b] of FA_LINKS)if(nm.has(p)&&(lc[a]||0)>=8&&(lc[b]||0)>=8&&lc[a]+lc[b]>=20)add(mk('F','A','FA 이적: '+p,`${lname(a)}+${lname(b)}`,5,4))}
   for(const [a,b,n] of RIVALS)if((lc[a]||0)>=8&&(lc[b]||0)>=8&&lc[a]+lc[b]>=20)add(mk('F','A',n,`${lname(a)}+${lname(b)}`,5,4));
   if(ln.length>=2&&ln[0][1]>=8&&ln[1][1]>=8&&ln[0][1]+ln[1][1]>=20&&!all.some(x=>x.fam==='F'&&x.g==='A'&&x.name!=='단일구단'))add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
   if(rg[0]&&rg[0][1]>=20)add(mk('F','B','지역',rg[0][0],3,2));
   // 묶음 계보(A): 여러 계보를 합쳐 20명 이상(각 계보 1명 이상)
-  for(const [n,ls,mn] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=20&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,ls.map(lname).join('+'),5,4))}
+  for(const [n,ls,mn,lb] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=20&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,lb||ls.map(lname).join('+'),5,4))}
   for(const [n,l,y0,y1,need] of ERA_SETS){const k=cards.filter(c=>c.line===l&&c.year>=y0&&c.year<=y1).length;if(k>=need)add(mk('Y','A',n,`${y0}~${y1} ${lname(l)} ${k}명`,5,4))}
   // 올스타덱·골든글러브덱: 연도·구단이 섞여도 특별 카드 장수로
   {const n=nv('AS');if(n>=12)add(mk('E','A','올스타덱',`올스타 ${n}명`,5,4));else if(n>=8)add(mk('E','B','올스타덱',`올스타 ${n}명`,3,2))}
@@ -1099,7 +1102,7 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={FA_LINKS,ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
 
 </script>
 <script>
