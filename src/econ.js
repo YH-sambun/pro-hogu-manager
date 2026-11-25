@@ -183,8 +183,10 @@ const STUDY=[['d1',2,1,[10,50,40,0],[4,3,2]],['d6',3,1.25,[12,45,38,5],[5,3,2]],
   ['d4',12,2.5,[18,25,27,30],[12,7,3]],['d5',24,3,[20,20,20,40],[15,9,4]]];
 const STUDY_BY=Object.fromEntries(STUDY.map(x=>[x[0],x])),RUSH=500;
 const studyFee=(d,cost)=>{const x=STUDY_BY[d]||STUDY[0];return Math.round(500*Math.pow(x[1],.6)*x[2]*(1+(cost||0)/5)/10)*10};
-function studyRoll(d){const x=STUDY_BY[d]||STUDY[0],N=['대성공','성공','보통','실패'];let u=rnd()*100;
-  for(let i=0;i<4;i++)if((u-=x[3][i])<0)return {name:N[i],gain:i<3?x[4][i]:0};return {name:'실패',gain:0}}
+// 저코스트 보정(SJ 2026-11-26): 코스트 5 이하는 (6-코스트)×3%p를 실패→보통 순으로 빼서 대성공·성공에 반씩 더함(1코 +15%p)
+function studyOdds(d,cost){const x=STUDY_BY[d]||STUDY[0],p=x[3].slice();let m=Math.max(0,6-(cost||6))*3;const t=m;for(const i of [3,2]){const k=Math.min(p[i],m);p[i]-=k;m-=k}const g=t-m;p[0]+=Math.ceil(g/2);p[1]+=Math.floor(g/2);return p}
+function studyRoll(d,cost){const x=STUDY_BY[d]||STUDY[0],N=['대성공','성공','보통','실패'],P=studyOdds(d,cost);let u=rnd()*100;
+  for(let i=0;i<4;i++)if((u-=P[i])<0)return {name:N[i],gain:i<3?x[4][i]:0};return {name:'실패',gain:0}}
 // 유학 가능 여부(경제 쪽 검사): 특수 카드(올스타·골글·EX)는 불가. 나이 조건 등은 UI/엔진에서 추가 검사
 const abResetFee=cost=>Math.round(3000*(1+(cost||0)/5)/100)*100; // 유학 초기화 비용(SJ 2026-11-25: 포인트나 초기화권으로 지우고 다시 보냄)
 const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 유학 불가'}:{ok:true};
@@ -292,6 +294,6 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
   S.dexDone=S.dexDone||{};return S}
 
 const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,pityTick,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
-  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,msText,msReq,msCyc,missionCheck,missionSubmit,missionLeague,isMissionOnly,buildNat,get NATS(){return NATS},natProg,natCheck,EQ_KIND,EQ_SLOTS,EQ_G,EQ_BASE,mkEquip,eqName,eqBonus,equip,unequip,cardEq,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,abResetFee,rushFee,pay,setRnd:f=>{rnd=f}};
+  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,msText,msReq,msCyc,missionCheck,missionSubmit,missionLeague,isMissionOnly,buildNat,get NATS(){return NATS},natProg,natCheck,EQ_KIND,EQ_SLOTS,EQ_G,EQ_BASE,mkEquip,eqName,eqBonus,equip,unequip,cardEq,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,studyOdds,canStudy,abResetFee,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);
