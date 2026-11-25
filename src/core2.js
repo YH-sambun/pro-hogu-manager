@@ -110,11 +110,12 @@ function teamColor(cards,sel){
   const cnt=f=>{const m={};for(const c of cards){const k=f(c);if(k)m[k]=(m[k]||0)+1}return Object.entries(m).sort((a,b)=>b[1]-a[1])};
   // EX 카드는 같은 계보의 가장 많은 연도에 들어가 단일연도 인원으로 셈
   // 커리어하이(CH)는 CH_WILD장까지 같은 계보 최다 연도에 합류(EX와 같은 방식), 영구결번(RN)은 계보와 무관하게 최다 연도에 합류
-  const chW=new Set(cards.filter(c=>c.v==='CH').slice(0,CH_WILD)),wild=c=>c.v==='EX'||chW.has(c);
-  const yk=(()=>{const m={};for(const c of cards)if(!wild(c)&&c.v!=='RN'){const k=yearKey(c);m[k]=(m[k]||0)+1}
+  // 2026-11-25(SJ): EX도 영구결번처럼 어떤 덱이든 만족(계보·연도 무관하게 최다 연도·최다 구단에 합류). 커리어하이만 같은 계보 한정
+  const chW=new Set(cards.filter(c=>c.v==='CH').slice(0,CH_WILD)),wild=c=>chW.has(c),any=c=>c.v==='RN'||c.v==='EX';
+  const yk=(()=>{const m={};for(const c of cards)if(!wild(c)&&!any(c)){const k=yearKey(c);m[k]=(m[k]||0)+1}
     for(const c of cards)if(wild(c)){let b=null;for(const k in m)if(k.split(' ')[1]===c.line&&(!b||m[k]>m[b]))b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
-    for(const c of cards)if(c.v==='RN'){let b=null;for(const k in m)if(!b||m[k]>m[b])b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
-    return Object.entries(m).sort((a,b)=>b[1]-a[1])})(),ln=(()=>{const a=cnt(c=>c.v==='RN'?null:c.line),n=cards.filter(c=>c.v==='RN').length;if(n){if(a[0])a[0][1]+=n;else a.push([cards.find(c=>c.v==='RN').line,n])}return a})(),rg=cnt(REGION_OF),cost=cards.reduce((s,c)=>s+c.cost,0),fx=[];
+    for(const c of cards)if(any(c)){let b=null;for(const k in m)if(!b||m[k]>m[b])b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
+    return Object.entries(m).sort((a,b)=>b[1]-a[1])})(),ln=(()=>{const a=cnt(c=>any(c)?null:c.line),n=cards.filter(any).length;if(n){if(a[0])a[0][1]+=n;else a.push([cards.find(any).line,n])}return a})(),rg=cnt(REGION_OF),cost=cards.reduce((s,c)=>s+c.cost,0),fx=[];
   // 표시용 이름: 계보 키 대신 실제 구단명(그 연도 카드에서 가장 많은 팀)
   const tname=k=>{const [yr,l]=k.split(' '),m={};for(const c of cards)if(c.line===l&&yearKey(c).startsWith(yr+' '))m[c.team]=(m[c.team]||0)+1;
     return yr+' '+(Object.entries(m).sort((a,b)=>b[1]-a[1])[0]||[l])[0]};
@@ -136,7 +137,8 @@ function teamColor(cards,sel){
   if(rg[0]&&rg[0][1]>=20)add(mk('F','B','지역',rg[0][0],3,2));
   // 묶음 계보(A): 여러 계보를 합쳐 20명 이상(각 계보 1명 이상)
   for(const [n,ls,mn,lb] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=20&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,lb||ls.map(lname).join('+'),5,4))}
-  for(const [n,l,y0,y1,need] of ERA_SETS){const k=cards.filter(c=>c.line===l&&c.year>=y0&&c.year<=y1).length;if(k>=need)add(mk('Y','A',n,`${y0}~${y1} ${lname(l)} ${k}명`,5,4))}
+  // 시대 세트는 S 칸(SJ 2026-11-25): 같은 구단이라 A 칸의 단일구단과 함께 켤 수 있게
+  for(const [n,l,y0,y1,need] of ERA_SETS){const k=cards.filter(c=>!any(c)&&c.line===l&&c.year>=y0&&c.year<=y1).length+cards.filter(any).length;if(k>=need)add(mk('Y','S',n,`${y0}~${y1} ${lname(l)} ${k}명`,5,4))}
   // 올스타덱·골든글러브덱: 연도·구단이 섞여도 특별 카드 장수로
   {const n=nv('AS');if(n>=12)add(mk('E','A','올스타덱',`올스타 ${n}명`,5,4));else if(n>=8)add(mk('E','B','올스타덱',`올스타 ${n}명`,3,2))}
   {const n=nv('GG');if(n>=8)add(mk('E','A','골든글러브덱',`골든글러브 ${n}명`,5,4));else if(n>=5)add(mk('E','B','골든글러브덱',`골든글러브 ${n}명`,3,2))}
