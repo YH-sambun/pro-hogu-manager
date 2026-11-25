@@ -447,10 +447,10 @@ const pick2=a=>a[Math.floor(Math.random()*a.length)];
 // 추천 라인업: 보유 카드로 자동 편성 (능력 우선 / 덱 효과 우선 / 코스트 절약). 코스트 상한 150 안에서
 const bv=c=>c.r.con*.35+c.r.pow*.35+c.r.eye*.2+c.r.spd*.1;
 function recommend(mode){for(let cp=0;cp<=12;cp+=.5){const r=recommend1(mode,cp);if(recCost(r)<=COST_CAP||cp>=12)return r}}
-const RF0={year:'all',team:'all'},recMatch=c=>{const f=S.recF||RF0;return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'};
+const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||(t.s&&c.name===t.s))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
 function recommend1(mode,cp){const own=exTrim([...new Map(OWN.filter(c=>!c.dup&&!abOf(c.id)).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
  const yc={};for(const c of own){const k=c.year+' '+c.team;yc[k]=(yc[k]||0)+1}const topY=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0][0];
- const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0);
+ const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0)+(recFx()&&recFx().s&&c.name===recFx().s?80:0);
  const B=own.filter(c=>c.type==='B'),P=own.filter(c=>c.type==='P'),used2=new Set(),lu=[];
  for(const p of ['C','SS','CF','2B','3B','RF','LF','1B']){const cand=B.filter(c=>!used2.has(c.id)&&canPos(c,p)).map(c=>[c,(c.ps&&c.ps[p]!=null?c.ps[p]*.5:-1e9)+bv(c)*.8+w(c)]).sort((a,b)=>b[1]-a[1])[0];if(cand){used2.add(cand[0].id);lu.push([p,cand[0].id])}}
  const dh=B.filter(c=>!used2.has(c.id)).sort((a,b)=>bv(b)+w(b)-bv(a)-w(a))[0];if(dh){used2.add(dh.id);lu.push(['DH',dh.id])}
@@ -468,7 +468,7 @@ function recPanel(){if(!S.recm)return '';const r=recommend(S.recm),cost=recCost(
  return `<div class="rec box"><div class="tools"><h3 style="margin:0;margin-right:auto">추천 라인업 미리보기</h3>${[['power','능력 우선'],['deck','덱 효과 우선'],['cost','코스트 절약']].map(([k,n])=>`<button class="${S.recm===k?'':'ghost'}" data-rec="${k}">${n}</button>`).join('')}</div>
  ${(()=>{const f=S.recF||RF0,ys=[...new Set(OWN.map(c=>c.year))].sort((a,b)=>b-a),ts=[...new Set(OWN.filter(c=>f.year==='all'||c.year===+f.year).map(c=>c.team))].sort(),o=(v,n,cur)=>`<option value="${esc(v)}"${String(cur)===String(v)?' selected':''}>${esc(n)}</option>`;
   const m=r=>[...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean).filter(id=>by[id]&&recMatch(by[id])).length;
-  return `<div class="tools recf"><span class="note" style="margin:0">조건</span><select id="recy" aria-label="추천 연도">${o('all','전체 연도',f.year)}${ys.map(y=>o(y,y+'년',f.year)).join('')}</select><select id="rect" aria-label="추천 구단">${o('all','전체 구단',f.team)}${ts.map(t=>o(t,t,f.team)).join('')}</select>${recOn()?`<span class="note" style="margin:0">조건에 맞는 선수 ${m(r)}명 · 나머지는 다른 카드로 채움</span>`:''}</div>`})()}
+  return `<div class="tools recf"><span class="note" style="margin:0">조건</span><select id="recy" aria-label="추천 연도">${o('all','전체 연도',f.year)}${ys.map(y=>o(y,y+'년',f.year)).join('')}</select><select id="rect" aria-label="추천 구단">${o('all','전체 구단',f.team)}${ts.map(t=>o(t,t,f.team)).join('')}</select><select id="recx" aria-label="목표 덱 효과">${o('','덱 효과 지정 안 함',f.fx||'')}${[...new Set(FX_TARGETS.map(t=>t.g))].map(g=>`<optgroup label="${esc(g)}">${FX_TARGETS.filter(t=>t.g===g).map(t=>o(t.k,t.n,f.fx||'')).join('')}</optgroup>`).join('')}</select>${recOn()?`<span class="note" style="margin:0">조건에 맞는 선수 ${m(r)}명 · 나머지는 다른 카드로 채움</span>`:''}${(()=>{const fx=teamColor([...r.lu.map(x=>x[1]),...r.rot,...r.pen].filter(Boolean).map(id=>byId[id]).filter(Boolean)).fx;return `<span class="note" style="margin:0">덱 효과 ${fx.length?fx.map(x=>esc(x.name)+' '+x.g).join(', '):'없음'}</span>`})()}</div>`})()}
  <p class="rsum">타순 ${r.lu.map((x,i)=>`<span><b>${i+1}</b>${PN[x[0]]} ${esc(by[x[1]].name)}</span>`).join('')}</p>
  <p class="rsum">선발 ${r.rot.filter(Boolean).map(id=>`<span>${esc(by[id].name)}</span>`).join('')} · 마무리 <span>${r.pen[0]?esc(by[r.pen[0]].name):'–'}</span></p>
  <p class="note">코스트 ${cost}/${COST_CAP} ${cost>COST_CAP?'· 상한 초과':''} · 새로 들어오는 선수 ${inn.length}명${inn.length?` (${inn.slice(0,4).map(id=>esc(by[id].name)).join(', ')}${inn.length>4?' 외':''})`:''} · 빠지는 선수 ${out.length}명</p>
@@ -906,7 +906,7 @@ vw.addEventListener('change',e=>{const t=e.target;
     S.photos=S.photos||{};S.photos[id]=cv.toDataURL('image/jpeg',.82);try{save()}catch(e){};render()};img.src=URL.createObjectURL(t.files[0]);return}
   if(t.dataset.f){flt[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;flt.lim=120;render();return}
   if(t.id==='tn'){S.team.name=t.value.trim()||'내 구단';save();render();return}
-  if(t.id==='recy'||t.id==='rect'){S.recF={...(S.recF||RF0)};if(t.id==='recy'){S.recF.year=t.value;S.recF.team='all'}else S.recF.team=t.value;render();return}
+  if(t.id==='recy'||t.id==='rect'||t.id==='recx'){S.recF={...RF0,...(S.recF||{})};if(t.id==='recy'){S.recF.year=t.value;S.recF.team='all'}else if(t.id==='rect')S.recF.team=t.value;else S.recF.fx=t.value;render();return}
   if(t.dataset.fxg){fxSet(t.dataset.fxs,t.dataset.fxg,t.value);return}
   if(t.dataset.bf){S.bldF=S.bldF||{};S.bldF[t.dataset.bf]=t.type==='checkbox'?t.checked:t.value;if(t.dataset.bf==='y')S.bldF.t='';S.bldLim=40;render();return}
   if(t.dataset.lf){S.lf=S.lf||{};S.lf[t.dataset.lf]=t.value;render();return}
