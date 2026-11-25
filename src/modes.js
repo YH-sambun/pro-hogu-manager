@@ -241,7 +241,7 @@ function vYears(){const L=S.yl,won=S.ylWon||{};ranked();
     const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`;
     return `<section class="hero"><h1>${L.year} 리그 참가 중</h1><p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p>
      <p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p>
-     ${pr?predHTML(L):''}<div class="btns">${pr?`<button class="big" data-a="m-start">하이라이트 보기</button><button data-a="m-auto">결과만 보기</button>`:`<button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button>`}</div>
+     ${pr?`<p class="mini">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatOf(L,0))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}<div class="btns">${pr?`<button class="big" data-a="m-start">하이라이트 보기</button><button data-a="m-auto">결과만 보기</button>`:`<button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button>`}</div>
           ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
      <div class="btns" style="margin-top:10px"><button data-a="m-quit" class="ghost">이 리그 포기</button></div></section>
      ${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${lastHTML(L)}${tableHTML(L,L.post?'정규시즌 최종 순위':'순위표')}${titleHTML(L)}${asHTML(L)}`}
