@@ -776,7 +776,7 @@ function dexViewModal(){const c=byId[S.dexView];if(!c)return '';const h=dexHas(c
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b><span class="pill">${h?'모은 적 있음 · 지금은 없음':'아직 없는 카드'}</span><button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',PFULL[c.pos]||'',c.v?VN[c.v]:''].filter(Boolean).join(' · ')}</p>
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
- <p class="note" style="text-align:center">카드팩·합성으로 획득${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
+ <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · 카드팩·합성으로 획득${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
 // 개인 기록: 주간 리그·연도별 리그의 내 구단 시즌 누적(L.ps, 키 '0|카드id')
 function recHTML(c){const f3=v=>v.toFixed(3).replace(/^0/,''),rows=[['주간 리그',S.season],['연도별 리그',S.yl]].map(([n,L])=>{const r=L&&L.ps&&L.ps['0|'+c.id];if(!r)return '';
   const bat=r.ab+r.bb>0?`타율 <b>${r.ab?f3(r.h/r.ab):'-'}</b> · ${r.ab}타수 ${r.h}안타 ${r.hr}홈런 ${r.rbi}타점 ${r.bb}볼넷 ${r.sb}도루`:'',pit=r.outs>0?`평균자책 <b>${(r.er*27/r.outs).toFixed(2)}</b> · ${Math.floor(r.outs/3)}.${r.outs%3}이닝 ${r.w}승 ${r.sv}세이브 ${r.so}탈삼진`:'';
@@ -1041,7 +1041,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='dexmore'){{const st=(S.dexK||'all')==='all'?60:24;S.dexLim=(S.dexLim||st)+st};render()}
   else if(a==='coupon')redeemCoupon();
   else if(a==='guest'){S.guest=1;save();render()}
-  else if(a==='rmphoto'){delete S.photos[baseId(S.modal)];delete S.photos[S.modal];save();render()}
+  else if(a==='rmphoto'){const id=S.modal||S.dexView;if(id){delete S.photos[baseId(id)];delete S.photos[id]}save();render()}
   else if(a==='theme'){S.theme=b.dataset.v||'';S.setbOpen=1;save();render()}
   else if(a==='work'){S.work=!S.work;save();render()}
   else if(a==='mssub'){S.msSub={line:b.dataset.line,sel:{}};S.msMsg='';render()}
