@@ -1,5 +1,5 @@
 // ===== 프로호구 매니저 v2 : 카드 모델 + 덱 효과 + 스킬 블록 + 경기 엔진 =====
-const LINE_COLOR={LG:'#b3134b',KIA:'#c8102e',두산:'#23214f',삼성:'#0a5fb4',롯데:'#16326b',한화:'#e8691b',SK:'#c22a2a',키움:'#7b1530',NC:'#1d4f8a',KT:'#2b2b2b'};
+const LINE_COLOR={LG:'#b3134b',KIA:'#c8102e',두산:'#23214f',삼성:'#0a5fb4',롯데:'#16326b',한화:'#e8691b',SK:'#c22a2a',키움:'#7b1530',NC:'#1d4f8a',KT:'#2b2b2b',국가대표:'#0b3d91'};
 const POS=['C','1B','2B','3B','SS','LF','CF','RF','DH'];
 const PK={C:'포수','1B':'1루수','2B':'2루수','3B':'3루수',SS:'유격수',LF:'좌익수',CF:'중견수',RF:'우익수',DH:'지명타자',SP:'선발',RP:'불펜'};
 const PS={C:'포',  '1B':'1루','2B':'2루','3B':'3루',SS:'유격',LF:'좌',CF:'중',RF:'우',DH:'지명'};
@@ -56,7 +56,10 @@ const ARM_LIST=[["이강철","U"],["박충식","U"],["박정현","U",["키움"]]
 const ARM_IDX={};for(const [n,f,ls,y0] of ARM_LIST)(ARM_IDX[n]=ARM_IDX[n]||[]).push([f,ls,y0]);
 const armOf=c=>{for(const [f,ls,y0] of ARM_IDX[c.name]||[])if((!ls||ls.includes(c.line))&&(!y0||c.year>=y0))return f;return null};
 const ARM_N={U:'언더핸드',S:'사이드암'};
-const ALIAS={'오재원|야탑고':'오세원','이호성|광주제일고':'이호진','정형식|진흥고':'정형민','임태훈|서울고':'임태건'};
+const ALIAS={'오재원|야탑고':'오세원','이호성|광주제일고':'이호진','정형식|진흥고':'정형민','임태훈|서울고':'임태건','박현준|전주고':'박현석','김성현|P':'김선혁','문우람|광주동성고':'문우진'};
+// 계보·연도까지 봐야 하는 동명이인(이태양: 넥센 2011~2012·NC 2013~2016만, 한화 이태양은 제외)
+const ALIAS2=[['이태양|P',c=>c.line==='NC'||(c.line==='키움'&&c.year<=2012),'이태민']];
+const aliasOf=c=>ALIAS[c.pk]||(ALIAS2.find(([k,f])=>k===c.pk&&f(c))||[])[2];
 function loadCards(json){
   // MVP는 이름+연도가 같은 기본 카드 중 OVR이 가장 높은 1장만(동명이인·투타 겸업 다른 카드는 제외)
   const MB={};for(const c of json.cards){if(c.v||c.tx)continue;const k=c.n.replace(/#\d+$/,'')+c.y;if(MVP.has(k)&&(!MB[k]||c.o>MB[k].o))MB[k]=c}const MK=new Set(Object.values(MB).map(c=>c.y+'|'+c.t+'|'+c.n));
@@ -73,7 +76,7 @@ function loadCards(json){
   {const bp={};for(const c of CARDS)if(!c.v)bp[c.id]=c.pk;for(const c of CARDS)if(c.v){const b=bp[c.id.split('·')[0]];if(b)c.pk=b}}
   for(const c of CARDS)if(c.type==='P'){const a=armOf(c);if(a)c.arm=a}
   // 가명 처리(SJ 2026-11-25): 화면 이름과 사진만 바꿈. 원래 이름은 c.on에 남겨 국가대표·이름 세트 판정에 씀. id는 저장 호환 때문에 유지
-  for(const c of CARDS){const a=ALIAS[c.pk];if(a){c.on=c.name;c.name=a;c.img=null}}
+  for(const c of CARDS){const a=aliasOf(c);if(a){c.on=c.name;c.name=a;c.img=null}}
   byId=Object.fromEntries(CARDS.map(c=>[c.id,c]));TEAMYEARS={};
   for(const c of CARDS)if(!c.v)(TEAMYEARS[c.year+' '+c.team]=TEAMYEARS[c.year+' '+c.team]||[]).push(c.id)}
 // 시뮬레이션용 능력치로 변환

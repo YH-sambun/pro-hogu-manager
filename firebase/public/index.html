@@ -650,7 +650,7 @@ body.xl .cnd{background:#999!important}
 <main id="view"></main></div>
 <script>
 // ===== 프로호구 매니저 v2 : 카드 모델 + 덱 효과 + 스킬 블록 + 경기 엔진 =====
-const LINE_COLOR={LG:'#b3134b',KIA:'#c8102e',두산:'#23214f',삼성:'#0a5fb4',롯데:'#16326b',한화:'#e8691b',SK:'#c22a2a',키움:'#7b1530',NC:'#1d4f8a',KT:'#2b2b2b'};
+const LINE_COLOR={LG:'#b3134b',KIA:'#c8102e',두산:'#23214f',삼성:'#0a5fb4',롯데:'#16326b',한화:'#e8691b',SK:'#c22a2a',키움:'#7b1530',NC:'#1d4f8a',KT:'#2b2b2b',국가대표:'#0b3d91'};
 const POS=['C','1B','2B','3B','SS','LF','CF','RF','DH'];
 const PK={C:'포수','1B':'1루수','2B':'2루수','3B':'3루수',SS:'유격수',LF:'좌익수',CF:'중견수',RF:'우익수',DH:'지명타자',SP:'선발',RP:'불펜'};
 const PS={C:'포',  '1B':'1루','2B':'2루','3B':'3루',SS:'유격',LF:'좌',CF:'중',RF:'우',DH:'지명'};
@@ -707,7 +707,10 @@ const ARM_LIST=[["이강철","U"],["박충식","U"],["박정현","U",["키움"]]
 const ARM_IDX={};for(const [n,f,ls,y0] of ARM_LIST)(ARM_IDX[n]=ARM_IDX[n]||[]).push([f,ls,y0]);
 const armOf=c=>{for(const [f,ls,y0] of ARM_IDX[c.name]||[])if((!ls||ls.includes(c.line))&&(!y0||c.year>=y0))return f;return null};
 const ARM_N={U:'언더핸드',S:'사이드암'};
-const ALIAS={'오재원|야탑고':'오세원','이호성|광주제일고':'이호진','정형식|진흥고':'정형민','임태훈|서울고':'임태건'};
+const ALIAS={'오재원|야탑고':'오세원','이호성|광주제일고':'이호진','정형식|진흥고':'정형민','임태훈|서울고':'임태건','박현준|전주고':'박현석','김성현|P':'김선혁','문우람|광주동성고':'문우진'};
+// 계보·연도까지 봐야 하는 동명이인(이태양: 넥센 2011~2012·NC 2013~2016만, 한화 이태양은 제외)
+const ALIAS2=[['이태양|P',c=>c.line==='NC'||(c.line==='키움'&&c.year<=2012),'이태민']];
+const aliasOf=c=>ALIAS[c.pk]||(ALIAS2.find(([k,f])=>k===c.pk&&f(c))||[])[2];
 function loadCards(json){
   // MVP는 이름+연도가 같은 기본 카드 중 OVR이 가장 높은 1장만(동명이인·투타 겸업 다른 카드는 제외)
   const MB={};for(const c of json.cards){if(c.v||c.tx)continue;const k=c.n.replace(/#\d+$/,'')+c.y;if(MVP.has(k)&&(!MB[k]||c.o>MB[k].o))MB[k]=c}const MK=new Set(Object.values(MB).map(c=>c.y+'|'+c.t+'|'+c.n));
@@ -724,7 +727,7 @@ function loadCards(json){
   {const bp={};for(const c of CARDS)if(!c.v)bp[c.id]=c.pk;for(const c of CARDS)if(c.v){const b=bp[c.id.split('·')[0]];if(b)c.pk=b}}
   for(const c of CARDS)if(c.type==='P'){const a=armOf(c);if(a)c.arm=a}
   // 가명 처리(SJ 2026-11-25): 화면 이름과 사진만 바꿈. 원래 이름은 c.on에 남겨 국가대표·이름 세트 판정에 씀. id는 저장 호환 때문에 유지
-  for(const c of CARDS){const a=ALIAS[c.pk];if(a){c.on=c.name;c.name=a;c.img=null}}
+  for(const c of CARDS){const a=aliasOf(c);if(a){c.on=c.name;c.name=a;c.img=null}}
   byId=Object.fromEntries(CARDS.map(c=>[c.id,c]));TEAMYEARS={};
   for(const c of CARDS)if(!c.v)(TEAMYEARS[c.year+' '+c.team]=TEAMYEARS[c.year+' '+c.team]||[]).push(c.id)}
 // 시뮬레이션용 능력치로 변환
@@ -1393,7 +1396,7 @@ const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['
   ['m5',5,'그 구단 레전드(9+) 카드 3장 보유',{pt:5000,tix:{legend:1},eq:'희귀'}]];
 const MS_META=[[3,'챕터 3개 완료',{pt:10000,tix:{pick:1}}],['all','모든 챕터 완료 · 명예의 전당',{pt:50000,tix:{pick:2}}]];
 let CHAPTERS=[],CARDS_=[];
-function buildMissions(CARDS){CARDS_=CARDS;const L=[...new Set(CARDS.map(c=>c.line))];
+function buildMissions(CARDS){CARDS_=CARDS;const L=[...new Set(CARDS.filter(c=>c.v!=='NT').map(c=>c.line))]; // 국가대표(NT)는 구단 챕터가 아님(국가대표 미션 보상)
   CHAPTERS=L.map(l=>({id:'ch:'+l,line:l,mx:CARDS.filter(c=>c.mx&&c.line===l).map(c=>c.id)}));return CHAPTERS}
 // 회차: 구단에 영구결번이 여러 장이면(삼성·한화 4장 등) 챕터를 다시 돌 수 있음. 회차 c마다 조건이 올라감
 const msReq=(c)=>({m1:10+5*c,m2:1+c,m3:5+3*c,m4:Math.min(10,4+2*c),m5:3+c});
@@ -1913,15 +1916,15 @@ const pick2=a=>a[Math.floor(Math.random()*a.length)];
 // 추천 라인업: 보유 카드로 자동 편성 (능력 우선 / 덱 효과 우선 / 코스트 절약). 코스트 상한 150 안에서
 const bv=c=>c.r.con*.35+c.r.pow*.35+c.r.eye*.2+c.r.spd*.1;
 // 코스트 페널티 cp를 이분 탐색: 상한 안에 들어가는 가장 작은 cp(=예산을 최대한 씀)
-function recommend(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)return r;let lo=0,hi=12,best=recommend1(mode,hi);for(let i=0;i<14;i++){const m=(lo+hi)/2,x=recommend1(mode,m);if(recCost(x)<=COST_CAP){hi=m;best=x}else lo=m}return best}
+function recommend(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)return r;let lo=0,hi=recFx()&&recFx().must?40:12,best=recommend1(mode,hi);for(let i=0;i<14;i++){const m=(lo+hi)/2,x=recommend1(mode,m);if(recCost(x)<=COST_CAP){hi=m;best=x}else lo=m}return best}
 const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||c.v==='EX'&&(!t.ls||t.ls.includes(c.line)))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
 // 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
 let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{let r=recommend('power');if(recCost(r)>COST_CAP){REC_ALL=2;r=recommend('power')}return recFix(recStar(r,recFx()),recFx())}finally{S.recF=keep;REC_ALL=0}}
 // FA 이적 목표: 그 선수(t.s)가 주전에 없으면 같은 자리에 설 수 있는 가장 약한 주전과 바꿔 넣음(코스트 상한 안에서)
-function recStar(r,t){if(t&&t.must){for(const e of t.must){const [n,y]=e.split(':'),nm=n.split('@')[0];r=recStar(r,{s:nm,m:t.mhit?c=>t.mhit(c,e):c=>t.m(c)&&(!y||c.year===+y),keep:new Set(t.must.map(e=>e.split(/[:@]/)[0]))})}return r}if(!t||!t.s)return r;const ids=[...r.lu.map(x=>x[1]),...r.rot,...r.pen].filter(Boolean);if(ids.some(id=>byId[id]&&byId[id].name===t.s&&t.m(byId[id])))return r;
+function recStar(r,t){if(t&&t.must){for(const e of t.must){const [n,y]=e.split(':'),nm=n.split('@')[0];r=recStar(r,{s:nm,m:t.mhit?c=>t.mhit(c,e):c=>t.m(c)&&(!y||c.year===+y),keep:new Set(t.must.map(e=>e.split(/[:@]/)[0]))})}return r}if(!t||!t.s)return r;const ids=[...r.lu.map(x=>x[1]),...r.rot,...r.pen].filter(Boolean);if(ids.some(id=>byId[id]&&(byId[id].on||byId[id].name)===t.s&&t.m(byId[id])))return r;
  const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
- const room=COST_CAP-recCost(r),C=CARDS.filter(c=>c.name===t.s&&t.m(c)&&c.v!=='EX').sort((a,b)=>b.ovr-a.ovr);
- for(const c of C)for(const s of sl.filter(s=>{const o=byId[get(s)];return o&&o.type===c.type&&o.v!=='EX'&&!(t.keep&&t.keep.has(o.name))&&c.cost<=o.cost+room&&(s[0]==='lu'?canPos(c,r.lu[s[1]][0]):s[0]==='rot'?c.pos==='SP':true)}).sort((a,b)=>byId[get(a)].ovr-byId[get(b)].ovr)){const o=byId[get(s)];if(t.q&&t.q[o.line]&&o.line!==c.line)continue;set(s,c.id);r.bench=r.bench.filter(id=>!id||byId[id].name!==t.s);return r}
+ const room=COST_CAP-recCost(r),C=CARDS.filter(c=>(c.on||c.name)===t.s&&t.m(c)&&c.v!=='EX').sort((a,b)=>b.ovr-a.ovr);
+ for(const c of C)for(const s of sl.filter(s=>{const o=byId[get(s)];return o&&o.type===c.type&&o.v!=='EX'&&!(t.keep&&t.keep.has(o.on||o.name))&&c.cost<=o.cost+room&&(s[0]==='lu'?canPos(c,r.lu[s[1]][0]):s[0]==='rot'?c.pos==='SP':true)}).sort((a,b)=>byId[get(a)].ovr-byId[get(b)].ovr)){const o=byId[get(s)];if(t.q&&t.q[o.line]&&o.line!==c.line)continue;set(s,c.id);r.bench=r.bench.filter(id=>!id||(byId[id].on||byId[id].name)!==t.s);return r}
  return r}
 // 계보별 최소 인원(t.q)이 모자라면 주전 중 남는 계보의 낮은 능력 선수를 같은 자리에 설 수 있는 부족 계보 선수로 바꿈(코스트 상한 안에서)
 function recFix(r,t){if(!t||!t.q)return r;const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
@@ -1936,7 +1939,7 @@ function recFix(r,t){if(!t||!t.q)return r;const sl=[...r.lu.map((x,i)=>['lu',i])
  return r}
 function recommend1(mode,cp){const own=exTrim([...new Map([...(REC_ALL?(recFx()&&REC_ALL===1&&!recFx().loose?CARDS.filter(recMatch):CARDS):OWN.filter(c=>!c.dup&&!abOf(c.id)))].sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
  const yc={};for(const c of own){const k=c.year+' '+c.team;yc[k]=(yc[k]||0)+1}const topY=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0][0];
- const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0)+(recFx()&&recFx().s&&c.name===recFx().s&&recFx().m(c)?80:0)+(recFx()&&recFx().must&&(recFx().mhit?recFx().must.some(e=>recFx().mhit(c,e)):recFx().m(c))?200:0);
+ const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0)+(recFx()&&recFx().s&&(c.on||c.name)===recFx().s&&recFx().m(c)?80:0)+(recFx()&&recFx().must&&(recFx().mhit?recFx().must.some(e=>recFx().mhit(c,e)):recFx().m(c))?200:0);
  const B=own.filter(c=>c.type==='B'),P=own.filter(c=>c.type==='P'),used2=new Set(),lu=[];
  for(const p of ['C','SS','CF','2B','3B','RF','LF','1B']){const cand=B.filter(c=>!used2.has(c.id)&&canPos(c,p)).map(c=>[c,(c.ps&&c.ps[p]!=null?c.ps[p]*.5:-1e9)+bv(c)*.8+w(c)]).sort((a,b)=>b[1]-a[1])[0];if(cand){used2.add(cand[0].id);lu.push([p,cand[0].id])}}
  const dh=B.filter(c=>!used2.has(c.id)).sort((a,b)=>bv(b)+w(b)-bv(a)-w(a))[0];if(dh){used2.add(dh.id);lu.push(['DH',dh.id])}
@@ -2910,7 +2913,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});
 // ===== 시작 =====
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
-fetch('cards.json?v=98d2ca7a30').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
+fetch('cards.json?v=57516b4a40').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
   for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.rg==null&&c.reg)c.rg=c.reg}
   LINES=[...new Set(CARDS.map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);if(ECON.buildMissions)ECON.buildMissions(CARDS);if(ECON.buildNat&&typeof NAT_SETS!=='undefined')ECON.buildNat(CARDS,NAT_SETS,natHit);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}

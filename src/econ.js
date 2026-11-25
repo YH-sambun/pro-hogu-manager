@@ -227,7 +227,7 @@ const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['
   ['m5',5,'그 구단 레전드(9+) 카드 3장 보유',{pt:5000,tix:{legend:1},eq:'희귀'}]];
 const MS_META=[[3,'챕터 3개 완료',{pt:10000,tix:{pick:1}}],['all','모든 챕터 완료 · 명예의 전당',{pt:50000,tix:{pick:2}}]];
 let CHAPTERS=[],CARDS_=[];
-function buildMissions(CARDS){CARDS_=CARDS;const L=[...new Set(CARDS.map(c=>c.line))];
+function buildMissions(CARDS){CARDS_=CARDS;const L=[...new Set(CARDS.filter(c=>c.v!=='NT').map(c=>c.line))]; // 국가대표(NT)는 구단 챕터가 아님(국가대표 미션 보상)
   CHAPTERS=L.map(l=>({id:'ch:'+l,line:l,mx:CARDS.filter(c=>c.mx&&c.line===l).map(c=>c.id)}));return CHAPTERS}
 // 회차: 구단에 영구결번이 여러 장이면(삼성·한화 4장 등) 챕터를 다시 돌 수 있음. 회차 c마다 조건이 올라감
 const msReq=(c)=>({m1:10+5*c,m2:1+c,m3:5+3*c,m4:Math.min(10,4+2*c),m5:3+c});
