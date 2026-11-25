@@ -31,7 +31,11 @@ const fatOf=(L,i)=>{L.fat=L.fat||{};return L.fat[i]=L.fat[i]||{}};
 // 투수 피로도: 경기가 끝나면 두 팀 투수에 쌓고(fatAdd), 라운드(하루)가 끝나면 모든 팀이 회복(fatRest)
 function fatGame(L,pr,g){fatAdd(fatOf(L,pr[0]),g,0);fatAdd(fatOf(L,pr[1]),g,1)}
 function fatDay(L){for(const k in L.fat||{})fatRest(L.fat[k])}
-function simT(L,i){if(i===0)return simTeam(userT(L),S.cond,fatOf(L,0));const T=L.teams[i];return simTeam(T,T.cv?condMap(T):undefined,fatOf(L,i))}
+// 리그 중 선발 교체 대책(SJ 2026-11-26): 시즌 중 새로 선발 로테이션에 들어온 투수는 피로도 75로 합류(약 3~4경기 등판 대기). 덱을 바꿔 쉰 에이스만 돌려 쓰는 걸 막음
+const ROT_JOIN=75;
+function rotJoin(L,T){const F=fatOf(L,0),R=(T.rot||[]).filter(Boolean);if(L.rot0)for(const id of R)if(!L.rot0.includes(id))F[id]=Math.max(F[id]||0,ROT_JOIN);L.rot0=R.slice()}
+function fatPrev(L,i,T){const F=fatOf(L,i);if(i!==0||!L.rot0)return F;const G={...F};for(const id of (T.rot||[]).filter(Boolean))if(!L.rot0.includes(id))G[id]=Math.max(G[id]||0,ROT_JOIN);return G} // 미리보기용(저장 안 함)
+function simT(L,i){if(i===0){const T=userT(L);rotJoin(L,T);return simTeam(T,S.cond,fatOf(L,0))}const T=L.teams[i];return simTeam(T,T.cv?condMap(T):undefined,fatOf(L,i))}
 const sched3=n=>{const base=rr(n%2?n+1:n);return [...base,...base.map(r=>r.map(p=>[p[1],p[0]])),...base]};
 const newSt=n=>Array.from({length:n},()=>({w:0,l:0,d:0,rs:0,ra:0}));
 function curPair(L){
@@ -219,11 +223,11 @@ function tableHTML(L,title){L=L||S.season;const R=lgStand(L),top=R[0],me=R.findI
 function lastHTML(L){return lastRes(L)+gamesHTML(L)+statsHTML(L)}
 function lastRes(L){return L.last&&L.last.length?`<section class="band"><h3>지난 경기</h3><div class="res">${L.last.map(x=>`<div class="${x.me?'me':''}"><span class="${x.sc[0]>x.sc[1]?'win':'lose'}">${esc(tname(x.a,L))}</span><b><i class="${x.sc[0]>x.sc[1]?'hi':''}">${x.sc[0]}</i> : <i class="${x.sc[1]>x.sc[0]?'hi':''}">${x.sc[1]}</i></b><span class="${x.sc[1]>x.sc[0]?'win':'lose'}">${esc(tname(x.h,L))}</span></div>`).join('')}</div></section>`:''}
 // 내 투수 피로도 표시: 피로가 남은 투수만. 선발은 15 미만이어야 등판, 불펜은 55 이상이면 그날 휴식
-function fatHTML(L){const T=teamOf(0,L),F=fatOf(L,0),P=[...(T.rot||[]).map(id=>[id,'선발']),...(T.pen||[]).map(id=>[id,'불펜'])].filter(([id])=>id&&(F[id]||0)>0).sort((a,b)=>F[b[0]]-F[a[0]]);
+function fatHTML(L){const T=teamOf(0,L),F=fatPrev(L,0,T),P=[...(T.rot||[]).map(id=>[id,'선발']),...(T.pen||[]).map(id=>[id,'불펜'])].filter(([id])=>id&&(F[id]||0)>0).sort((a,b)=>F[b[0]]-F[a[0]]);
  if(!P.length)return '<p class="note fat" style="margin:6px 0 0">투수 피로 없음</p>';
- return `<p class="note fat" style="margin:6px 0 0" title="던진 만큼 피로가 쌓이고 체력에 비례해 하루마다 회복. 선발은 피로 15 미만일 때 등판(아니면 다음 순번), 피로 20을 넘으면 구위·제구가 떨어지고, 불펜은 55 이상이면 그날 휴식">투수 피로 ${P.map(([id,r])=>{const v=F[id],out=r==='선발'?v>=FAT.spOk:v>=FAT.rpOut;return `<span style="white-space:nowrap${out?';color:#ff8a7a':''}">${esc(byId[id].name)} ${v}${out?(r==='선발'?' 등판 대기':' 휴식'):''}</span>`}).join(' · ')}</p>`}
+ return `<p class="note fat" style="margin:6px 0 0" title="던진 만큼 피로가 쌓이고 체력에 비례해 하루마다 회복. 선발은 피로 15 미만일 때 등판(아니면 다음 순번), 피로 20을 넘으면 구위·제구가 떨어지고, 불펜은 55 이상이면 그날 휴식. 시즌 중 새로 로테이션에 넣은 선발은 피로 75로 합류해 몇 경기 쉬어요">투수 피로 ${P.map(([id,r])=>{const v=F[id],out=r==='선발'?v>=FAT.spOk:v>=FAT.rpOut;return `<span style="white-space:nowrap${out?';color:#ff8a7a':''}">${esc(byId[id].name)} ${v}${out?(r==='선발'?' 등판 대기':' 휴식'):''}</span>`}).join(' · ')}</p>`}
 function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),H=teamOf(pr[1],L);
-  const spA=byId[fatSP(A,fatOf(L,pr[0]))],spH=byId[fatSP(H,fatOf(L,pr[1]))],sp=t=>t===A?spA:spH,cost=regCards(T).reduce((x,c)=>x+c.cost,0);
+  const spA=byId[fatSP(A,fatPrev(L,pr[0],A))],spH=byId[fatSP(H,fatPrev(L,pr[1],H))],sp=t=>t===A?spA:spH,cost=regCards(T).reduce((x,c)=>x+c.cost,0);
   return `<div class="mu"><div class="side"><small>원정 · 평균 ${teamOvr(A)}</small><h2>${esc(tname(pr[0],L))}</h2>${sp(A)?cardHTML(sp(A),{cond:pr[0]===0?S.cond[sp(A).id]:0}):''}</div>
    <div class="vs"><small class="mlab">${label}</small><b>VS</b><div class="btns fixbtn"><button class="big" data-a="${aS}" ${e.length?'disabled':''}>하이라이트 보기</button><button data-a="${aA}" ${e.length?'disabled':''}>결과만 보기</button></div>${predHTML(L)}${fatHTML(L)}
    ${e.length?`<p class="warn">${esc(e[0])} · <a href="#lineup">라인업 수정</a></p>`:''}</div>
@@ -242,7 +246,7 @@ function vYears(){const L=S.yl,won=S.ylWon||{};ranked();
     return `<section class="hero"><h1>${L.year} 리그 참가 중</h1><p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p>
      <p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p>
      <div class="btns fixbtn">${pr?`<button class="big" data-a="m-start">하이라이트 보기</button><button data-a="m-auto">결과만 보기</button>`:`<button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button>`}</div>
-     ${pr?`<p class="mini">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatOf(L,0))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
+     ${pr?`<p class="mini">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
           ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
      <div class="btns" style="margin-top:10px"><button data-a="m-quit" class="ghost">이 리그 포기</button></div></section>
      ${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${lastHTML(L)}${tableHTML(L,L.post?'정규시즌 최종 순위':'순위표')}${titleHTML(L)}${asHTML(L)}`}
