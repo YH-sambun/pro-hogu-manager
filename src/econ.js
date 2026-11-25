@@ -57,7 +57,7 @@ function yearLeague(rank,firstWin){if(rank===1)return firstWin?{pt:3000,tix:{gg:
 const W=[0,30,22,18,12,8,5,3,1.6,.8,.35];
 const PACKS=[
  {k:'n', n:'일반 팩',     p:500, cnt:5,d:'5장 · 전체 무작위 · 1장은 3코스트 이상'},
- {k:'c1',n:'1코스트 팩',  p:200, cnt:5,d:'5장 · 1코스트 카드만 · 합성 재료·도감 채우기용 · 10팩 안에 1코 올스타·골글 확정'},
+ {k:'c1',n:'1코스트 팩',  p:200, cnt:5,d:'5장 · 1코스트 카드만 · 합성 재료·도감 채우기용 · 10팩 안에 1코 올스타 확정'},
  {k:'p', n:'프리미엄 팩', p:1800,cnt:5,d:'5장 · 4코스트 이상 · 1장은 스타(6+) · 20팩 안에 레전드(9+) 확정'},
  {k:'t', n:'구단 묶음 팩', p:800, cnt:5,d:'5장 · 고른 구단 계보 3개 · 1장은 3코스트 이상'},
  {k:'y', n:'연도 묶음 팩', p:800, cnt:5,d:'5장 · 고른 연도 3개 · 1장은 3코스트 이상'},
@@ -71,7 +71,7 @@ const PACKS=[
 // 천장: 팩 k를 연속 n팩 열 동안 조건(f)에 맞는 결과가 없으면 n번째 팩 하나를 확정으로 바꿈. 확정이 나오면(자연이든 천장이든) 카운트 0
 // 카드 팩은 buyCards가 처리. 블록·작전·서포트 팩은 UI가 뽑은 뒤 pityTick(S,k,hit) 호출 → true면 결과 하나를 확정 등급으로 바꿀 것
 const isSp=c=>c.v==='GG'||c.v==='AS'||c.v==='CH';
-const PITY={p:{n:20,label:'레전드(9+)',f:c=>c.cost>=9},n:{n:10,label:'스타(6+)',f:c=>c.cost>=6},c1:{n:10,label:'1코 올스타·골글',f:isSp},
+const PITY={p:{n:20,label:'레전드(9+)',f:c=>c.cost>=9},n:{n:10,label:'스타(6+)',f:c=>c.cost>=6},c1:{n:10,label:'1코 올스타',f:isSp},
   t:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},y:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},tl:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},ty:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},
   sx:{n:10,label:'9코 이상 특별 카드',f:c=>c.cost>=9&&isSp(c)},b:{n:10,label:'S급 블록'},tc:{n:10,label:'황금 작전'},t1:{n:30,label:'황금 작전'},sp:{n:10,label:'강화(+) 서포트'}};
 function pityTick(S,k,hit){const P=PITY[k];if(!P)return false;S.pity=S.pity||{};if(hit){S.pity[k]=0;return false}

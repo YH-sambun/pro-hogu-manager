@@ -448,7 +448,9 @@ const pick2=a=>a[Math.floor(Math.random()*a.length)];
 const bv=c=>c.r.con*.35+c.r.pow*.35+c.r.eye*.2+c.r.spd*.1;
 function recommend(mode){for(let cp=0;cp<=12;cp+=.5){const r=recommend1(mode,cp);if(recCost(r)<=COST_CAP||cp>=12)return r}}
 const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||(t.s&&c.name===t.s))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
-function recommend1(mode,cp){const own=exTrim([...new Map(OWN.filter(c=>!c.dup&&!abOf(c.id)).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
+// 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
+let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{return recommend('power')}finally{S.recF=keep;REC_ALL=0}}
+function recommend1(mode,cp){const own=exTrim([...new Map((REC_ALL?CARDS:OWN.filter(c=>!c.dup&&!abOf(c.id))).sort((x,y)=>(recMatch(x)-recMatch(y))||x.ovr-y.ovr).map(c=>[c.name+c.type,c])).values()]);
  const yc={};for(const c of own){const k=c.year+' '+c.team;yc[k]=(yc[k]||0)+1}const topY=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0][0];
  const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0)+(recFx()&&recFx().s&&c.name===recFx().s?80:0);
  const B=own.filter(c=>c.type==='B'),P=own.filter(c=>c.type==='P'),used2=new Set(),lu=[];
@@ -542,6 +544,7 @@ function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cos
  const YS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a),TS=[...new Set(CARDS.filter(c=>!F.y||c.year===+F.y).map(c=>c.team))].sort(),o=(v,n,cur)=>`<option value="${esc(v)}"${String(cur||'')===String(v)?' selected':''}>${esc(n)}</option>`;
  const full=cards.length===25,allOwn=full&&own===25;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">덱 짜보기</h2><button class="ghost" data-a="bldfrom">지금 라인업 가져오기</button><button class="ghost" data-a="bldclr">${S.bldClr?'한 번 더 누르면 비움':'모두 비우기'}</button><button data-a="bldapply" ${allOwn?'':'disabled'} title="${allOwn?'':'25명 모두 보유해야 적용 가능'}">라인업에 적용</button><button class="ghost" data-a="bldsave" ${full?'':'disabled'}>덱으로 저장</button></div>
+ <div class="tools" style="margin-top:8px"><select data-bf="rx" aria-label="추천 목표 덱 효과">${o('','덱 효과 지정 안 함',F.rx)}${[...new Set(FX_TARGETS.map(t=>t.g))].map(g=>`<optgroup label="${esc(g)}">${FX_TARGETS.filter(t=>t.g===g).map(t=>o(t.k,t.n,F.rx)).join('')}</optgroup>`).join('')}</select><button class="ghost" data-a="bldrec">전체 카드로 추천</button><span class="note" style="margin:0">없는 선수도 포함해 코스트 ${COST_CAP} 안에서 채움. 지금 짠 덱은 바뀜</span></div>
  <div class="bsum"><span>코스트 <b class="${cost>COST_CAP?'bad':''}">${cost}</b>/${COST_CAP}</span><span>인원 <b>${cards.length}</b>/25</span><span>보유 <b>${own}</b>/${cards.length}</span><span>EX 타자 <b class="${ex.B>EX_MAX.B?'bad':''}">${ex.B}</b>/${EX_MAX.B} · 투수 <b class="${ex.P>EX_MAX.P?'bad':''}">${ex.P}</b>/${EX_MAX.P}</span><span>덱 효과 야수 <b>+${T.bat}</b> · 투수 <b>+${T.pit}</b></span></div>
  ${fxPickHTML(bldStart(),B.fxsel,'bld')}
  ${S.msg?`<p class="note hint on" aria-live="polite">${esc(S.msg)}</p>`:''}
@@ -553,6 +556,7 @@ function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cos
  ${pool.length>lim?`<div class="tools" style="justify-content:center;margin-top:8px"><button class="ghost" data-a="bldmore">더 보기 (${(pool.length-lim).toLocaleString()})</button></div>`:''}</div></div></section>`}
 function bldAct(a){const B=bldInit();
  if(a==='bldmore'){S.bldLim=(S.bldLim||40)+40}
+ else if(a==='bldrec'){const fx=(S.bldF||{}).rx||'',r=recommendAll(fx),pad=(a,n)=>[...a,...Array(n).fill(null)].slice(0,n);B.lu=r.lu.map(([p,id])=>[p,id]);B.bench=pad(r.bench,5);B.rot=pad(r.rot,5);B.pen=pad(r.pen,6);B.fxsel=[];S.bldSel=null;const t=FX_T_BY[fx];S.msg=`전체 카드 기준 추천으로 채움${t?' · 목표 '+t.n:''}. 마음에 들면 덱으로 저장`}
  else if(a==='bldclr'){if(!S.bldClr){S.bldClr=1;render();return}S.bld=null;S.bldClr=0;S.bldSel=null;bldInit()}
  else if(a==='bldfrom'){syncTeam();const T=S.team,L=T.lineup||[];B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=[...(T.bench||[]),null,null,null,null,null].slice(0,5);B.rot=[...(T.rot||[]),null,null,null,null,null].slice(0,5);B.pen=[...(T.pen||[]),null,null,null,null,null,null].slice(0,6);B.fxsel=[...(T.fxsel||[])];S.msg='현재 라인업 불러옴'}
  else if(a==='bldapply'){if(bldCards().some(c=>!S.owned[c.id]))return;Object.assign(S.team,{lineup:B.lu.map(([pos,id])=>({id,pos})),bench:[...B.bench],rot:[...B.rot],pen:[...B.pen],fxsel:[...B.fxsel]});pullTeam();S.msg='라인업 적용 완료';save();go('lineup');return}
@@ -692,7 +696,7 @@ function modal(){if(S.dexView)return dexViewModal();const c=by[S.modal];if(!c)re
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  ${eqHTML(c)}
  <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · <a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
-vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
+vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-tix],[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
  if(abAct(D)||shopAct(D)){render();return}
  if(D.msn&&S.msSub){const m=S.msSub,v=Math.max(0,(m.sel[D.msn]|0)+(+t.dataset.d));if(v)m.sel[D.msn]=v;else delete m.sel[D.msn];S.msMsg='';render();return}
  if(D.dexk){S.dexK=D.dexk;S.dexLim=0;render();return}
@@ -870,7 +874,7 @@ function render(){if(!S)return;ensureUI();xlSet();msTick();if(S.season&&!G){week
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
