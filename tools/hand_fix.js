@@ -14,11 +14,21 @@ const FIX=[
  ['지크','KIA','a'],['후랭코프','두산','a'],['아델만','삼성','a'],['킹험','SK','a'],['킹험','한화','a'],['브랜든','두산','d'],['태너','NC','d'],['코너','삼성','a'],
  ['헤이수스','키움','d'],['헤이수스','KT','d'],['패트릭','KT','a'],['데이비슨','롯데','d'],
  // 국내 투수(던지는 손)
- ['장명부','삼미','a'],['장명부','청보','a'],['장명부','빙그레','a'],['김일융','삼성','e'],['장정순','빙그레','a'],['신승현','SK','a'],['신승현','KIA','a'],['강윤구','히어로즈','d'],['강윤구','넥센','d'],['강윤구','NC','d'],['강윤구','롯데','d'],
+ ['이상훈','LG','e'],['장명부','삼미','a'],['장명부','청보','a'],['장명부','빙그레','a'],['김일융','삼성','e'],['장정순','빙그레','a'],['신승현','SK','a'],['신승현','KIA','a'],['강윤구','히어로즈','d'],['강윤구','넥센','d'],['강윤구','NC','d'],['강윤구','롯데','d'],
  // 타자
  ['강정호','현대','a'],['강정호','히어로즈','a'],['강정호','넥센','a'],['강정호','키움','a'],['이순철','해태','a'],['이순철','삼성','a'],['나바로','삼성','a'],['나바로','롯데','a'],
  ['에반스','두산','a'],['스크럭스','NC','a'],['소크라테스','KIA','e'],['데이비스','한화','e'],['브리또','SK','a'],['브리또','한화','a'],['퀸란','현대','a'],['퀸란','LG','a'],
- ['크루즈','한화','e'],['크루즈','삼성','e'],['쿨바','현대','a'],['펠로우','롯데','a'],['로하스','KT','c']];
+ ['크루즈','한화','e'],['크루즈','삼성','e'],['쿨바','현대','a'],['쿨바','두산','a'],['펠로우','롯데','a'],['로하스','KT','c']];
+// 동명이인이 한 선수로 묶여 출생연도까지 틀린 경우: [이름, 구단, 시작연도, 끝연도, 출생연도, 투타] (h가 있어도 덮어씀)
+const FIXY=[['산체스','SK',2018,2019,1989,'a'],['산체스','KIA',2023,2023,1994,'a'],['산체스','한화',2023,2024,1997,'e'],['김기태','삼성',2013,2015,1987,'a'],['박정환','삼성',2001,2003,1977,'a'],['양승철','KIA',2019,2019,1992,'a']]; // 앙헬·마리오·리카르도 산체스
+let ny=0;for(const c of J.cards)for(const [nm,t,y0,y1,bb,h] of FIXY)if(c.n===nm&&c.t===t&&c.y>=y0&&c.y<=y1){c.b=bb;c.h=h;ny++}
+// SJ가 채운 입력 시트(data/hand_sheet*.txt): 이름|출생연도|연도|구단|구분|코드. h가 없는 카드만
+const path=require('path'),dir=path.dirname(f);let ns=0;
+for(const sf of fs.readdirSync(dir).filter(x=>/^hand_sheet.*\.txt$/.test(x)).sort())for(const ln of fs.readFileSync(path.join(dir,sf),'utf8').split('\n')){
+  if(!ln||ln[0]==='#')continue;const [nm,bb,yr,ts,k,h]=ln.split('|');if(!h||!/^[a-f]$/.test(h.trim()))continue;const [y0,y1=y0]=yr.split('~').map(Number),T=ts.split('·');
+  for(const c of J.cards)if(!c.h&&c.n===nm&&c.k===k&&c.y>=y0&&c.y<=y1&&T.includes(c.t)&&(!bb||c.b===+bb)){c.h=h.trim();ns++}}
 let n=0;for(const c of J.cards){if(c.h)continue;const x=FIX.find(([nm,t])=>c.n===nm&&c.t===t);if(x){c.h=x[2];n++}}
+// 투타 겸업으로 나뉜 '이름#2' 카드(같은 연도·출생)는 본 카드의 투타를 그대로
+{const by={};for(const c of J.cards)if(c.h&&!/#\d+$/.test(c.n))by[c.n+'|'+c.y+'|'+c.b]=c.h;for(const c of J.cards){if(c.h||!/#\d+$/.test(c.n))continue;const h=by[c.n.replace(/#\d+$/,'')+'|'+c.y+'|'+c.b];if(h){c.h=h;n++}}}
 fs.writeFileSync(f+'.tmp',JSON.stringify(J));fs.renameSync(f+'.tmp',f);
-const base=J.cards.filter(c=>!c.v);console.log({채움:n,남은기본카드:base.filter(c=>!c.h).length,남은전체:J.cards.filter(c=>!c.h).length});
+const base=J.cards.filter(c=>!c.v);console.log({출생연도수정:ny,시트:ns,채움:n,남은기본카드:base.filter(c=>!c.h).length,남은전체:J.cards.filter(c=>!c.h).length});

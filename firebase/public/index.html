@@ -2761,7 +2761,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});
 // ===== 시작 =====
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
-fetch('cards.json?v=2fb61e3e29').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
+fetch('cards.json?v=c20b3bfcaf').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
   for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.rg==null&&c.reg)c.rg=c.reg}
   LINES=[...new Set(CARDS.map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);if(ECON.buildMissions)ECON.buildMissions(CARDS);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}

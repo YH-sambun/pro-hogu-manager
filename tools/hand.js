@@ -1,3 +1,4 @@
+// 순서: birth.js → birth_fix.js → hand.js → hand_fix.js (2026-11-25)
 // 이 다음에 node tools/hand_fix.js data/cards.json 으로 표기 차이·확실한 선수 보충(2026-11-25)
 // 투타 손(좌우) 정보: c.h 한 글자(a 우투우타 b 우투좌타 c 우투양타 d 좌투우타 e 좌투좌타 f 좌투양타). 사용: node tools/hand.js data/cards.json data/hand_kbo.txt data/hand_wiki.txt
 // 원자료: KBO 선수 조회의 현역 선수 정보(우투우타 등), 한국어 위키백과 야구 선수 정보 틀(투구/타석). 형식: 이름 + (출생연도 끝 두 자리 + 코드)…, 코드 a=우우 b=우좌 c=우양 d=좌우 e=좌좌 f=좌양
