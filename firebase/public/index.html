@@ -703,6 +703,8 @@ body.xl .yly.won{background:#e6f2ea!important}body.xl .yly.todo{background:#fff!
 .glr .gs{display:flex;justify-content:center;gap:6px;font:800 19px var(--fh);font-variant-numeric:tabular-nums;color:#9aa69f}.glr .gs i{font-style:normal;min-width:1.4em;text-align:center}.glr .gs i.hi{color:#fff}.glr .gs em{font-style:normal}
 .glr .ha{font-size:12px;color:var(--mute);text-align:center}
 @media(max-width:600px){.lg details.gl>summary.glr,.glr{grid-template-columns:1.8em minmax(0,1fr) 4.5em minmax(0,1fr) 1em;font-size:14px}.glr .gn,.glr .ha{display:none}}
+.hvt{display:inline-flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}.hvt button{border:0;border-radius:0;min-height:34px;padding:4px 12px;opacity:.55}.hvt button.on{opacity:1;background:var(--clay);color:#fff;font-weight:700}
+.dexfd{margin-top:8px}.dexfd>summary{cursor:pointer;display:inline-block;padding:6px 12px;border:1px solid var(--line);border-radius:10px;font-weight:700;font-size:14px;list-style:none}.dexfd>summary::-webkit-details-marker{display:none}.dexfd>summary::before{content:'▸ '}.dexfd[open]>summary::before{content:'▾ '}.dexfd>.dexf{margin-top:8px}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1534,7 +1536,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['luAna','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['luAna','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -1650,12 +1652,13 @@ function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
   <p class="note help">한 번 얻은 카드는 도감에 계속 기록. 세트를 다 모으면 보상이 바로 들어와요. 확정권은 카드팩 화면에서 써요.</p>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
-  ${k!=='meta'?`<div class="dexf">${YS.length?sel('dexy',F.y,'전체 연도',YS.map(y=>[y,y+'년'])):''}${TS.length?sel('dext',F.t,'전체 구단',TS.map(t=>[t,t])):''}${sel('dexst',F.st,'전체 세트',[['todo','미완성 세트'],['done','완성 세트']])}${sel('dexh',F.h,'모든 카드',[['have','모은 카드만'],['miss','못 모은 카드만']])}<input id="dexq" value="${esc(q)}" placeholder="이름 검색" aria-label="세트 검색">${on?'<button class="ghost" data-a="dexclr">필터 초기화</button>':''}<span class="note" style="margin:0">${L.length}세트</span></div>`:''}
+  ${k!=='meta'?`<div class="dexf">${dexHV(F)}<input id="dexq" value="${esc(q)}" placeholder="이름 검색" aria-label="세트 검색">${on?'<button class="ghost" data-a="dexclr">필터 초기화</button>':''}<span class="note" style="margin:0">${L.length}세트</span></div>${dexFD([F.y,F.t,F.st].filter(Boolean).length,`${YS.length?sel('dexy',F.y,'전체 연도',YS.map(y=>[y,y+'년'])):''}${TS.length?sel('dext',F.t,'전체 구단',TS.map(t=>[t,t])):''}${sel('dexst',F.st,'전체 세트',[['todo','미완성 세트'],['done','완성 세트']])}`)}`:''}
   <div class="dexl">${L.slice(0,lim).map(({s,p})=>{const done=!!S.dexDone[s.id],ids=(s.ids||[]).filter(id=>!F.h||(F.h==='have')===!!dexHas(id));if(s.ids&&!ids.length)return '';
    return `<div class="dexs${done?' done':''}"><div class="dexh"><b>${esc(s.name)}</b><span class="pill">${p.have}/${p.need}</span><span class="dexrw">${esc(rwText(s.rw))}</span>${done?'<span class="pill dexok">완성 · 지급됨</span>':''}</div>
    <span class="abbar"><i style="width:${p.have/p.need*100}%"></i></span>
    ${s.ids?`<div class="dexg">${ids.map(id=>{const c=dexCard(id),h=dexHas(id);if(!c)return '';return `<div class="dexc${h?'':' no'}" ${S.owned[id]?`data-pick="${esc(id)}"`:`data-dexv="${esc(id)}"`} role="button" tabindex="0" title="${esc(c.name)} ${c.year}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`}).join('')}</div>`:''}</div>`}).join('')||'<p class="note">해당 세트 없음</p>'}</div>
   ${L.length>lim?`<div class="tools" style="justify-content:center;margin-top:12px"><button class="ghost" data-a="dexmore">더 보기 (${L.length-lim})</button></div>`:''}</section>`}
+const dexHV=F=>`<span class="hvt" role="group" aria-label="보유 여부"><button class="ghost${F.h!=='miss'?' on':''}" data-a="dexhv" data-v="have" aria-pressed="${F.h!=='miss'}">보유</button><button class="ghost${F.h!=='have'?' on':''}" data-a="dexhv" data-v="miss" aria-pressed="${F.h!=='have'}">미보유</button></span>`,dexFD=(n,inner)=>`<details class="dexfd"${S.dexFOpen?' open':''}><summary>필터${n?` · ${n}개 적용 중`:''}</summary><div class="dexf">${inner}</div></details>`;
 const dexCell=c=>{const h=dexHas(c.id);return `<div class="dexc${h?'':' no'}" ${S.owned[c.id]?`data-pick="${esc(c.id)}"`:`data-dexv="${esc(c.id)}"`} role="button" tabindex="0" title="${esc(c.name)} ${c.year} ${esc(c.team)}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`};
 let DEXYS=null;
 function dexAll(KN,tix,sel,q){const F=S.dexF,lim=S.dexLim||60;DEXYS=DEXYS||[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);
@@ -1664,7 +1667,7 @@ function dexAll(KN,tix,sel,q){const F=S.dexF,lim=S.dexLim||60;DEXYS=DEXYS||[...n
   const have=L.filter(c=>dexHas(c.id)).length,on=F.y||F.t||F.p||F.v||F.h||q;
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${x==='all'}" class="${x==='all'?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
-  <div class="dexf">${sel('dexy',F.y,'전체 연도',DEXYS.map(y=>[y,y+'년']))}${sel('dext',F.t,'전체 구단',TS.map(t=>[t,t]))}${sel('dexp',F.p,'전체 포지션',[['P','투수 전체'],['B','타자 전체'],...Object.entries(PFULL)])}${sel('dexv',F.v,'전체 종류',VK)}${sel('dexh',F.h,'모든 카드',[['have','모은 카드만'],['miss','못 모은 카드만']])}<input id="dexq" value="${esc(q)}" placeholder="선수 이름" aria-label="선수 검색">${on?'<button class="ghost" data-a="dexclr">필터 초기화</button>':''}<span class="note" style="margin:0">${L.length.toLocaleString()}장 · 모음 ${have.toLocaleString()}</span></div>
+  <div class="dexf">${dexHV(F)}<input id="dexq" value="${esc(q)}" placeholder="선수 이름" aria-label="선수 검색">${on?'<button class="ghost" data-a="dexclr">필터 초기화</button>':''}<span class="note" style="margin:0">${L.length.toLocaleString()}장 · 모음 ${have.toLocaleString()}</span></div>${dexFD([F.y,F.t,F.p,F.v].filter(Boolean).length,`${sel('dexy',F.y,'전체 연도',DEXYS.map(y=>[y,y+'년']))}${sel('dext',F.t,'전체 구단',TS.map(t=>[t,t]))}${sel('dexp',F.p,'전체 포지션',[['P','투수 전체'],['B','타자 전체'],...Object.entries(PFULL)])}${sel('dexv',F.v,'전체 종류',VK)}`)}
   <div class="dexg dexall">${L.slice(0,lim).map(dexCell).join('')||'<p class="note">해당 선수 없음</p>'}</div>
   ${L.length>lim?`<div class="tools" style="justify-content:center;margin-top:12px"><button class="ghost" data-a="dexmore">더 보기 (${(L.length-lim).toLocaleString()})</button></div>`:''}</section>`}
 // 카드팩·확정권 (econ.js)
@@ -2378,7 +2381,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-tix],[d
   if(a==='synth')doSynth();if(a==='synclr'){S.mat=[];S.synRes=null}if(a==='synauto'){const m=synAuto(S.sk||'p');S.synRes=null;if(m)S.mat=m;else{S.mat=[];S.msg='재료 부족.'}}
   if(a==='tdraw'){if(ECON.pay(S,100).err)S.msg='포인트 부족';else{const u=Math.random(),g=u<.05?'황금':u<.25?'특수':'일반',x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;S.tdraw=x[0]}}}
  render()});
-vw.addEventListener('toggle',e=>{const t=e.target;if(t.classList&&t.classList.contains('pdet')&&S)S.pdetOpen=t.open},true);
+vw.addEventListener('toggle',e=>{const t=e.target;if(t.classList&&t.classList.contains('pdet')&&S)S.pdetOpen=t.open;if(t.classList&&t.classList.contains('dexfd')&&S)S.dexFOpen=t.open},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S&&S.luAna){S.luAna=false;render();return}if((e.code==='KeyR'||e.key==='Enter')&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test((e.target.tagName||''))&&!e.target.closest?.('[role=button],[tabindex]')&&S&&!S.modal){const b=document.querySelector('[data-a="pkbuy"]');if(b){e.preventDefault();if(!e.repeat&&!b.disabled)b.click();return}}if(e.code==='Backquote'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||''))&&S){e.preventDefault();S.work=!S.work;save();render();return}if(e.key==='Escape'&&(S.modal||S.dexView)){S.modal=null;S.dexView=null;render()}});
 // 드래그해서 넣기 (데스크톱). 누르고 칸 누르기도 그대로 됨
 // 라인업 드래그 앤 드롭 (컴퓨터): 보유 카드 → 자리에 놓으면 넣기, 자리 → 자리에 놓으면 맞바꾸기. 폰은 누르기 방식 그대로
@@ -2946,7 +2949,7 @@ function render(){if(!S)return;RERR='';SAFE(ensureUI);SAFE(xlSet);SAFE(msTick);i
 addEventListener('hashchange',()=>{S&&(S.modal=null,S.bmodal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -2960,6 +2963,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='synview'){S.synView=b.dataset.v;render()}
   else if(a==='lustat'){S.luStat=b.dataset.v;render()}
   else if(/^deck/.test(a))deckAct(a);
+  else if(a==='dexhv'){const F=S.dexF=S.dexF||{},v=b.dataset.v;let H=F.h!=='miss',M=F.h!=='have';if(v==='have')H=!H;else M=!M;if(!H&&!M){if(v==='have')M=true;else H=true}F.h=H&&M?'':H?'have':'miss';S.dexLim=0;render()}
   else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=0;render()}
   else if(a==='dexmore'){{const st=(S.dexK||'all')==='all'?60:24;S.dexLim=(S.dexLim||st)+st};render()}
   else if(a==='coupon')redeemCoupon();
