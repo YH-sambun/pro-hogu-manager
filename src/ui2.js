@@ -100,11 +100,11 @@ function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAg
   S.owned[c.id]-=m.length;S.locks=S.locks.filter(k=>!m.some(x=>x.id===k));S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
 const TIXN=ECON.TIX,rwText=ECON.rwText,dexHas=id=>ECON.dexHas(S,id),dexCard=id=>byId[id];
-function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',gg:'골든글러브',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||24,F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
+function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',gg:'골든글러브',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
   const prog=s=>ECON.setProgress(S,s),tmOf=s=>s.kind==='team'?s.id.split('|')[1]:'',all=ECON.SETS.filter(s=>s.kind===k);
   const YS=[...new Set(all.map(s=>s.year).filter(Boolean))].sort((a,b)=>b-a),TS=[...new Set(all.map(tmOf).filter(Boolean))].sort();
   let L=all.filter(s=>(!q||s.name.includes(q))&&(!F.y||s.year===+F.y)&&(!F.t||tmOf(s)===F.t)&&(!F.st||(F.st==='done')===!!S.dexDone[s.id]));
-  L=L.map(s=>({s,p:prog(s)})).sort((a,b)=>(!!S.dexDone[a.s.id])-(!!S.dexDone[b.s.id])||b.p.have/b.p.need-a.p.have/a.p.need);
+  L=L.map(s=>({s,p:prog(s)})).sort((a,b)=>(!!S.dexDone[a.s.id])-(!!S.dexDone[b.s.id])||b.p.have/b.p.need-a.p.have/a.p.need||(b.s.year||0)-(a.s.year||0));
   const tix=Object.entries(S.tix||{}).filter(([,n])=>n>0),sel=(id,v,lab,opts)=>`<select id="${id}" aria-label="${lab}"><option value="">${lab}</option>${opts.map(([x,n])=>`<option value="${esc(x)}"${String(v)===String(x)?' selected':''}>${esc(n)}</option>`).join('')}</select>`,on=F.y||F.t||F.st||F.h||q;
   if(k==='all')return dexAll(KN,tix,sel,q);
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
