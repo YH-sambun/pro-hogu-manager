@@ -611,6 +611,10 @@ body.xl a{color:#0563c1}
 .thm button i{width:16px;height:16px;border-radius:3px;background:linear-gradient(135deg,var(--a) 0 55%,var(--b) 55%)}
 .thm button.on{border-color:var(--gold);outline:1px solid var(--gold)}
 .stars b{color:#ff4b3a;font-weight:inherit;text-shadow:0 0 3px rgba(255,75,58,.6)}body.xl .stars b{color:#c00!important}
+.pity{display:grid;gap:3px;margin:6px 0 4px}.pity small{font-size:12px;color:var(--mute)}.pity .pbar{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:2px}
+.pity .pbar i{height:8px;background:rgba(255,255,255,.14)}.pity .pbar i.on{background:var(--gold)}.pity .pbar i.last{background:color-mix(in srgb,#ff4b3a 45%,transparent)}.pity .pbar i.last.on{background:#ff4b3a}
+.pkb .pity{grid-column:1/-1;width:100%}.pity.sm .pbar i{height:5px}
+body.xl .pity .pbar i{background:#eee!important;border:1px solid #ccc!important;height:8px!important}body.xl .pity .pbar i.on{background:#217346!important}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1398,13 +1402,14 @@ const PACKS=ECON.PACKS.map(p=>[p.k,p.n,p.p,p.d.replace('최대 3개','3개')]);
 let LINES=[],YEARS=[];
 const YEARS_OF=l=>[...new Set(CARDS.filter(c=>c.line===l&&!c.v).map(c=>c.year))].sort((a,b)=>a-b);
 const TEAMS_OF=y=>[...new Set(CARDS.filter(c=>c.year===+y).map(c=>c.team))].sort();
+function pityHTML(k,sm){const PT=(ECON.PITY||{})[k];if(!PT)return '';const N=typeof PT==='number'?PT:PT.n,lab=typeof PT==='number'?(k==='p'?'레전드(9+)':'확정'):(PT.label||'확정'),n=Math.min(N,(((S.pity||{})[k])|0)),left=N-n;return `<div class="pity${sm?' sm':''}" title="${esc(lab)} 천장 ${n}/${N}"><span class="pbar" style="--n:${N}">${Array.from({length:N},(_,i)=>`<i class="${i<n?'on':''}${i===N-1?' last':''}"></i>`).join('')}</span><small>천장 ${n}/${N} · ${left<=1?`다음 팩 ${esc(lab)} 확정`:`${left}팩 뒤 ${esc(lab)}`}</small></div>`}
 function pkOutHTML(){const o=S.pkOut;if(!o)return '';
-  return `<div class="box" style="margin-top:14px"><h3 style="margin-top:0">개봉 결과</h3>${o.cards?`<div class="pool">${o.cards.map(c=>card(c,{pick:1})).join('')}</div>`:''}${o.text?`<p>${esc(o.text)}</p>`:''}${o.dex&&o.dex.length?`<p class="note" style="color:var(--gold)">도감 완성: ${o.dex.map(s=>esc(s.name)+' ('+esc(rwText(s.rw))+')').join(', ')}</p>`:''}</div>`}
+  return `<div class="box" style="margin-top:14px"><h3 style="margin-top:0">개봉 결과</h3>${o.cards?(S.work?`<div class="scroll"><table class="tbl lul"><thead><tr><th>#</th><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th><th>종류</th><th>보유</th></tr></thead><tbody>${o.cards.map((c,i)=>`<tr role="button" tabindex="0" data-pick="${esc(c.id)}"><td>${i+1}</td><td class="l">${esc(c.name)}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td>${c.ovr}</td><td>${c.cost}</td><td>${c.v?esc(VN[c.v]||c.v):'일반'}</td><td>${(S.owned[baseId(c.id)]|0)>1?'중복':'신규'}</td></tr>`).join('')}</tbody></table></div>`:`<div class="pool">${o.cards.map(c=>card(c,{pick:1})).join('')}</div>`):''}${o.text?`<p>${esc(o.text)}</p>`:''}${o.dex&&o.dex.length?`<p class="note" style="color:var(--gold)">도감 완성: ${o.dex.map(s=>esc(s.name)+' ('+esc(rwText(s.rw))+')').join(', ')}</p>`:''}</div>`}
 function vShop(){const pk=S.pk||'n',P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.pkSel||(S.pkSel={t:LINES.slice(0,3),y:YEARS.slice(0,3),tl:LINES[0],ty:{line:LINES[0],years:[]}}),_fix=((!pick.ty||!pick.ty.years)&&(pick.ty={line:LINES[0],years:[]}),pick.tl||(pick.tl=LINES[0])),multi=pk==='t'||pk==='y',sel=multi?pick[pk]:[],ok=(!multi||sel.length===3)&&(pk!=='ty'||pick.ty.years.length===3),afford=S.pt>=P[2];
   const tix=Object.entries(S.tix||{}).filter(([,n])=>n>0),legends=tix.some(([k])=>k==='pick')?CARDS.filter(c=>c.cost>=9).sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.year-b.year):[];
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">카드팩</h2><span class="pill">${S.pt.toLocaleString()} P</span></div>
-  <div class="shop"><div class="pkl">${PACKS.map(([k,n,p,d])=>`<button class="pkb${k===pk?' on':''}" data-pk="${k}"><b>${n}</b><em>${p.toLocaleString()}P</em><small>${d}</small></button>`).join('')}</div>
-  <div class="box"><h3 style="margin-top:0">${P[1]} <small style="color:var(--gold)">${P[2].toLocaleString()}P</small></h3><p class="note" style="margin-top:0">${P[3]}</p>
+  <div class="shop"><div class="pkl">${PACKS.map(([k,n,p,d])=>`<button class="pkb${k===pk?' on':''}" data-pk="${k}"><b>${n}</b><em>${p.toLocaleString()}P</em><small>${d}</small>${pityHTML(k,1)}</button>`).join('')}</div>
+  <div class="box"><h3 style="margin-top:0">${P[1]} <small style="color:var(--gold)">${P[2].toLocaleString()}P</small></h3><p class="note" style="margin-top:0">${P[3]}</p>${pityHTML(pk)}
   ${multi?`<div class="lbl">${pk==='t'?'구단 계보':'연도'} 3개 고르기 <small>(${sel.length}/3)</small></div><div class="chips">${(pk==='t'?LINES:YEARS).map(v=>{const on=sel.includes(v),full=!on&&sel.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${pk==='t'?esc(lname(v)):v}</button>`}).join('')}</div>`:''}
   ${pk==='tl'||pk==='ty'?`<div class="tools"><select id="${pk==='tl'?'tll':'tyl'}" aria-label="구단 계보">${LINES.map(l=>`<option value="${esc(l)}" ${(pk==='tl'?pick.tl:pick.ty.line)===l?'selected':''}>${esc(lname(l))}</option>`).join('')}</select></div>`:''}
   ${pk==='ty'?(()=>{const ys=YEARS_OF(pick.ty.line),a=pick.ty.years;return `<div class="lbl">연도 3개 고르기 <small>(${a.length}/3)</small></div><div class="chips">${ys.map(v=>{const on=a.includes(v),full=!on&&a.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${v}</button>`}).join('')}</div>`})():''}
