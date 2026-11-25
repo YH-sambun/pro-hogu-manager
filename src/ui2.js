@@ -858,7 +858,7 @@ vw.addEventListener('dragover',e=>{const c=e.target.closest&&e.target.closest('[
 
 vw.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('[data-cell]');if(!c)return;e.preventDefault();vw.dataset.foot='';tapBlk(+c.dataset.cell,location.hash==='#skill'?S.skc:S.cardId);render()});
 vw.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&(e.target.dataset.pick||e.target.dataset.dexv||e.target.dataset.bslot||e.target.dataset.bput)){e.preventDefault();e.target.click()}});
-vw.addEventListener('change',e=>{const t=e.target;if(t.id==='deckname'){S.deckName=t.value;return}if(t.id==='cpn')return; // 쿠폰 입력칸: 다시 그리면 입력값과 받기 버튼 클릭이 사라짐
+vw.addEventListener('change',e=>{const t=e.target;if(t.id==='bldimp')return;if(t.id==='deckname'){S.deckName=t.value;return}if(t.id==='cpn')return; // 쿠폰 입력칸: 다시 그리면 입력값과 받기 버튼 클릭이 사라짐
   S.msg='';if(t.id==='sort')S.sort=t.value;if(t.id==='fteam')S.fteam=t.value;if(t.id==='fyear')S.fyear=t.value;if(t.dataset.sf){S.sf={...(S.sf||SF0),[t.dataset.sf]:t.value};S.mat=[]}if(t.id==='cpick'){S.cardId=t.value;S.back=false}if(t.dataset.pos)setPos(+t.dataset.pos,t.value);if(t.id==='t-live')S.tacLive=t.checked;render()});
 
 const abd=id=>ABD.find(d=>d[0]===id),abOpen=d=>!d[2]||(ABU[d[2]]?ABU[d[2]][0]():false);
