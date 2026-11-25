@@ -105,7 +105,7 @@ const abWhy=c=>c.v?'특수 카드는 유학 불가':'유학 불가 (25세 이하
 const dupsOf=c=>OWN.filter(x=>x.dup&&baseId(x.id)===c.id&&!isLocked(x.id));
 function abRoll(a){const d=abd(a.d),c=byId[a.id],r=ECON.studyRoll(a.d),keys=Object.keys(c.r).filter(k=>d[5].includes(k));
   let pts=Math.max(0,Math.min(Math.round(abGain(r.gain,c.cost)*potMul(c)),abCapC(c)-abUsed(c)));const st={};while(pts>0&&keys.length){const k=keys[Math.floor(Math.random()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:r.name,st}}
-function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAge(c)||ECON.canStudy(c).err||abUsed(c)>=abCapC(c))return;
+function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||used().includes(c.id)||!abOpen(d)||!abAge(c)||ECON.canStudy(c).err||abUsed(c)>=abCapC(c))return;
   const fee=studyFee(d[0],c.cost);if(ECON.pay(S,fee).err){S.msg='포인트 부족';return}
   S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
@@ -427,14 +427,14 @@ const PLANE='<svg viewBox="1 1.25 21 21" aria-hidden="true"><path d="M21 15.5v-2
 const planeB=(c,cls)=>{const t=[...new Set(((S.abHist||{})[c.id]||[]).map(h=>abd(h.d)[1]))].join(', ');return t?`<i class="${cls}" title="${esc(t)}" aria-label="${esc(t)}">${PLANE}</i>`:''};
 const abUsed=c=>(S.abSum||{})[c.id]||0;
 const hm=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floor(m/60)}시간 ${m%60}분`:`${m}분`};
-function vAbroad(){const now=Date.now(),d=abd(S.abSel)||ABD[0],cand=OWN.filter(c=>!c.dup&&!c.v&&!used().includes(c.id)&&!abOf(c.id)&&ageOf(c)!=null),pick=by[S.abPick];
- const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&abAge(pick)&&abUsed(pick)<abCapC(pick)&&S.pt>=fee,rf=pick?ECON.abResetFee(pick.cost):0,rt=(S.tix||{}).abr|0;
+function vAbroad(){const now=Date.now(),d=abd(S.abSel)||ABD[0],U=new Set(used()),aq=(S.abQ||'').trim(),only=S.abOnly!==false,alim=S.abLim||48,okC=c=>abAge(c)&&!U.has(c.id)&&abUsed(c)<abCapC(c),cand=OWN.filter(c=>!c.dup&&!c.v&&!abOf(c.id)&&ageOf(c)!=null&&(!aq||c.name.includes(aq))&&(!only||okC(c))),pick=by[S.abPick];
+ const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&!U.has(pick.id)&&abAge(pick)&&abUsed(pick)<abCapC(pick)&&S.pt>=fee,rf=pick?ECON.abResetFee(pick.cost):0,rt=(S.tix||{}).abr|0;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">유학</h2><span class="pill">진행 중 ${S.ab.filter(a=>!a.got).length}명</span></div>
  <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군 미등록 선수만 · 유학 기간 동안 사용 불가. 시간이 끝나면 결과를 확인해 능력치가 올라요. 포인트만 내고 카드는 그대로예요. 특수 카드(올스타·골든글러브·EX 등)는 못 가요. 다 오른 카드는 포인트나 유학 초기화권으로 초기화하고 다시 보낼 수 있어요. 코스트 낮을수록 효율↑: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 카드당 상승 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4예요. 기록은 평범했지만 세부 지표가 좋았던 선수(잠재력↑)는 유학 상승치·한도와 장비 보너스가 25~50% 더 붙어요. </p>
  ${abMapHTML(d)}<div class="abl"><div class="box"><h3 style="margin-top:0">${d[1]}</h3>${abOpen(d)?`<p class="abm" title="${ABR[d[0]][0].map((p,i)=>ABGN[i]+' '+p+'%'+(i<3?' (+'+ABR[d[0]][1][i]+')':'')).join(' · ')}"><span>${d[3]}시간</span><span>대성공 +${ABR[d[0]][1][0]}</span><span${ABR[d[0]][0][3]?' class="risk"':''}>실패 ${ABR[d[0]][0][3]}%</span><span>${d[5].map(k=>SKN[k]).filter((v,i,a)=>a.indexOf(v)===i).join('·')}</span></p>
   <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">상승 ${abUsed(pick)}/${abCapC(pick)} · 효율 ×${+(abMul(pick.cost)*potMul(pick)).toFixed(2)}${pick.pz?` · <b style="color:var(--gold)">숨은 잠재력 +${pick.pz*25}%</b>`:''}</p>
-   <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트 부족</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드 유학 불가':ageOf(pick)+'세 · 유학 불가 (25세 이하 또는 35세 이상)'}</p>`:''}${abUsed(pick)?`<div class="tools" style="margin-top:8px"><button class="ghost" data-abreset="pt" ${S.pt<rf?'disabled':''}>유학 초기화 · ${rf.toLocaleString()}P</button><button class="ghost" data-abreset="tix" ${rt?'':'disabled'}>초기화권 사용 (${rt}장)</button></div><p class="note" style="margin:4px 0 0">유학으로 오른 능력치 +${abUsed(pick)}을 모두 지워요</p>`:''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수 선택</p>'}</div>
-  <h3>보낼 선수</h3><div class="abc">${cand.sort((a,b)=>abAge(b)-abAge(a)||b.ovr-a.ovr).slice(0,24).map(c=>`<button class="abr${c.id===S.abPick?' on':''}${abAge(c)?'':' no'}" data-abpick="${esc(c.id)}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><span><b>${esc(c.name)}</b><small>${c.year} · ${ageOf(c)}세${abAge(c)?'':' · 유학 불가'}${abUsed(c)?` · 상승 ${abUsed(c)}/${abCapC(c)}`:''}${c.pz?' · 잠재력↑':''}</small></span></button>`).join('')}</div>`
+   <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${U.has(pick.id)?'<p class="note" style="color:var(--bad);margin:6px 0 0">1군에 등록된 선수예요 · 라인업에서 빼면 보낼 수 있어요</p>':''}${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트 부족</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드 유학 불가':ageOf(pick)+'세 · 유학 불가 (25세 이하 또는 35세 이상)'}</p>`:''}${abUsed(pick)?`<div class="tools" style="margin-top:8px"><button class="ghost" data-abreset="pt" ${S.pt<rf?'disabled':''}>유학 초기화 · ${rf.toLocaleString()}P</button><button class="ghost" data-abreset="tix" ${rt?'':'disabled'}>초기화권 사용 (${rt}장)</button></div><p class="note" style="margin:4px 0 0">유학으로 오른 능력치 +${abUsed(pick)}을 모두 지워요</p>`:''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수 선택</p>'}</div>
+  <div class="tools" style="margin:14px 0 6px"><h3 style="margin:0">보낼 선수</h3><input id="abq" value="${esc(aq)}" placeholder="선수 이름" aria-label="선수 검색" style="max-width:12em"><span class="hvt"><button class="ghost${only?' on':''}" data-a="abonly" aria-pressed="${only}">보낼 수 있는 선수만</button></span><span class="note" style="margin:0">${cand.length.toLocaleString()}명</span></div><div class="abc">${cand.sort((a,b)=>okC(b)-okC(a)||abAge(b)-abAge(a)||b.ovr-a.ovr).slice(0,alim).map(c=>`<button class="abr${c.id===S.abPick?' on':''}${okC(c)?'':' no'}" data-abpick="${esc(c.id)}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><span><b>${esc(c.name)}</b><small>${c.year} · ${ageOf(c)}세${abAge(c)?'':' · 유학 불가'}${U.has(c.id)?' · 1군 등록 중':''}${abUsed(c)?` · 상승 ${abUsed(c)}/${abCapC(c)}`:''}${c.pz?' · 잠재력↑':''}</small></span></button>`).join('')||'<p class="note">해당 선수 없음</p>'}</div>${cand.length>alim?`<div class="tools" style="justify-content:center;margin-top:8px"><button class="ghost" data-a="abmore">더 보기 (${(cand.length-alim).toLocaleString()})</button></div>`:''}`
   :`<p class="note">잠김. 여는 조건: <b>${d[6]}</b></p>`}</div></div>
  <h3>유학 중</h3><div class="abq">${S.ab.filter(a=>!a.got).map(a=>{const c=by[a.id],x=abd(a.d),done=now>=a.end,pc=Math.min(100,(now-a.start)/(a.end-a.start)*100);
   return `<div class="abi${done?' done':''}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><div><b>${esc(c.name)}</b> <small>${x[1]}</small><span class="abbar"><i style="width:${pc}%"></i></span>
@@ -694,7 +694,7 @@ function fieldMap(c){const col=f=>f==='X'?'#55615a':fitCls(f)==='A'?'#2f9e5e':f=
  <path d="M150 214 L18 82 Q150 -38 282 82 Z" fill="#245f3d"/><path d="M150 214 L18 82 Q150 -38 282 82 Z" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
  <path d="M150 210 L92 150 Q150 70 208 150 Z" fill="#9a6a43"/><path d="M150 196 L112 156 L150 118 L188 156 Z" fill="#2f7a4f"/>
  <circle cx="150" cy="158" r="5" fill="#9a6a43"/>${[[150,196],[188,156],[150,118],[112,156]].map(([x,y])=>`<rect x="${x-3}" y="${y-3}" width="6" height="6" fill="#fff" transform="rotate(45 ${x} ${y})"/>`).join('')}
- ${POS.filter(p=>p!=='DH'&&FXY[p]).map(p=>{const f=fit(c,p),[x,y]=FXY[p],no=f==='X';return `<g transform="translate(${x} ${y})"${no?' opacity=".7"':''}><rect x="-31" y="-17" width="62" height="34" rx="9" fill="${col(f)}" stroke="rgba(0,0,0,.35)"/><text y="-3" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${PFULL[p]}</text><text y="12" text-anchor="middle" font-size="12.5" font-weight="800" fill="#fff">${no?'불가':`${f} · ${c.ps[p]}`}</text></g>`}).join('')}</svg>`}
+ ${POS.filter(p=>p!=='DH'&&FXY[p]&&fit(c,p)!=='X').map(p=>{const f=fit(c,p),[x,y]=FXY[p],no=false;return `<g transform="translate(${x} ${y})"${no?' opacity=".7"':''}><rect x="-31" y="-17" width="62" height="34" rx="9" fill="${col(f)}" stroke="rgba(0,0,0,.35)"/><text y="-3" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="var(--fh)">${p}</text><text y="12" text-anchor="middle" font-size="12.5" font-weight="800" fill="#fff">${no?'불가':`${f} · ${c.ps[p]}`}</text></g>`}).join('')}</svg>`}
 function pitchMap(c){const E=ptNow(c).map(x=>[x[0],x[1]]),gc={S:'#e2b23c',A:'#b05ad6',B:'#3d8fd1',C:'#8a9a90',D:'#6b6b6b'};
  return `<svg viewBox="0 0 300 200" class="pmap" role="img" aria-label="구종과 휘는 방향"><rect width="300" height="200" rx="12" fill="var(--board)"/>
  ${[40,70].map(r=>`<circle cx="150" cy="100" r="${r}" fill="none" stroke="rgba(255,255,255,.12)"/>`).join('')}
@@ -993,7 +993,7 @@ function render(){if(!S)return;RERR='';SAFE(ensureUI);SAFE(xlSet);SAFE(msTick);i
 addEventListener('hashchange',()=>{S&&(S.modal=null,S.bmodal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -1007,6 +1007,8 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='synview'){S.synView=b.dataset.v;render()}
   else if(a==='lustat'){S.luStat=b.dataset.v;render()}
   else if(/^deck/.test(a))deckAct(a);
+  else if(a==='abonly'){S.abOnly=S.abOnly===false;S.abLim=0;render()}
+  else if(a==='abmore'){S.abLim=(S.abLim||48)+48;render()}
   else if(a==='dexhv'){const F=S.dexF=S.dexF||{},v=b.dataset.v;let H=F.h!=='miss',M=F.h!=='have';if(v==='have')H=!H;else M=!M;if(!H&&!M){if(v==='have')M=true;else H=true}F.h=H&&M?'':H?'have':'miss';S.dexLim=0;render()}
   else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=0;render()}
   else if(a==='dexmore'){{const st=(S.dexK||'all')==='all'?60:24;S.dexLim=(S.dexLim||st)+st};render()}
@@ -1044,6 +1046,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='tll'){S.pkSel.tl=t.value;render();return}
   if(t.id==='tyl'){S.pkSel.ty={line:t.value,years:[]};render();return}
   if(t.id==='dexq'){S.dexQ=t.value;S.dexLim=0;render();return}
+  if(t.id==='abq'){S.abQ=t.value;S.abLim=0;render();return}
   if(/^dex(y|t|st|h|p|v)$/.test(t.id)){S.dexF=S.dexF||{};S.dexF[t.id.slice(3)]=t.value;if(t.id==='dexy')S.dexF.t='';S.dexLim=0;render();return}
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});
 // ===== 시작 =====
