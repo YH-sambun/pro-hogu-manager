@@ -28,7 +28,8 @@ const deckIds=t=>[...(t.lineup||[]).map(x=>x.id),...(t.bench||[]),...(t.rot||[])
 const deckOk=d=>d&&deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))&&!exErr(deckIds(d.t)).length; // EX 타자1·투수1 넘는 저장 덱은 모드에 쓰지 않음
 const modeDeck=m=>{const id=(S.modeDeck||{})[MODEK(m)],d=(S.decks||[]).find(x=>x.id===id);return deckOk(d)?d:null};
 const snapT=()=>{syncTeam();const T=S.team;return JSON.parse(JSON.stringify({lineup:T.lineup,bench:T.bench,rot:T.rot,pen:T.pen,mgr:T.mgr,tsel:T.tsel,fxsel:T.fxsel||[]}))};
-const userT=m=>{syncTeam();const d=m!==undefined?modeDeck(m):null;return {...clean({...S.team,...(d?JSON.parse(JSON.stringify(d.t)):{})}),color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{}}};
+const userT=m=>{syncTeam();const d=m!==undefined?modeDeck(m):null;return {...clean({...S.team,...(d?JSON.parse(JSON.stringify(d.t)):{})}),color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{},eq:eqMap()}};
+const eqMap=()=>{const o={};if(typeof ECON!=='undefined'&&ECON.cardEq)for(const it of S.eq||[])if(it.on&&!o[it.on])o[it.on]=ECON.cardEq(S,it.on,byId);return o}; // 장착 장비 보너스(카드id→{능력:+n}), 경기 능력치에 더함
 const starters=T=>{T=clean(T);return [...T.lineup.map(x=>x.id),...T.rot,...T.pen].filter(Boolean).map(id=>byId[id])};
 const regCards=T=>{T=clean(T);return [...starters(T),...T.bench.map(id=>byId[id])].filter(Boolean)};
 function validate(){syncTeam();
@@ -100,7 +101,7 @@ function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAg
   S.owned[c.id]-=m.length;S.locks=S.locks.filter(k=>!m.some(x=>x.id===k));S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
 const TIXN=ECON.TIX,rwText=ECON.rwText,dexHas=id=>ECON.dexHas(S,id),dexCard=id=>byId[id];
-function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',gg:'골든글러브',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
+function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
   const prog=s=>ECON.setProgress(S,s),tmOf=s=>s.kind==='team'?s.id.split('|')[1]:'',all=ECON.SETS.filter(s=>s.kind===k);
   const YS=[...new Set(all.map(s=>s.year).filter(Boolean))].sort((a,b)=>b-a),TS=[...new Set(all.map(tmOf).filter(Boolean))].sort();
   let L=all.filter(s=>(!q||s.name.includes(q))&&(!F.y||s.year===+F.y)&&(!F.t||tmOf(s)===F.t)&&(!F.st||(F.st==='done')===!!S.dexDone[s.id]));
@@ -146,6 +147,7 @@ function vShop(){const pk=S.pk||'n',P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.
   <div class="tools" style="margin-top:12px"><button data-a="pkbuy" ${ok&&afford?'':'disabled'}>${P[2].toLocaleString()}P로 열기</button>${multi&&sel.length<3?`<span class="note">${3-sel.length}개 더 선택</span>`:''}${!afford?'<span class="note" style="color:var(--bad)">포인트 부족</span>':''}${S.pkMsg?`<span class="note">${esc(S.pkMsg)}</span>`:''}</div>
   ${pkOutHTML()}<!-- 개봉 결과는 열기 버튼 바로 아래(오른쪽 상자)에: 목록 아래에 두면 화면 밖이라 안 보임 -->
   ${tix.length?`<div class="lbl" style="margin-top:16px">확정권</div><div class="tools">${tix.map(([k,n])=>`<button class="ghost" data-tix="${k}">${esc(TIXN[k]||k)} ×${n}</button>`).join('')}
+   ${tix.filter(([k])=>k==='gg'||k==='ch'||k==='ex').map(([k])=>{const v=k==='gg'?'GG':k==='ch'?'CH':'EX',o=k==='ex'?[...new Set(CARDS.filter(c=>c.v==='EX').map(c=>c.line))].sort():[...new Set(CARDS.filter(c=>c.v===v).map(c=>c.year))].sort((a,b)=>b-a);return o.length?`<select id="tixarg-${k}" aria-label="${esc(TIXN[k]||k)} 조건"><option value="">${k==='ex'?'구단':'연도'} 무작위</option>${o.map(x=>`<option value="${esc(x)}">${k==='ex'?esc(msLn(x)):x}</option>`).join('')}</select>`:''}).join('')}
    ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+VN[c.v]:''}</option>`).join('')}</select>`:''}</div>`:''}
   </div></div></section>`}
 function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
@@ -153,7 +155,7 @@ function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
   if(D.tix){const k=D.tix;S.pkOut=null;
     if(k==='prem'){S.tix.prem--;S.pt+=1800;const r=ECON.buyCards(S,CARDS,'p');if(r.err){S.tix.prem++;S.pt-=1800;S.pkMsg=r.err}else S.pkOut={cards:r.cards,dex:r.dex}}
     else if(k==='block'){S.tix.block--;const g=ECON.blockGrades(3);if(!g.some(x=>x==='A'||x==='S'))g[2]='A';S.pkOut={text:'블록: '+g.map(x=>{const b=gainBlock(null,x);return `${x}급 ${bname(b)}`}).join(', ')}}
-    else{const arg=k==='pick'?(document.getElementById('tixpick')||{}).value:undefined,r=ECON.useTicket(S,CARDS,k,arg);if(r.err)S.pkMsg=r.err;else S.pkOut={cards:r.cards,dex:r.dex}}
+    else{const arg=k==='pick'?(document.getElementById('tixpick')||{}).value:['gg','ch','ex'].includes(k)?((document.getElementById('tixarg-'+k)||{}).value||undefined):undefined,r=ECON.useTicket(S,CARDS,k,arg);if(r.err)S.pkMsg=r.err;else S.pkOut={cards:r.cards,dex:r.dex}}
     return 1}
   if(D.a==='pkbuy'){const k=S.pk||'n',P=PACKS.find(x=>x[0]===k);S.pkMsg='';S.pkOut=null;
     if(['n','p','t','y','tl','ty','sx','c1'].includes(k)){const r=ECON.buyCards(S,CARDS,k,{lines:S.pkSel.t,years:S.pkSel.y,line:k==='tl'?S.pkSel.tl:S.pkSel.ty.line,tyYears:S.pkSel.ty.years});if(r.err){S.pkMsg=r.err;return 1}S.pkOut={cards:r.cards,dex:r.dex}}
@@ -204,7 +206,7 @@ const LNAME={키움:'삼미~현대·키움',SK:'쌍방울·SK·SSG',KIA:'해태�
 // 철인(IR): 그해 전 경기 출장 야수 · 최다 등판 3위 안 투수. 능력치는 기본과 같고 스킬 블록 효과 ×1.5
 // 투타: 좌우 던지기·치기 (KBO 선수 조회)
 const HAND={a:'우투우타',b:'우투좌타',c:'우투양타',d:'좌투우타',e:'좌투좌타',f:'좌투양타'};
-const VN={AS:'올스타',GG:'골든글러브',EX:'EX',IR:'철인',RY:'신인왕'},SKB={GG:1.25,EX:1.25,IR:1.5};
+const VN={AS:'올스타',GG:'골든글러브',EX:'EX',IR:'철인',RY:'신인왕',CH:'커리어하이',RN:'영구결번'},SKB={GG:1.25,EX:1.25,RN:1.25,IR:1.5};
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const POS=['C','1B','2B','3B','SS','LF','CF','RF','DH'];
 const XY={C:[50,90],'1B':[73,58],'2B':[63,40],'3B':[27,58],SS:[37,40],LF:[17,22],CF:[50,12],RF:[83,22],DH:[87,88]};

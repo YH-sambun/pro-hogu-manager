@@ -14,6 +14,7 @@ const GRADE=v=>v>=115?'SS+':v>=110?'SS':v>=100?'S+':v>=90?'S':v>=80?'A':v>=70?'B
 const COND=[null,{n:'최악',m:-.2},{n:'나쁨',m:-.1},{n:'보통',m:0},{n:'좋음',m:.04},{n:'최상',m:.08}];
 const baseId=id=>String(id).replace(/~\d+$/,''); // 보유 중복 카드 id는 '기본id~k'('#k'는 동명이인 접미사라 따로 씀)
 // EX 제한(2026-11-24, SJ): 1군 25명 중 EX는 타자 1명·투수 1명까지
+const CH_WILD=1; // 커리어하이: 연도 무관으로 단일연도 인원에 넣을 수 있는 장수
 const EX_MAX={B:1,P:1},exCount=ids=>{const n={B:0,P:0};for(const id of ids){const c=byId[baseId(id)];if(c&&c.v==='EX')n[c.type]++}return n},
   exErr=ids=>{const n=exCount(ids),e=[];if(n.B>EX_MAX.B)e.push(`EX 타자는 ${EX_MAX.B}명까지 쓸 수 있어요(지금 ${n.B}명)`);if(n.P>EX_MAX.P)e.push(`EX 투수는 ${EX_MAX.P}명까지 쓸 수 있어요(지금 ${n.P}명)`);return e},
   exTrim=cs=>{const keep=new Set();for(const t of ['B','P']){const x=cs.filter(c=>c&&c.v==='EX'&&c.type===t).sort((a,b)=>b.ovr-a.ovr).slice(0,EX_MAX[t]);x.forEach(c=>keep.add(c))}return cs.filter(c=>c&&(c.v!=='EX'||keep.has(c)))};
@@ -49,7 +50,7 @@ const boKey=(c,k)=>c.st?(k==='T'?c.st.obp:c.st.ops)*100:boScore(c.r)[k];
 // 타자 점수 = 양쪽 이웃 쌍 점수 합. 점수 1당 교타·장타·선구 +ADJ_PCT%
 const ADJ={team:2,line:1,hs:3,un:2,reg:1},ADJ_PCT=.15;
 // EX 카드는 같은 계보(line)면 같은 팀·연도로 침(덱 효과와 같은 규칙)
-const sameTY=(a,b)=>(a.year===b.year&&a.team===b.team)||((a.v==='EX'||b.v==='EX')&&a.line===b.line);
+const sameTY=(a,b)=>(a.year===b.year&&a.team===b.team)||((a.v==='EX'||b.v==='EX')&&a.line===b.line)||a.v==='RN'||b.v==='RN'; // 영구결번(RN)은 누구와도 같은 팀·연도로 침
 const adjPair=(a,b)=>{if(!a||!b)return 0;const t=sameTY(a,b)?ADJ.team:a.line===b.line?ADJ.line:0;
   const o=a.hs&&a.hs===b.hs?ADJ.hs:a.un&&a.un===b.un?ADJ.un:a.reg&&a.reg===b.reg?ADJ.reg:0;return t+o};
 const adjBonus=(L,i)=>{const n=L.length;if(n<2)return 0;return adjPair(L[i],L[(i+n-1)%n])+adjPair(L[i],L[(i+1)%n])};
@@ -60,7 +61,7 @@ const ABD=[['d1','국내 2군 캠프',null,2,1,['con','eye','ctl','men'],'처음
 const AB_BY=Object.fromEntries(ABD.map(d=>[d[0],d])),AB_CAP=12,ABG=[['대성공',.15,6],['성공',.6,4],['보통',1,2]];
 // 코스트별 유학 효율(2026-11-24, SJ): 저코스트일수록 상승 폭·상한이 크고 고코스트는 미미. 등급별 기본 상승치 × AB_MUL[코스트](반올림, 최소 1), 상한 = 20 × min(배율,1.5)(최소 2)
 const AB_MUL=[0,1.6,1.45,1.3,1.15,1,.8,.6,.45,.3,.2],abMul=c=>AB_MUL[Math.min(10,Math.max(1,c|0))],abGain=(g,c)=>g>0?Math.max(1,Math.round(g*abMul(c))):0,abCap=c=>Math.max(2,Math.round(20*Math.min(1.5,abMul(c))));
-const ageOf=c=>c&&c.b?c.year-c.b:null,abAge=c=>{if(c&&(c.v==='IR'||c.v==='RY'))return false;const a=ageOf(c);return a!=null&&(a<=25||a>=35)};
+const ageOf=c=>c&&c.b?c.year-c.b:null,abAge=c=>{if(c&&(c.v==='IR'||c.v==='RY'||c.v==='RN'))return false;const a=ageOf(c);return a!=null&&(a<=25||a>=35)};
 // used: 이 카드의 지금까지 유학 상승 합계. 반환 {g:등급, st:{능력:+n}}
 function abRoll(d,c,used){d=AB_BY[d]||d;const u=rnd(),g=ABG.find(x=>u<x[1]),keys=Object.keys(c.r).filter(k=>d[5].includes(k));let pts=Math.max(0,Math.min(g[2]+(d[4]-1),AB_CAP-(used||0)));const st={};
   while(pts>0&&keys.length){const k=keys[Math.floor(rnd()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:g[0],st}}
@@ -88,9 +89,12 @@ const FX_FAM={Y:'연도',F:'구단',E:'인연'};
 function teamColor(cards,sel){
   const cnt=f=>{const m={};for(const c of cards){const k=f(c);if(k)m[k]=(m[k]||0)+1}return Object.entries(m).sort((a,b)=>b[1]-a[1])};
   // EX 카드는 같은 계보의 가장 많은 연도에 들어가 단일연도 인원으로 셈
-  const yk=(()=>{const m={};for(const c of cards)if(c.v!=='EX'){const k=yearKey(c);m[k]=(m[k]||0)+1}
-    for(const c of cards)if(c.v==='EX'){let b=null;for(const k in m)if(k.split(' ')[1]===c.line&&(!b||m[k]>m[b]))b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
-    return Object.entries(m).sort((a,b)=>b[1]-a[1])})(),ln=cnt(c=>c.line),rg=cnt(REGION_OF),cost=cards.reduce((s,c)=>s+c.cost,0),fx=[];
+  // 커리어하이(CH)는 CH_WILD장까지 같은 계보 최다 연도에 합류(EX와 같은 방식), 영구결번(RN)은 계보와 무관하게 최다 연도에 합류
+  const chW=new Set(cards.filter(c=>c.v==='CH').slice(0,CH_WILD)),wild=c=>c.v==='EX'||chW.has(c);
+  const yk=(()=>{const m={};for(const c of cards)if(!wild(c)&&c.v!=='RN'){const k=yearKey(c);m[k]=(m[k]||0)+1}
+    for(const c of cards)if(wild(c)){let b=null;for(const k in m)if(k.split(' ')[1]===c.line&&(!b||m[k]>m[b]))b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
+    for(const c of cards)if(c.v==='RN'){let b=null;for(const k in m)if(!b||m[k]>m[b])b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
+    return Object.entries(m).sort((a,b)=>b[1]-a[1])})(),ln=(()=>{const a=cnt(c=>c.v==='RN'?null:c.line),n=cards.filter(c=>c.v==='RN').length;if(n){if(a[0])a[0][1]+=n;else a.push([cards.find(c=>c.v==='RN').line,n])}return a})(),rg=cnt(REGION_OF),cost=cards.reduce((s,c)=>s+c.cost,0),fx=[];
   // 표시용 이름: 계보 키 대신 실제 구단명(그 연도 카드에서 가장 많은 팀)
   const tname=k=>{const [yr,l]=k.split(' '),m={};for(const c of cards)if(c.line===l&&yearKey(c).startsWith(yr+' '))m[c.team]=(m[c.team]||0)+1;
     return yr+' '+(Object.entries(m).sort((a,b)=>b[1]-a[1])[0]||[l])[0]};
@@ -146,7 +150,7 @@ const openCount=()=>16; // 스킬 칸은 처음부터 16칸 모두 열림
 const isOpen=(c,gp,r,q)=>{const n=openCount(c,gp),seq=PAT[patOf(c)][2];for(let i=0;i<n;i++)if(seq[i][0]===r&&seq[i][1]===q)return true;return false};
 function canPlace(card,gp,blocks,b,r0,q0){for(const [r,q] of cellsOf(b)){const R=r+r0,Q=q+q0;if(R<0||Q<0||R>=GRID||Q>=GRID||!isOpen(card,gp,R,Q))return false;
   if(blocks.some(o=>o.on===card.id&&o.u!==b.u&&cellsOf(o).some(([a,d])=>a+o.at[0]===R&&d+o.at[1]===Q)))return false}return true}
-const SK_MUL={GG:1.25,EX:1.25,IR:1.5}; // 골든글러브·EX ×1.25, 철인 ×1.5 스킬 블록 효과 (올스타는 능력치 +3만)
+const SK_MUL={GG:1.25,EX:1.25,RN:1.25,IR:1.5}; // 골든글러브·EX ×1.25, 철인 ×1.5 스킬 블록 효과 (올스타는 능력치 +3만)
 function skillOf(id,blocks){const s={},m=(byId[id]&&SK_MUL[byId[id].v])||1;for(const b of blocks||[])if(b.on===id)for(const k in b.st)s[k]=(s[k]||0)+b.st[k];if(m!==1)for(const k in s)s[k]=Math.round(s[k]*m*10)/10;return s}
 // ===== 시뮬레이션 팀 =====
 // T={name,color,lineup:[{id,pos}],rot:[id],pen:[id],rotIdx,blocks?}, cond: id->1..5
@@ -269,7 +273,7 @@ function simTeam(T,cond){
   const all=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);
   const M=mgrOf(T),tac=M?{...M.t}:{...TAC_DEF},fx=M?M.fx:{};
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
-  const AS=T.abSt||{},tc=teamColor(all,T.fxsel),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{};for(const k in raw){if(k!=='sta')raw[k]+=bon;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
+  const AS=T.abSt||{},tc=teamColor(all,T.fxsel),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
     const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
     const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+bon+(sk.def||0)])):null;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;return {...c,r,ps,rawr:raw}};
   const LC=T.lineup.map(x=>byId[x.id]);
@@ -437,4 +441,4 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};

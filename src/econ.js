@@ -116,7 +116,8 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
 // arg: pick→카드 id, gg→연도(선택), ex→구단 계보(선택)
 function useTicket(S,CARDS,k,arg){const pickId=arg;if(!(S.tix&&S.tix[k]>0))return {err:'확정권 없음'};let c;
   if(k==='pick'){c=CARDS.find(x=>x.id===pickId&&x.cost>=9&&!x.mx);if(!c)return {err:'레전드(9+) 카드 선택'}}
-  else if(tixPool[k]){const all=CARDS.filter(c=>tixPool[k](c)&&(arg==null||(k==='gg'&&c.year===+arg)||(k==='ex'&&c.line===arg)||(k==='ch'&&c.year===+arg)||!['gg','ex','ch'].includes(k))),nw=all.filter(x=>!dexHas(S,x.id));c=wpick(nw.length?nw:all)} // 도감에 없는 카드 우선else return {err:'팩형 확정권은 팩 화면에서 써요'};
+  else if(tixPool[k]){const all=CARDS.filter(c=>tixPool[k](c)&&(arg==null||(k==='gg'&&c.year===+arg)||(k==='ex'&&c.line===arg)||(k==='ch'&&c.year===+arg)||!['gg','ex','ch'].includes(k))),nw=all.filter(x=>!dexHas(S,x.id));c=wpick(nw.length?nw:all)} // 도감에 없는 카드 우선
+  else return {err:'팩형 확정권은 팩 화면에서 써요'};
   if(!c)return {err:'조건에 맞는 카드 없음'};S.tix[k]--;return {cards:[c],dex:gain(S,[c.id])}}
 function dismantle(S,byId,id,n){n=n||1;const have=S.owned[id]|0;if(have-n<1)return {err:'1장은 남겨야 함'};
   S.owned[id]=have-n;if(byId[id].v==='EX'){S.exShard=(S.exShard|0)+n;let tk=0;while(S.exShard>=3){S.exShard-=3;tk++}if(tk){S.tix=S.tix||{};S.tix.ex=(S.tix.ex|0)+tk}return {shard:n,tix:tk,left:S.exShard}} // EX 중복 → EX 조각, 3개마다 EX 확정권(구단 지정 가능)
