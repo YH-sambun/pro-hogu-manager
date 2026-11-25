@@ -25,12 +25,12 @@ const LINE_UNIONS=[['구도 인천',['키움','SK'],1,'인천 연고 구단'],['
 const ERA_SETS=[['비밀번호 8888577','롯데',2001,2007,15]];
 // 덱 추천 목표(SJ 2026-11-25): 원하는 덱 효과를 고르면 그 조건에 맞는 카드를 우선. m=조건 카드, s=꼭 넣을 선수(FA 이적)
 const FX_LINES=['KIA','KT','LG','NC','SK','두산','롯데','삼성','키움','한화'],FX_LN={SK:'SSG(SK)',키움:'키움(현대·넥센)'};
-const FX_TARGETS=[...FX_LINES.map(l=>({k:'L:'+l,g:'단일구단',n:FX_LN[l]||l,m:c=>c.line===l})),
- ...LINE_UNIONS.map(([n,ls,mn,lb])=>({k:'U:'+n,g:'묶음',n:`${n} (${lb||ls.join('·')})`,m:c=>ls.includes(c.line),q:Object.fromEntries(ls.map(l=>[l,mn||1]))})),
- ...RIVALS.map(([a,b,n])=>({k:'R:'+n,g:'라이벌',n:`${n} (${FX_LN[a]||a}·${FX_LN[b]||b})`,m:c=>c.line===a||c.line===b,q:{[a]:8,[b]:8}})),
- ...ERA_SETS.map(([n,l,y0,y1])=>({k:'E:'+n,g:'시대',n:`${n} (${l} ${y0}~${y1})`,m:c=>c.line===l&&c.year>=y0&&c.year<=y1})),
+const FX_TARGETS=[...FX_LINES.map(l=>({k:'L:'+l,g:'단일구단',n:FX_LN[l]||l,m:c=>c.line===l,ls:[l]})),
+ ...LINE_UNIONS.map(([n,ls,mn,lb])=>({k:'U:'+n,g:'묶음',n:`${n} (${lb||ls.join('·')})`,m:c=>ls.includes(c.line),ls,q:Object.fromEntries(ls.map(l=>[l,mn||1]))})),
+ ...RIVALS.map(([a,b,n])=>({k:'R:'+n,g:'라이벌',n:`${n} (${FX_LN[a]||a}·${FX_LN[b]||b})`,m:c=>c.line===a||c.line===b,ls:[a,b],q:{[a]:8,[b]:8}})),
+ ...ERA_SETS.map(([n,l,y0,y1])=>({k:'E:'+n,g:'시대',n:`${n} (${l} ${y0}~${y1})`,m:c=>c.line===l&&c.year>=y0&&c.year<=y1,ls:[l]})),
  {k:'S:AS',g:'특별',n:'올스타덱',m:c=>c.v==='AS'},{k:'S:GG',g:'특별',n:'골든글러브덱',m:c=>c.v==='GG'},
- ...FA_LINKS.map(([p,a,b])=>({k:'F:'+p,g:'FA 이적',n:`${p} (${a}·${b})`,m:c=>c.line===a||c.line===b,s:p,q:{[a]:8,[b]:8}}))];
+ ...FA_LINKS.map(([p,a,b])=>({k:'F:'+p,g:'FA 이적',n:`${p} (${a}·${b})`,m:c=>c.line===a||c.line===b,ls:[a,b],s:p,q:{[a]:8,[b]:8}}))];
 const FX_T_BY=Object.fromEntries(FX_TARGETS.map(t=>[t.k,t]));
 const CH_WILD=1; // 커리어하이: 연도 무관으로 단일연도 인원에 넣을 수 있는 장수
 const EX_MAX={B:1,P:1},exCount=ids=>{const n={B:0,P:0};for(const id of ids){const c=byId[baseId(id)];if(c&&c.v==='EX')n[c.type]++}return n},
