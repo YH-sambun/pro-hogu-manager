@@ -759,7 +759,7 @@ function loadCards(json){
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
     const cost=Math.min(10,c.c+(mvp?1:0));
     return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
-      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),bo:c.k==='B'?boOf(r,rates(c.x)):null}});
+      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),bo:c.k==='B'?boOf(r,rates(c.x)):null}});
   // 선수 단위 키: 이름+출신고. 1군 중복 검사는 pkt(c)=pk+유형으로 함(투타 겸업 선수는 타자 1장+투수 1장 가능). 출신고가 없으면 같은 이름·같은 유형 카드에 출신고가 하나뿐일 때 그 값을, 아니면 유형을 씀
   const HS={};for(const c of CARDS)if(c.hs){const k=c.name+'|'+c.type;(HS[k]=HS[k]||new Set()).add(c.hs)}
   for(const c of CARDS){const h=HS[c.name+'|'+c.type];c.pk=c.name+'|'+(c.hs||(h&&h.size===1?[...h][0]:c.type))}
@@ -2203,8 +2203,10 @@ function pitchMap(c){const E=ptNow(c).map(x=>[x[0],x[1]]),gc={S:'#e2b23c',A:'#b0
  for(let t=0;t<40;t++)for(let k=0;k<A.length&&A.length>1;k++){const p=A[k],q=A[(k+1)%A.length],gap=((q.d-p.d)%360+360)%360;if(gap<MIN){const f=(MIN-gap)/2;p.d-=f;q.d+=f}}
  const D={};A.forEach(x=>D[x.i]=x.d);return E.map(([n,g],i)=>{const a=D[i]*Math.PI/180,r=Math.max(E.length>3?68:58,g==='S'||g.startsWith('S')?80:g==='A'?70:58),w=String(n+' '+g).length*12+16,x=Math.max(w/2+4,Math.min(296-w/2,150+Math.cos(a)*r*1.35)),y=Math.max(16,Math.min(184,100+Math.sin(a)*r));
  return `<line x1="${150+Math.cos(a)*20}" y1="${100+Math.sin(a)*20}" x2="${x}" y2="${y}" stroke="${gc[g[0]]||'#888'}" stroke-width="3" stroke-dasharray="4 3"/><g><rect x="${x-w/2}" y="${y-12}" width="${w}" height="24" rx="12" fill="${gc[g[0]]||'#888'}"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${esc(n)} ${esc(g)}</text></g>`}).join('')})()}</svg>`}
-function seasonLine(c){const H=c.type==='B'?['타율','홈런','타점','도루','경기','타석']:['ERA','승','패','세이브','홀드','탈삼진','이닝','경기'];
- return `<div class="scroll"><table class="sl"><thead><tr><th>연도</th>${H.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody><tr><td>${c.year}</td>${c.s.map((v,i)=>`<td>${i===0?(c.type==='B'?Number(v).toFixed(3).replace(/^0/,''):Number(v).toFixed(2)):v}</td>`).join('')}</tr></tbody></table></div>`}
+// 세부 지표 c.sx: 타자 [BABIP, wRC+], 투수 [WHIP, FIP, LOB%, 피BABIP] (tools/adv.js, KBO 기록 기준·구장 보정 없음)
+const SXH={B:['BABIP','wRC+'],P:['WHIP','FIP','LOB%','피BABIP']},sxF=(t,i,v)=>v==null?'-':t==='B'?(i===0?v.toFixed(3).replace(/^0/,''):v):(i===2?v+'%':i===3?v.toFixed(3).replace(/^0/,''):v.toFixed(2));
+function seasonLine(c){const H=c.type==='B'?['타율','홈런','타점','도루','경기','타석']:['ERA','승','패','세이브','홀드','탈삼진','이닝','경기'],X=c.sx?SXH[c.type]:[];
+ return `<div class="scroll"><table class="sl"><thead><tr><th>연도</th>${H.map(h=>`<th>${h}</th>`).join('')}${X.map(h=>`<th class="sxh">${h}</th>`).join('')}</tr></thead><tbody><tr><td>${c.year}</td>${c.s.map((v,i)=>`<td>${i===0?(c.type==='B'?Number(v).toFixed(3).replace(/^0/,''):Number(v).toFixed(2)):v}</td>`).join('')}${X.map((h,i)=>`<td>${sxF(c.type,i,c.sx[i])}</td>`).join('')}</tr></tbody></table></div>`}
 function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells(b).forEach(([r,q])=>occ[(r+b.at[0])*4+q+b.at[1]]=b)});const op=open(c),os=openSet(c),pt=patOf(c);
  const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g:''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g:''}"></span>`}).join('');
  return `<div class="cback" style="--tc:${c.col}"><div class="cbh"><b>${esc(c.name)}</b><span>${c.year} ${esc(c.team)} · ${PFULL[c.pos]}</span></div><div class="cbm">${[ageOf(c)!=null?`${ageOf(c)}세`:'',HAND[c.h]||'',c.rg||'',c.hs||'',c.un||''].filter(Boolean).map(esc).join(' · ')||'출신 정보 없음'}</div>
@@ -2253,8 +2255,8 @@ function cmpView(a,b){const head=`<div class="mhead"><b>선수 비교</b><button
  const row=(n,x,y,fmt=v=>v,hi=1)=>{const d=typeof x==='number'&&typeof y==='number'?(y-x):0,wa=hi?x>y:x<y,wb=hi?y>x:y<x;return `<tr><td class="${wa?'win':''}">${fmt(x)}</td><th>${n}</th><td class="${wb?'win':''}">${fmt(y)}${d?`<small class="${(hi?d>0:d<0)?'up':'dn'}">${d>0?'+':''}${Math.round(d*1000)/1000}</small>`:''}</td></tr>`};
  const sA=a.s||[],sB=b.s||[],f3=v=>v==null?'–':Number(v).toFixed(3).replace(/^0/,''),f2=v=>v==null?'–':Number(v).toFixed(2);
  const rows=[row('코스트',a.cost,b.cost,v=>v,0),row('OVR',a.ovr,b.ovr),...keys.map(k=>row(SKN[k],ra[k],rb[k])),
-  ...(B?[row('타율',+sA[0],+sB[0],f3),row('홈런',sA[1],sB[1]),row('타점',sA[2],sB[2]),row('도루',sA[3],sB[3]),row('출루율',a.st&&a.st.obp,b.st&&b.st.obp,f3),row('OPS',a.st&&a.st.ops,b.st&&b.st.ops,f3)]
-   :[row('ERA',+sA[0],+sB[0],f2,0),row('승',sA[1],sB[1]),row('세이브',sA[3],sB[3]),row('탈삼진',sA[5],sB[5]),row('이닝',sA[6],sB[6]),row('구속',a.kmh,b.kmh,v=>v+'km')])];
+  ...(B?[row('타율',+sA[0],+sB[0],f3),row('홈런',sA[1],sB[1]),row('타점',sA[2],sB[2]),row('도루',sA[3],sB[3]),row('출루율',a.st&&a.st.obp,b.st&&b.st.obp,f3),row('OPS',a.st&&a.st.ops,b.st&&b.st.ops,f3),row('wRC+',a.sx&&a.sx[1],b.sx&&b.sx[1],v=>v==null?'–':v)]
+   :[row('ERA',+sA[0],+sB[0],f2,0),row('승',sA[1],sB[1]),row('세이브',sA[3],sB[3]),row('탈삼진',sA[5],sB[5]),row('WHIP',a.sx&&a.sx[0],b.sx&&b.sx[0],f2,0),row('FIP',a.sx&&a.sx[1],b.sx&&b.sx[1],f2,0),row('이닝',sA[6],sB[6]),row('구속',a.kmh,b.kmh,v=>v+'km')])];
  const txt=(n,fa,fb)=>`<tr><td>${fa}</td><th>${n}</th><td>${fb}</td></tr>`;
  const extra=B?txt('수비',Object.entries(a.ps||{}).map(([p,v])=>PN[p]+' '+grade(v)).join(' ')||'지명',Object.entries(b.ps||{}).map(([p,v])=>PN[p]+' '+grade(v)).join(' ')||'지명')+txt('타순 적성',a.bo.map(x=>BOS[x]).join('·'),b.bo.map(x=>BOS[x]).join('·'))
   :txt('구종',Object.entries(a.pt||{}).map(([k,g])=>k+' '+g).join(' '),Object.entries(b.pt||{}).map(([k,g])=>k+' '+g).join(' '));
@@ -2975,7 +2977,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});
 // ===== 시작 =====
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
-fetch('cards.json?v=57516b4a40').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
+fetch('cards.json?v=145ba9af3c').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
   for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.rg==null&&c.reg)c.rg=c.reg}
   LINES=[...new Set(CARDS.filter(c=>c.v!=='NT').map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);if(ECON.buildMissions)ECON.buildMissions(CARDS);if(ECON.buildNat&&typeof NAT_SETS!=='undefined')ECON.buildNat(CARDS,NAT_SETS,natHit);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}
