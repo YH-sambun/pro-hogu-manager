@@ -2144,6 +2144,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-tix],[d
  if(D.msn&&S.msSub){const m=S.msSub,v=Math.max(0,(m.sel[D.msn]|0)+(+t.dataset.d));if(v)m.sel[D.msn]=v;else delete m.sel[D.msn];S.msMsg='';render();return}
  if(D.dexk){S.dexK=D.dexk;S.dexLim=0;render();return}
  if(D.bclr){bldSlotSet(D.bclr,null);S.bldSel=null;save();render();return}
+ if(D.bslot&&S.bldSel&&S.bldSel!==D.bslot){const g=k=>/^(lu|bench)/.test(k)?'B':'P',a=S.bldSel,b=D.bslot;if(g(a)===g(b)){const x=bldSlotGet(a),y=bldSlotGet(b);bldSlotSet(a,y);bldSlotSet(b,x);S.bldSel=null;S.msg='자리 교환';save();render();return}}
  if(D.bslot){const id=bldSlotGet(D.bslot);if(S.bldView==='card'&&id&&!S.bldSel){S.bmodal=id;S.bmslot=D.bslot;S.mflip=false}else S.bldSel=S.bldSel===D.bslot?null:D.bslot;S.msg='';render();return}
  if(D.bswap){S.bldSel=S.bmslot;S.bmodal=null;S.bmslot=null;render();return}
  if(D.bput){bldPut(D.bput);save();render();return}
