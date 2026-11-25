@@ -256,7 +256,7 @@ function msDone(S,ch,mid,out){S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{}
     const fin=CHAPTERS.filter(c=>S.msFin[c.id]).length;S.msMeta=S.msMeta||{};
     for(const [k,name,r] of MS_META){const need=k==='all'?CHAPTERS.length:k;if(fin>=need&&!S.msMeta[k]){S.msMeta[k]=Date.now();grant(S,r);out.push({ch:'',what:name,rw:r})}}}}
 // 보유·도감 조건 미션 자동 확인(카드 얻은 뒤, 화면 열 때 호출). 새로 깬 미션 목록 반환
-function missionCheck(S){const out=[];for(const ch of CHAPTERS)for(const mid of ['m1','m2','m5']){const p=msProg(S,ch,mid);if(!p.done&&p.have>=p.need)msDone(S,ch,mid,out)}return out}
+function missionCheck(S){const out=[];for(const ch of CHAPTERS)for(const mid of ['m1','m2','m5']){const p=msProg(S,ch,mid);if(!p.done&&p.have>=p.need)msDone(S,ch,mid,out)}return out.concat(natCheck(S))}
 // 제출(★3): ids = 낼 카드 id 배열(중복 허용). 그 구단 7코+만. 기본은 중복만, S.opt.submitLast면 마지막 장도
 function missionSubmit(S,line,ids){const ch=CHAPTERS.find(c=>c.line===line);if(!ch)return {err:'없는 챕터'};S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{};
   if(st.m3)return {err:'이미 완료한 미션이에요'};const last=S.opt&&S.opt.submitLast,use={};
@@ -267,6 +267,17 @@ function missionSubmit(S,line,ids){const ch=CHAPTERS.find(c=>c.line===line);if(!
 // ★4: 주간 리그 우승 때 모드 쪽에서 호출. lineupCards = 1군 카드 객체 배열
 function missionLeague(S,tier,lineupCards){const out=[];const cnt={};for(const c of lineupCards||[])if(c)cnt[c.line]=(cnt[c.line]|0)+1;
   for(const ch of CHAPTERS)if((cnt[ch.line]|0)>=15&&tier>=msReq(msCyc(S,ch)).m4)msDone(S,ch,'m4',out);return out}
+// ── 국가대표 우승 미션 ─────────────────────────────────────────
+// 대회마다 명단 선수 중 그해 기본 카드(c.v 없음)가 있는 선수 전원의 그해 카드를 1장씩 보유하면 완료(도감 아님, 보유 기준)
+// 보상: 그 대회 국가대표 카드(v:'NT', mx, 미션 전용) 전부 + 5,000P. 보상 카드가 없는 대회(2018·2026)는 10,000P + 레전드 확정권
+// 사용: ECON.buildNat(CARDS, NAT_SETS, natHit) — core2의 NAT_SETS·natHit를 넘김. 확인은 missionCheck가 같이 함
+let NATS=[];
+function buildNat(CARDS,sets,hit){NATS=(sets||[]).map(([name,y,list])=>{const mem=list.split(' ').map(e=>({e,ids:CARDS.filter(c=>!c.v&&hit(c,y,e)).map(c=>c.id)})).filter(m=>m.ids.length);
+  const nt=CARDS.filter(c=>c.v==='NT'&&(c.nt?c.nt===name:c.year===y)).map(c=>c.id);
+  return {id:'nat:'+name,name:name+' 멤버 모으기',year:y,mem,nt,rw:nt.length?{pt:5000}:{pt:10000,tix:{legend:1}}}});return NATS}
+function natProg(S,n){if(S.nat&&S.nat[n.id])return {done:true,have:n.mem.length,need:n.mem.length};return {have:n.mem.filter(m=>m.ids.some(id=>(S.owned[id]|0)>0)).length,need:n.mem.length}}
+function natCheck(S){const out=[];S.nat=S.nat||{};for(const n of NATS){if(S.nat[n.id])continue;const p=natProg(S,n);if(p.have>=p.need&&p.need){S.nat[n.id]=Date.now();grant(S,n.rw);if(n.nt.length)gain(S,n.nt);
+  out.push({ch:'국가대표',what:n.name+' 완료',rw:n.rw,cards:n.nt})}}return out}
 const isMissionOnly=c=>!!(c&&c.mx);
 // ── 4. 공통 ──────────────────────────────────────────────────
 function grant(S,rw){if(!rw)return S;S.pt=(S.pt||0)+(rw.pt||0);S.tix=S.tix||{};for(const k in rw.tix||{})S.tix[k]=(S.tix[k]|0)+rw.tix[k];return S}
@@ -279,6 +290,6 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
   S.dexDone=S.dexDone||{};return S}
 
 const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,pityTick,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
-  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,msText,msReq,msCyc,missionCheck,missionSubmit,missionLeague,isMissionOnly,EQ_KIND,EQ_SLOTS,EQ_G,EQ_BASE,mkEquip,eqName,eqBonus,equip,unequip,cardEq,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
+  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,msText,msReq,msCyc,missionCheck,missionSubmit,missionLeague,isMissionOnly,buildNat,get NATS(){return NATS},natProg,natCheck,EQ_KIND,EQ_SLOTS,EQ_G,EQ_BASE,mkEquip,eqName,eqBonus,equip,unequip,cardEq,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);
