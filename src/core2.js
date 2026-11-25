@@ -294,7 +294,7 @@ function synthRules(cs){const all=f=>cs.length===3&&cs.every(f),same=k=>all(c=>c
   const player=L.some(x=>x.player)?c=>c.pk===cs[0].pk&&!cs.some(m=>m.year===c.year):null;return {list:L,up,gg,player}}
 const L3same=cs=>cs.every(c=>c.line===cs[0].line);
 // opt.ex: 결과에서 뺄 구단 계보(line) 목록, 최대 SYN_EX_MAX개. 걸러서 후보가 없으면 제외를 무시
-const SYN_EX_MAX=3;
+const SYN_EX_MAX=3,SYN_EX10=.05;
 function synth(kind,mats,locks,opt){
   if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 재료 불가'}}
   if(kind!=='b'&&mats.length!==3)return {err:'재료 3개 필요'};
@@ -307,6 +307,8 @@ function synth(kind,mats,locks,opt){
      const exOut=(lineOnly)=>{let P=EXS.filter(c=>c.cost>=Math.min(a,10));const L=cs.filter(c=>c.v==='EX').map(c=>c.line);
        if(lineOnly){const Q=P.filter(c=>c.line===L[0]);if(Q.length)P=Q}if(!P.length)P=EXS;return pick(P)};
      const done=(c,n)=>({kind,out:c.id,cost:c.cost,rules:exN?[n,exN]:[n]});
+     // 10코스트 3장(EX 없음) → 5% 확률로 EX(같은 구단 3장이면 그 구단 EX). SJ 2026-11-26
+     if(nEX===0&&cs.every(c=>c.cost===10)&&rnd()<SYN_EX10){let P=EXS.filter(c=>c.cost>=10);if(L3same(cs)){const Q=P.filter(c=>c.line===cs[0].line);if(Q.length)P=Q}if(!P.length)P=EXS;return done(pick(P),'10코스트 3장 → EX 5% 성공'+(L3same(cs)?` (${cs[0].line})`:''))}
      if(nEX===3)return done(exOut(L3same(cs)),'EX 3장 → EX 확정'+(L3same(cs)?` (${cs[0].line})`:''));
      if(nEX===2&&u<.5)return done(exOut(cs.filter(c=>c.v==='EX').every((c,i,A)=>c.line===A[0].line)),'EX 2장 → EX 50% 성공');
      if(nEX===1&&nSP===2){if(u<.25)return done(exOut(false),'EX+특별 2장 → EX 25% 성공');
