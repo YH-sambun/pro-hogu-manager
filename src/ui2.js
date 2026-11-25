@@ -4,7 +4,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['sel','modal','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['setbOpen','sel','modal','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -181,8 +181,10 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   <div class="lbl">감독</div><p style="margin:0">${m?`${esc(m.n)} · ${MSTY[m.st]} · [${esc(m.sn)}]`:'없음'}</p><div class="lbl">내 덱 효과</div><p style="margin:0">${d.fx.map(x=>`${esc(x.n)} ${x.g}`).join(' · ')||'팀컬러 없음'} · 야수 +${d.bat} · 투수 +${d.pit} · 코스트 ${d.cost}/${COST_CAP}</p></div>
   <div class="box"><h3>오늘</h3>${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 8px">게스트 플레이 중. 이 기기에만 저장. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
   <div class="lbl">쿠폰</div><div class="tools" style="flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}</div></section>
-  <section class="band setb"><details><summary><b>구단 설정 · 저장 데이터</b></summary>
+  <section class="band setb"><details${S.setbOpen?' open':''}><summary><b>구단 설정 · 테마 · 저장 데이터</b></summary>
   <div class="tools" style="margin-top:10px"><label>구단 이름 <input id="tn" value="${esc(S.team.name)}" maxlength="12"></label></div>
+  <div class="thm" role="group" aria-label="테마 색"><b>테마</b><button class="${!S.theme?'on':''}" data-a="theme" data-v="" aria-pressed="${!S.theme}"><i style="--a:#e07a45;--b:#ffd27a"></i>기본</button>${Object.entries(THEMES).map(([k,[a,b2]])=>`<button class="${S.theme===k?'on':''}" data-a="theme" data-v="${k}" aria-pressed="${S.theme===k}"><i style="--a:${a};--b:${b2}"></i>${k}</button>`).join('')}</div>
+  <div class="tools"><button class="ghost" data-a="work">업무 모드 ${S.work?'끄기':'켜기'}</button><span class="note" style="margin:0">PC에서는 \` 키</span></div>
   <p class="note">브라우저 자동 저장${FBMODE()&&ON.user?' · 계정 동기화':''}. 다른 기기: 코드 복사 후 붙여넣기.</p>
   <textarea id="sv" rows="3" style="width:100%"></textarea><div class="tools"><button class="ghost" data-a="copy">코드 복사</button><button class="ghost" data-a="load">붙여 넣은 코드 불러오기</button><button class="ghost danger" data-a="reset" style="margin-left:auto">처음부터 다시</button></div></details></section>`}
 async function redeemCoupon(){const el=document.getElementById('cpn'),code=((el&&el.value)||'').trim().toUpperCase();if(!code){S.cpMsg='코드 입력';render();return}
@@ -436,7 +438,7 @@ function vSynth(){const k=S.sk||'p',pool=synPoolF(k),mk=new Set(S.mat),m=pool.fi
  <div class="tools" style="justify-content:center;margin-top:12px"><button data-a="synth" ${err?'disabled':''}>합성하기</button><button class="ghost" data-a="synauto">자동 추천</button><button class="ghost" data-a="synclr">재료 비우기</button><button class="ghost qbtn${S.synHelp?' on':''}" data-a="synhelp" aria-label="합성 방식 설명" aria-pressed="${!!S.synHelp}">?</button></div>
  ${k==='p'?`<div class="tools synex" style="justify-content:center;margin-top:8px;flex-wrap:wrap;gap:4px" title="결과로 안 나왔으면 하는 구단(최대 ${SYN_EX_MAX}개)"><small style="align-self:center">제외 구단(재료·결과 모두)</small>${SYN_LINES.map(l=>{const on=(S.synEx||[]).includes(l);return `<button class="ghost${on?' on':''}" data-synex="${esc(l)}" aria-pressed="${on}" title="${esc(SYN_LN[l]||l)} 계열 전부 제외" style="padding:2px 8px;font-size:12px${on?';text-decoration:line-through':''}">${esc(SYN_LN[l]||l)}</button>`}).join('')}</div>`:''}
  ${S.msg?`<p class="note" style="text-align:center" aria-live="polite">${esc(S.msg)}</p>`:''}${S.synHelp?`<p class="note synrule">${esc(SYN[k].rule)}</p>`:''}</div>
- <h3 style="margin-top:18px">재료로 쓸 수 있는 ${SYN[k].n} <span class="pill">${pool.length}</span></h3>${k==='p'?synFilt()+`<div class="tabs" role="tablist" aria-label="보기 방식" style="margin:6px 0">${[['card','카드'],['list','일람']].map(([v,n])=>`<button role="tab" aria-selected="${(S.synView||'card')===v}" class="${(S.synView||'card')===v?'on':''}" data-a="synview" data-v="${v}">${n}</button>`).join('')}</div>`:''}${k==='p'&&S.synView==='list'?synList(pool,mk):`<div class="mpool">${pool.map(x=>{const lk=isLocked(lkey(k,x));return `<div class="mpw"><div class="mp${mk.has(x.key)?' on':''}${lk?' locked':''}" ${lk?'aria-disabled="true"':`data-mat="${esc(x.key)}" role="button" tabindex="0"`}>${x.html}${lk?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div><button class="ghost lockt" data-lock="${esc(lkey(k,x))}" aria-pressed="${lk}" aria-label="${lk?'잠금 해제':'잠그기'}" title="${lk?'잠금 해제':'잠그기'}">${LOCKI(lk)}</button></div>`}).join('')||'<p class="note">재료 없음</p>'}</div>`}
+ <h3 style="margin-top:18px">재료로 쓸 수 있는 ${SYN[k].n} <span class="pill">${pool.length}</span></h3>${k==='p'?synFilt()+`<div class="tabs" role="tablist" aria-label="보기 방식" style="margin:6px 0">${[['card','카드'],['list','일람']].map(([v,n])=>`<button role="tab" aria-selected="${(S.synView||'card')===v}" class="${(S.synView||'card')===v?'on':''}" data-a="synview" data-v="${v}">${n}</button>`).join('')}</div>`:''}${k==='p'&&(S.synView==='list'||S.work)?synList(pool,mk):`<div class="mpool">${pool.map(x=>{const lk=isLocked(lkey(k,x));return `<div class="mpw"><div class="mp${mk.has(x.key)?' on':''}${lk?' locked':''}" ${lk?'aria-disabled="true"':`data-mat="${esc(x.key)}" role="button" tabindex="0"`}>${x.html}${lk?'<span class="lockb" role="img" aria-label="잠김">'+LOCKI(1)+'</span>':''}</div><button class="ghost lockt" data-lock="${esc(lkey(k,x))}" aria-pressed="${lk}" aria-label="${lk?'잠금 해제':'잠그기'}" title="${lk?'잠금 해제':'잠그기'}">${LOCKI(lk)}</button></div>`}).join('')||'<p class="note">재료 없음</p>'}</div>`}
  <p class="note help">자물쇠로 잠근 카드는 재료·자동 추천 제외. 재료 선수의 스킬 블록도 함께 소멸.</p></section>`}
 const pick2=a=>a[Math.floor(Math.random()*a.length)];
 // 추천 라인업: 보유 카드로 자동 편성 (능력 우선 / 덱 효과 우선 / 코스트 절약). 코스트 상한 150 안에서
@@ -583,7 +585,7 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  <select data-lf="hand" aria-label="${B?'타석':'투구 손'}">${o('all',B?'모든 타석':'모든 투구',LF.hand)}${(B?[['R','우타'],['L','좌타'],['S','양타']]:[['R','우투'],['L','좌투']]).map(([k,n])=>o(k,n,LF.hand)).join('')}</select>
  <select data-lf="reg" aria-label="1군 등록">${o('all','1군 포함 전체',LF.reg)}${o('out','미등록만',LF.reg)}${o('in','1군만',LF.reg)}</select>`)((v,n,cur)=>`<option value="${esc(v)}"${String(cur||'all')===String(v)?' selected':''}>${esc(n)}</option>`)}
  <input data-lf="q" value="${esc(LF.q||'')}" placeholder="이름" aria-label="이름 검색" style="max-width:110px"><span class="pill">${pool.length}종</span><div class="tabs" role="tablist" aria-label="기록 기준">${[['','능력치'],['lg','주간 리그 기록'],['yl','연도별 리그 기록']].map(([k,n])=>`<button class="${(S.luStat||'')===k?'on':''}" data-a="lustat" data-v="${k}">${n}</button>`).join('')}</div><div class="tabs" role="tablist" aria-label="보기 방식" style="margin-left:auto">${[['card','카드'],['list','일람']].map(([k,n])=>`<button role="tab" aria-selected="${(S.luStat?'list':S.luView||'card')===k}" class="${(S.luStat?'list':S.luView||'card')===k?'on':''}" data-a="luview" data-v="${k}">${n}</button>`).join('')}</div></div>
- ${S.luView==='list'||S.luStat?luList(pool,ids,dupC,B,rec):`<div class="pool">${pool.map(c=>`<div class="pw">${card(c,{pick:1,dim:ids.has(c.id),inUse:ids.has(c.id)})}${dupC[c.id]?`<span class="dupn" title="같은 카드 ${dupC[c.id]+1}장">×${dupC[c.id]+1}</span>`:''}</div>`).join('')}</div>`}</div>
+ ${S.luView==='list'||S.work||S.luStat?luList(pool,ids,dupC,B,rec):`<div class="pool">${pool.map(c=>`<div class="pw">${card(c,{pick:1,dim:ids.has(c.id),inUse:ids.has(c.id)})}${dupC[c.id]?`<span class="dupn" title="같은 카드 ${dupC[c.id]+1}장">×${dupC[c.id]+1}</span>`:''}</div>`).join('')}</div>`}</div>
  <div class="box"><div class="tabs" role="tablist">${SIDE.map(([k,n])=>`<button role="tab" aria-selected="${side===k}" class="${side===k?'on':''}" data-side="${k}">${n}</button>`).join('')}</div>
  <div style="margin-top:12px">${side==='bat'?batteryPanel():side==='line'?lineupChart():field()}</div></div></section>`}
 const KIND=k=>k==='lu'||k==='bench'?'B':'P';
@@ -735,7 +737,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[d
   if(a==='synth')doSynth();if(a==='synclr'){S.mat=[];S.synRes=null}if(a==='synauto'){const m=synAuto(S.sk||'p');S.synRes=null;if(m)S.mat=m;else{S.mat=[];S.msg='재료 부족.'}}
   if(a==='tdraw'){if(ECON.pay(S,100).err)S.msg='포인트 부족';else{const u=Math.random(),g=u<.05?'황금':u<.25?'특수':'일반',x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;S.tdraw=x[0]}}}
  render()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(S.modal||S.dexView)){S.modal=null;S.dexView=null;render()}});
+document.addEventListener('keydown',e=>{if(e.code==='Backquote'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||''))&&S){e.preventDefault();S.work=!S.work;save();render();return}if(e.key==='Escape'&&(S.modal||S.dexView)){S.modal=null;S.dexView=null;render()}});
 // 드래그해서 넣기 (데스크톱). 누르고 칸 누르기도 그대로 됨
 // 라인업 드래그 앤 드롭 (컴퓨터): 보유 카드 → 자리에 놓으면 넣기, 자리 → 자리에 놓으면 맞바꾸기. 폰은 누르기 방식 그대로
 let DRAG=null;
@@ -812,12 +814,17 @@ const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
 function head(k){const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
-  return `<div class="logo">프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small></div>
+  return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
   <div class="wallet"><span id="ptw">${(S.pt||0).toLocaleString()} P</span>${tx?`<a href="#shop" style="text-decoration:none;color:inherit"><span>확정권 ${tx}장</span></a>`:''}<span>블록 ${S.blocks.filter(b=>!b.on).length}</span>${s?`<span>${s.tier?esc(tierName(s.tier)):'시즌 '+s.n} · ${Math.min(s.round+1,s.sched.length)}/${s.sched.length}</span>`:''}</div>
   <nav id="nav">${Object.entries(NAVS).map(([gk,LL])=>`<a href="#${LL[0][0]}" data-g="${gk}" class="${gk===g?'on':''}">${NAVN[gk]}</a>`).join('')}<a href="#guide" class="${k==='guide'?'on':''}" style="margin-left:auto">능력치 가이드</a><button id="helpBtn" class="ghost" aria-pressed="${document.body.classList.contains('showhelp')}">${document.body.classList.contains('showhelp')?'설명 숨기기':'설명 보기'}</button></nav>
   <div id="subnav" class="subnav2" role="navigation" aria-label="하위 메뉴" ${L.length<2?'hidden':''}>${L.length>1?L.map(([h,n])=>`<a href="#${h}" class="${h===k?'on':''}"${h===k?' aria-current="page"':''}>${n}</a>`).join(''):''}</div>
   ${S.toast?`<div class="toast">${esc(S.toast)}</div>`:''}`}
-function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}restoreLift();syncTeam();rebuildOwn();
+const XLC='ABCDEFGHIJKLMN'.split('');
+function xlBar(k){const ref=XLC[(k.length*3)%XLC.length]+(k.charCodeAt(0)%40+2);return `<div class="xlbar" aria-hidden="true"><div class="xlt">업무 현황.xlsx<span>저장됨</span></div><div class="xlr">${['파일','홈','삽입','페이지 레이아웃','수식','데이터','검토','보기'].map((x,i)=>`<i class="${i===1?'on':''}">${x}</i>`).join('')}</div><div class="xlf"><b>${ref}</b><i>fx</i><span>=SUMIFS(실적!D:D,실적!B:B,"${esc(NAVN[NAVG[k]]||'홈')}")</span></div><div class="xlc"><i></i>${XLC.map(c=>`<i>${c}</i>`).join('')}</div></div>`}
+const THEMES={LG:['#c30452','#ff8fb8'],두산:['#1a1748','#ff6b72'],삼성:['#074ca1','#8ab8ff'],KIA:['#d8001f','#ff9a9a'],롯데:['#041e42','#ff7b84'],키움:['#6d0a1d','#f0c27b'],한화:['#f26a00','#ffb36b'],SSG:['#ce0e2d','#f6d36b'],NC:['#2b4a80','#d9b48a'],KT:['#1f1f1f','#ff5a4f']};
+function themeSet(){const r=document.documentElement.style,t=THEMES[S.theme];if(t){r.setProperty('--clay',t[0]);r.setProperty('--clay2',`color-mix(in srgb,${t[0]} 80%,#000)`);r.setProperty('--gold',t[1])}else['--clay','--clay2','--gold'].forEach(k=>r.removeProperty(k))}
+function xlSet(){themeSet();const on=!!S.work;document.body.classList.toggle('xl',on);document.title=on?'업무 현황.xlsx':'프로호구 매니저'}
+function render(){if(!S)return;ensureUI();xlSet();if(S.season&&!G){weekTick();ylTick()}restoreLift();syncTeam();rebuildOwn();
   if(FBMODE()&&!ON.user&&!S.guest){document.body.dataset.bg='field';hdr.innerHTML='';vw.innerHTML=loginView();return}
   const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=head(k);let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면 오류</h2><p class="note">${esc(e.message)}</p></section>`}
   vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+cmpBar()+modal();S.toast='';
@@ -825,7 +832,7 @@ function render(){if(!S)return;ensureUI();if(S.season&&!G){weekTick();ylTick()}r
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','coupon']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','coupon','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -843,6 +850,8 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='coupon')redeemCoupon();
   else if(a==='guest'){S.guest=1;save();render()}
   else if(a==='rmphoto'){delete S.photos[baseId(S.modal)];delete S.photos[S.modal];save();render()}
+  else if(a==='theme'){S.theme=b.dataset.v||'';S.setbOpen=1;save();render()}
+  else if(a==='work'){S.work=!S.work;save();render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
   else if(a==='load'){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#sv').value.trim()))));if(o&&o.team&&o.season){S=o;ensureUI();save();render()}}catch(e){b.textContent='코드 오류'}}
   else if(a==='reset'){if(b.dataset.c){fresh();packOut=null;G=null;render()}else{b.dataset.c=1;b.textContent='한 번 더 누르면 초기화'}}}
