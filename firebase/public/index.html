@@ -642,6 +642,7 @@ body.xl .eqp,body.xl .eqslot,body.xl .eqi{background:#fff!important;border:1px s
 .oc .osub,.oc .onm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.oc .osub{letter-spacing:-.3px}
 .card .tag.tstar{background:rgba(10,10,10,.85);padding:3px 7px}.card .tag.tstar .stars{font-size:14px}.card .tag.tstar .stars b{color:#ff5e45;text-shadow:0 0 1px #fff,0 0 4px rgba(255,94,69,.8)}
 body.xl .cnd{background:#999!important}
+.bshare{margin-top:8px;gap:6px}.bshare b{margin-right:2px}.bshare #bldimp{max-width:200px}.bshare .bcode{max-width:260px;font-size:12px;font-family:ui-monospace,monospace}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1415,7 +1416,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -1985,6 +1986,7 @@ function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cos
  const YS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a),TS=[...new Set(CARDS.filter(yIn).map(c=>c.team))].sort(),o=(v,n,cur)=>`<option value="${esc(v)}"${String(cur||'')===String(v)?' selected':''}>${esc(n)}</option>`;
  const full=cards.length===25,allOwn=full&&own===25;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">덱 짜보기</h2><button class="ghost" data-a="bldfrom">지금 라인업 가져오기</button><button class="ghost" data-a="bldclr">${S.bldClr?'한 번 더 누르면 비움':'모두 비우기'}</button><button data-a="bldapply" ${allOwn?'':'disabled'} title="${allOwn?'':'25명 모두 보유해야 적용 가능'}">라인업에 적용</button><button class="ghost" data-a="bldsave" ${full?'':'disabled'}>덱으로 저장</button></div>
+ <div class="tools bshare"><b>공유</b><button class="ghost" data-a="bldcode" ${cards.length?'':'disabled'}>공유 코드 복사</button><button class="ghost" data-a="bldimg" ${cards.length?'':'disabled'}>덱 이미지 저장</button><input id="bldimp" placeholder="받은 공유 코드 붙여넣기" aria-label="공유 코드" value=""><button class="ghost" data-a="bldimp">코드로 불러오기</button>${S.bldCode?`<input readonly class="bcode" value="${esc(S.bldCode)}" aria-label="내 공유 코드" onclick="this.select()">`:''}${S.bldImpMsg?`<span class="note" style="margin:0">${esc(S.bldImpMsg)}</span>`:''}</div>
  <div class="tools" style="margin-top:8px"><select data-bf="rx" aria-label="추천 목표 덱 효과">${o('','덱 효과 지정 안 함',F.rx)}${[...new Set(FX_TARGETS.map(t=>t.g))].map(g=>`<optgroup label="${esc(g)}">${FX_TARGETS.filter(t=>t.g===g).map(t=>o(t.k,t.n,F.rx)).join('')}</optgroup>`).join('')}</select><button class="ghost" data-a="bldrec">전체 카드로 추천</button><span class="note" style="margin:0">없는 선수도 포함해 코스트 ${COST_CAP} 안에서 채움. 지금 짠 덱은 바뀜</span></div>
  <div class="bsum"><span>코스트 <b class="${cost>COST_CAP?'bad':''}">${cost}</b>/${COST_CAP}</span><span>인원 <b>${cards.length}</b>/25</span><span>보유 <b>${own}</b>/${cards.length}</span><span>EX 타자 <b class="${ex.B>EX_MAX.B?'bad':''}">${ex.B}</b>/${EX_MAX.B} · 투수 <b class="${ex.P>EX_MAX.P?'bad':''}">${ex.P}</b>/${EX_MAX.P}</span><span title="주전 20명 기준. 커리어하이는 ${CH_WILD}장까지 같은 계보 최다 연도에 합류, 영구결번은 모두 최다 연도·구단에 합류">${wildTxt(bldStart())}</span><span>덱 효과 야수 <b>+${T.bat}</b> · 투수 <b>+${T.pit}</b></span></div>
  ${fxPickHTML(bldStart(),B.fxsel,'bld')}
@@ -1996,7 +1998,34 @@ function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cos
  ${S.bldView==='card'&&!S.work?`<div class="pool">${pool.slice(0,lim).map(c=>`<div class="pw" data-bput="${esc(c.id)}" role="button" tabindex="0" aria-label="${esc(c.name)} 덱에 넣기" style="cursor:pointer">${card(c,{dim:ids.has(c.id),inUse:ids.has(c.id),nocond:1})}${S.owned[c.id]?'':'<span class="dupn" title="보유하지 않은 카드" style="top:34px;bottom:auto;left:8px;right:auto">미보유</span>'}</div>`).join('')}</div>`:`<div class="scroll"><table class="tbl lul bpool"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th><th>보유</th></tr></thead><tbody>
  ${pool.slice(0,lim).map(c=>`<tr class="${ids.has(c.id)?'use':''}" data-bput="${esc(c.id)}" role="button" tabindex="0"><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td><b>${c.ovr}</b></td><td>${c.cost}</td><td>${S.owned[c.id]?'보유':''}</td></tr>`).join('')}</tbody></table></div>`}
  ${pool.length>lim?`<div class="tools" style="justify-content:center;margin-top:8px"><button class="ghost" data-a="bldmore">더 보기 (${(pool.length-lim).toLocaleString()})</button></div>`:''}</div></div></section>`}
+// ===== 덱 공유 (코드·이미지) =====
+const b64e=t=>btoa(unescape(encodeURIComponent(t))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),b64d=t=>decodeURIComponent(escape(atob(t.replace(/-/g,'+').replace(/_/g,'/'))));
+function bldEncode(B){return 'PHD1.'+b64e(JSON.stringify({l:B.lu,b:B.bench,r:B.rot,p:B.pen,f:B.fxsel||[]}))}
+function bldDecode(code){const m=String(code||'').trim().match(/PHD1\.([A-Za-z0-9_-]+)/);if(!m)return null;try{const d=JSON.parse(b64d(m[1])),ok=id=>id&&byId[id]?id:null,pad=(a,n)=>[...(a||[]).map(ok),...Array(n).fill(null)].slice(0,n);let miss=0;const cnt=a=>(a||[]).forEach(id=>{if(id&&!byId[id])miss++});cnt((d.l||[]).map(x=>x[1]));cnt(d.b);cnt(d.r);cnt(d.p);
+  return {lu:BLD_POS.map((p,i)=>{const x=(d.l||[])[i];return [x&&x[0]||p,x?ok(x[1]):null]}),bench:pad(d.b,5),rot:pad(d.r,5),pen:pad(d.p,6),fxsel:Array.isArray(d.f)?d.f:[],miss}}catch(e){return null}}
+async function bldImage(B){try{await document.fonts.ready}catch(e){}
+  const W=1080,H=1380,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),F='"IBM Plex Sans KR",sans-serif',FH='"Barlow Condensed","IBM Plex Sans KR",sans-serif';
+  g.fillStyle='#0d3a27';g.fillRect(0,0,W,H);g.fillStyle='#195a3a';g.fillRect(0,0,W,150);
+  const cards=bldCards(),cost=cards.reduce((t,c)=>t+c.cost,0),T=teamColor(bldStart(),B.fxsel);
+  g.fillStyle='#ffd27a';g.font=`700 54px ${FH}`;g.fillText(S.team&&S.team.name||'내 덱',48,82);
+  g.fillStyle='#d2e7d9';g.font=`500 26px ${F}`;g.fillText(`코스트 ${cost}/${COST_CAP} · ${cards.length}/25명 · 야수 +${T.bat} · 투수 +${T.pit}`,48,126);
+  const fx=(T.fx||[]).map(f=>`${f.g} ${f.name||f.n||''}`).join('   ');if(fx){g.fillStyle='#fff';g.font=`600 22px ${F}`;g.fillText(fx.slice(0,70),48,186)}
+  const col=(x,y,title,rows)=>{g.fillStyle='#ffd27a';g.font=`700 30px ${FH}`;g.fillText(title,x,y);y+=16;
+    for(const [lab,id] of rows){const c=byId[id];y+=52;g.fillStyle='rgba(255,255,255,.06)';g.fillRect(x,y-36,480,46);g.fillStyle='#a3c1af';g.font=`600 20px ${F}`;g.fillText(lab,x+12,y-6);
+      if(c){g.fillStyle=c.col||'#888';g.fillRect(x+96,y-34,6,42);g.fillStyle='#fff';g.font=`700 24px ${F}`;g.fillText(c.name,x+112,y-6);const nw=g.measureText(c.name).width;if(c.v){g.fillStyle='#ffd27a';g.font=`600 15px ${F}`;g.fillText(VN[c.v]||c.v,x+118+nw,y-7)}g.fillStyle='#a3c1af';g.font=`500 17px ${F}`;g.fillText(`${String(c.year).slice(2)}' ${c.team}`,x+300,y-6);
+        g.fillStyle='#ff8a6a';g.font=`600 16px ${F}`;g.fillText('C'+c.cost,x+392,y-6);g.textAlign='right';g.fillStyle='#ffd27a';g.font=`700 26px ${FH}`;g.fillText(c.ovr,x+468,y-4);g.textAlign='left'}
+      else{g.fillStyle='#6f8a7a';g.font=`500 20px ${F}`;g.fillText('비어 있음',x+112,y-6)}}return y};
+  let y1=col(48,250,'타순',B.lu.map(([p,id],i)=>[`${i+1}번 ${p}`,id]));col(48,y1+70,'벤치',B.bench.map(id=>['벤치',id]));
+  let y2=col(552,250,'선발',B.rot.map((id,i)=>[`선발 ${i+1}`,id]));col(552,y2+70,'불펜',B.pen.map((id,i)=>[i<4?`중계 ${i+1}`:i===4?'셋업':'마무리',id]));
+  g.fillStyle='#6f8a7a';g.font=`500 18px ${F}`;g.fillText('프로호구 매니저 · 공유 코드로 같은 덱 불러오기 가능',48,H-36);
+  window.__deckPng=cv.toDataURL('image/png');
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png')),name=`deck-${Date.now().toString(36)}.png`;
+  try{const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'내 덱'});return 'shared'}}catch(e){}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);return 'saved'}
 function bldAct(a){const B=bldInit();
+ if(a==='bldcode'){S.bldCode=bldEncode(B);S.bldImpMsg='';navigator.clipboard?.writeText(S.bldCode).then(()=>{S.bldImpMsg='코드 복사됨';render()},()=>{S.bldImpMsg='옆 코드를 직접 복사';render()});render();return}
+ if(a==='bldimg'){bldImage(B).then(r=>{S.bldImpMsg=r==='shared'?'이미지 공유':'이미지 저장';render()});return}
+ if(a==='bldimp'){const d=bldDecode((document.getElementById('bldimp')||{}).value);if(!d){S.bldImpMsg='잘못된 코드';render();return}Object.assign(B,{lu:d.lu,bench:d.bench,rot:d.rot,pen:d.pen,fxsel:d.fxsel});S.bldCode='';S.bldImpMsg=d.miss?`불러옴 · 없는 카드 ${d.miss}장 제외`:'불러옴';save();render();return}
  if(a==='bldmore'){S.bldLim=(S.bldLim||40)+40}
  else if(a==='bldrec'){const fx=(S.bldF||{}).rx||'',r=recommendAll(fx),pad=(a,n)=>[...a,...Array(n).fill(null)].slice(0,n);B.lu=r.lu.map(([p,id])=>[p,id]);B.bench=pad(r.bench,5);B.rot=pad(r.rot,5);B.pen=pad(r.pen,6);B.fxsel=[];S.bldSel=null;const t=FX_T_BY[fx];if(t){const nm=t.k[0]==='F'?'FA 이적: '+t.s:t.k[0]==='L'?'단일구단':t.k==='S:AS'?'올스타덱':t.k==='S:GG'?'골든글러브덱':t.k.slice(2),x=(teamColor(bldStart(),[],(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean)).all||[]).find(x=>x.name===nm);if(x)B.fxsel=[x.key]}S.msg=`전체 카드 기준 추천으로 채움${t?' · 목표 '+t.n:''}. 마음에 들면 덱으로 저장`}
  else if(a==='bldclr'){if(!S.bldClr){S.bldClr=1;render();return}S.bld=null;S.bldClr=0;S.bldSel=null;bldInit()}
@@ -2768,7 +2797,7 @@ function render(){if(!S)return;ensureUI();xlSet();msTick();if(S.season&&!G){week
 addEventListener('hashchange',()=>{S&&(S.modal=null,S.bmodal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','bldcode','bldimg','bldimp','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
