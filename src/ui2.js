@@ -652,8 +652,8 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  const FN=B?[['all','전체 야수'],['C','포수'],['IF','내야수'],['OF','외야·지명']]:[['all','전체 투수'],['SP','선발'],['RP','불펜']];
  const SIDE=B?[['line','타선 분석'],['field','수비 위치']]:[['bat','배터리 분석']],side=SIDE.some(x=>x[0]===S.side)?S.side:SIDE[0][0];
  return `<section class="band">${sub}<div class="tools" style="margin-top:12px"><div class="tabs tb" role="tablist">${[['B','야수'],['P','투수']].map(([k,n])=>`<button role="tab" aria-selected="${S.tb===k}" class="${S.tb===k?'on':''}" data-tb="${k}">${n}</button>`).join('')}</div>${nextOpp()}<button class="ghost" data-a="luana" style="margin-left:auto">${B?'타선 분석':'배터리 분석'}</button><button class="ghost" data-rec="${S.recm||'power'}">추천 라인업</button>${S.undo?'<button class="ghost" data-a="recundo">되돌리기</button>':''}</div>${recPanel()}
- ${B?`<div class="strip"><div class="sh">야수</div><div class="row scroll">${S.lu.map((x,i)=>oc('lu',i,'',{num:(i+1)+'번',under:posSel(i)})).join('')}<span class="gap"></span>${S.bench.map((x,i)=>oc('bench',i,'벤치',{num:(i+1)+'번'})).join('')}</div></div>`
- :`<div class="strip"><div class="sh">투수</div><div class="row scroll">${S.rot.map((x,i)=>(i?'<span class="arr" aria-hidden="true">›</span>':'')+oc('rot',i,'선발',{num:(i+1)+'번',cls:'sp'})).join('')}<span class="gap"></span>${[2,3,4,5].map((j,n)=>oc('pen',j,'중계',{num:(n+1)+'번',cls:'rp'})).join('')}<span class="gap"></span>${oc('pen',1,'셋업',{cls:'su'})}${oc('pen',0,'마무리',{cls:'cl'})}</div></div>`}
+ ${`<div class="strip"><div class="sh">야수</div><div class="row scroll">${S.lu.map((x,i)=>oc('lu',i,'',{num:(i+1)+'번',under:posSel(i)})).join('')}<span class="gap"></span>${S.bench.map((x,i)=>oc('bench',i,'벤치',{num:(i+1)+'번'})).join('')}</div></div>`
+ +`<div class="strip pit"><div class="sh">투수</div><div class="row scroll">${S.rot.map((x,i)=>(i?'<span class="arr" aria-hidden="true">›</span>':'')+oc('rot',i,'선발',{num:(i+1)+'번',cls:'sp'})).join('')}<span class="gap"></span>${[2,3,4,5].map((j,n)=>oc('pen',j,'중계',{num:(n+1)+'번',cls:'rp'})).join('')}<span class="gap"></span>${oc('pen',1,'셋업',{cls:'su'})}${oc('pen',0,'마무리',{cls:'cl'})}</div></div>`}
  ${deckBar()}<details class="pdet"${S.pdetOpen?' open':''}><summary>덱 저장 · 모드별 덱</summary>${presetBar()}</details>
  <p class="note hint${S.sel||S.msg?' on':''}" aria-live="polite">${S.msg?esc(S.msg):S.sel?'바꿀 자리나 넣을 카드 선택. 같은 자리 다시 누르면 취소.':''}</p><p class="note help">${S.sel?'같은 줄의 다른 자리를 누르면 서로 바뀌고, 아래 보유 카드를 누르면 그 카드가 들어갑니다. 같은 자리를 다시 누르면 선택 해제.':'PC: 카드·자리를 끌어 놓아 교체 가능. 카드를 누르면 상세 정보가 뜨고, 거기서 [자리 교체하기]를 누른 다음 다른 자리(타순 교체·벤치 교대)나 보유 카드를 누르면 바뀝니다. 빈 자리는 바로 선택. 수비 위치는 카드 아래 메뉴에서 바꾸고, 메뉴 옆 등급은 그 위치 수비 적성입니다.'}</p></section>
  <section class="band lu2 one"><div><div class="tools"><h2 style="margin:0">보유 카드</h2>
@@ -831,8 +831,8 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-tix],[d
  else if(D.sdel)S.sup.splice(+D.sdel,1);
  else if(D.slot){const [k,i]=D.slot.split(':'),s={k,i:+i};
   if(S.sel&&S.sel.k===k&&S.sel.i===+i)S.sel=null;else if(S.sel&&KIND(S.sel.k)===KIND(k)){swapSlots(S.sel,s);S.sel=null}
-  else{const id=getS(s);if(id){S.modal=id;S.mflip=false;S.mslot=s}else S.sel=s}}
- else if(D.mswap){S.sel=S.mslot;S.modal=null;S.mslot=null}
+  else{const id=getS(s);if(id){S.modal=id;S.mflip=false;S.mslot=s}else{S.sel=s;S.tb=KIND(k)}}}
+ else if(D.mswap){S.sel=S.mslot;if(S.sel)S.tb=KIND(S.sel.k);S.modal=null;S.mslot=null}
  else if(D.pick){if(S.sel)place(D.pick);else{S.modal=D.pick;S.mflip=false;S.mslot=null}}
  else if(D.pf)S.pf=D.pf;else if(D.side)S.side=D.side;else if(D.face)S.back=D.face==='1';
  else if(D.cell)tapBlk(+D.cell,location.hash==='#skill'?S.skc:S.cardId);
