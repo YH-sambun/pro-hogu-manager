@@ -687,6 +687,7 @@ function modal(){if(S.dexView)return dexViewModal();const c=by[S.modal];if(!c)re
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button>${(S.owned[baseId(c.id)]|0)>1?`<button class="ghost" data-a="dism" data-id="${esc(baseId(c.id))}" title="${c.v==='EX'?'EX 조각 3개 = 구단 지정 EX 확정권 1장':'코스트 × 30P'}">중복 1장 분해 · ${c.v==='EX'?`EX 조각 ${(S.exShard|0)}/3`:'+'+(c.cost*ECON.DISMANTLE)+'P'}</button>`:''}<button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.un?`대학 <b>${esc(c.un)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',!c.rg&&!c.hs?'출신 정보 없음':'',`${esc(lname(c.line))} 계보`,c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null?(abAge(c)?'유학 가능':'유학 불가'):''].filter(Boolean).join(' · ')}</p>${recHTML(c)}${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
+ ${eqHTML(c)}
  <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · <a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
 vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
  if(abAct(D)||shopAct(D)){render();return}
@@ -809,6 +810,16 @@ function loginView(){return `<section class="login"><div class="logo big">프로
   <button class="ghost" data-a="guest">로그인 없이 하기 (이 기기에만 저장)</button></section>`}
 setTimeout(()=>{if(!ON.ready){ON.ready=1;if(S)render()}},8000);
 
+
+// ===== 장비 =====
+const EQSN={bat:'배트',glove:'글러브',spike:'스파이크',rosin:'로진',ball:'공인구',shoe:'투수화'},EQGC={일반:'g1',희귀:'g2',전설:'g3'};
+function eqHTML(c){if(!ECON.EQ_SLOTS)return '';const id=baseId(c.id),K=ECON.EQ_KIND,EQ=S.eq||[],slots=ECON.EQ_SLOTS[c.type]||[];
+  const on=slots.map(sl=>EQ.find(x=>x.on===id&&K[x.k][1]===sl));
+  const mine=EQ.filter(x=>K[x.k][0]===c.type&&x.on!==id).map(x=>({x,b:ECON.eqBonus(x,c)})).sort((a,b)=>(b.b?b.b.v:0)-(a.b?a.b.v:0));
+  const tot=ECON.cardEq(S,id,byId);
+  return `<div class="eqp"><div class="eqh"><b>장비</b><small>${Object.keys(tot).length?Object.entries(tot).map(([k,v])=>`${SKN[k]} +${v}`).join(' · '):'장착 없음'} · 코스트 낮을수록 효과 큼</small></div>
+  <div class="eqs">${slots.map((sl,i)=>{const it=on[i],b=it&&ECON.eqBonus(it,c);return `<div class="eqslot${it?' on '+EQGC[it.g]:''}"><small>${EQSN[sl]}</small>${it?`<b>${esc(ECON.eqName(it))}</b><em>${b?SKN[b.stat]+' +'+b.v:''}</em><button class="ghost" data-a="eqoff" data-u="${esc(it.u)}">빼기</button>`:'<span class="mute">비어 있음</span>'}</div>`}).join('')}</div>
+  ${mine.length?`<div class="eql">${mine.map(({x,b})=>`<div class="eqi ${EQGC[x.g]}"><span><b>${esc(ECON.eqName(x))}</b><small>${EQSN[K[x.k][1]]}${x.on&&byId[x.on]?` · ${esc(byId[x.on].name)} 장착 중`:''}</small></span><em>${b?`이 카드에 끼우면 ${SKN[b.stat]} +${b.v}`:''}</em><button data-a="eqon" data-u="${esc(x.u)}" data-id="${esc(id)}">끼우기</button></div>`).join('')}</div>`:`<p class="note" style="margin:6px 0 0">${c.type==='B'?'타자':'투수'}용 장비 없음 · 미션 보상으로 획득</p>`}</div>`}
 // ===== 미션 챕터 =====
 let msSig='';
 function msTick(){if(!ECON.missionCheck||!(ECON.CHAPTERS||[]).length)return;const sig=Object.keys(S.owned).length+'|'+Object.values(S.owned).reduce((a,b)=>a+(b|0),0)+'|'+Object.keys(S.dexDone||{}).length;if(sig===msSig)return;msSig=sig;const out=ECON.missionCheck(S);if(out.length){S.toast='미션 달성 · '+out.map(x=>`${x.ch?msLn(x.ch)+' ':''}${x.what}${x.card&&byId[x.card]?' '+byId[x.card].name:''}${x.rw&&rwText(x.rw)?' +'+rwText(x.rw):''}`).join(' / ');save()}}
@@ -855,7 +866,7 @@ function render(){if(!S)return;ensureUI();xlSet();msTick();if(S.season&&!G){week
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','coupon','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -879,6 +890,8 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='msclose'){S.msSub=null;render()}
   else if(a==='msopt'){S.opt=S.opt||{};S.opt.submitLast=!S.opt.submitLast;save();render()}
   else if(a==='msgo'){const m=S.msSub;if(!m)return;const ids=Object.entries(m.sel).flatMap(([id,n])=>Array(n).fill(id));if(!ids.length){S.msMsg='카드 선택';render();return}const r=ECON.missionSubmit(S,m.line,ids);if(r.err){S.msMsg=r.err;render();return}S.toast=`${r.used}장 제출 · ${r.have}/5`+(r.out&&r.out.length?' · '+r.out.map(x=>x.what+(x.rw?' '+rwText(x.rw):'')).join(' · '):'');S.msSub=null;msTick();save();render()}
+  else if(a==='eqon'){const r=ECON.equip(S,b.dataset.u,b.dataset.id,byId);S.toast=r.err||'';save();render()}
+  else if(a==='eqoff'){ECON.unequip(S,b.dataset.u);save();render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
   else if(a==='load'){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#sv').value.trim()))));if(o&&o.team&&o.season){S=o;ensureUI();save();render()}}catch(e){b.textContent='코드 오류'}}
   else if(a==='reset'){if(b.dataset.c){fresh();packOut=null;G=null;render()}else{b.dataset.c=1;b.textContent='한 번 더 누르면 초기화'}}}

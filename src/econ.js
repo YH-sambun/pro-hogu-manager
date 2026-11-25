@@ -50,7 +50,7 @@ function predOffer(mode,tier){const m=mode==='league'?tierMul(tier):1,L=PRED.sli
 function predSettle(offer,box,won){const ok=k=>{const x=PRED.find(p=>p[0]===k);if(k==='ra0')return won&&box.ra===0;if(k==='bw')return won&&box.r-box.ra>=5;return (box[k]|0)>=x[2]};
   const hit=(offer||[]).filter(o=>ok(o[0]));return {pt:hit.reduce((s,o)=>s+o[2],0),hit:hit.map(o=>o[1])}}
 const yearGame=res=>({pt:{w:25,d:12,l:8}[res]|0}); // 연도 리그 경기당(정규·포스트시즌 공통). 144경기·하루 약 60경기 기준 하루 약 1,100P → 상한 1,500P 안
-function yearLeague(rank,firstWin){if(rank===1)return firstWin?{pt:3000,tix:{gg:1}}:{pt:500};return {pt:[0,0,800,500][rank]||200}}
+function yearLeague(rank,firstWin){if(rank===1)return firstWin?{pt:3000,tix:{gg:1,ch:1}}:{pt:500};return {pt:[0,0,800,500][rank]||200}}
 
 // ── 2. 뽑기 상품 ─────────────────────────────────────────────
 // 가격은 기존 코인가 그대로. 카드 확률은 코스트 가중치 W (기존 draw와 같음)
@@ -61,7 +61,7 @@ const PACKS=[
  {k:'p', n:'프리미엄 팩', p:1800,cnt:5,d:'5장 · 4코스트 이상 · 1장은 스타(6+) · 20팩 안에 레전드(9+) 확정'},
  {k:'t', n:'구단 묶음 팩', p:800, cnt:5,d:'5장 · 고른 구단 계보 3개 · 1장은 3코스트 이상'},
  {k:'y', n:'연도 묶음 팩', p:800, cnt:5,d:'5장 · 고른 연도 3개 · 1장은 3코스트 이상'},
- {k:'sx',n:'스타 이벤트 팩',p:1500,cnt:5,d:'5장 · 4코스트 이상 · 장마다 골든글러브·올스타 25% · 1장은 골글·올스타 확정'},
+ {k:'sx',n:'스타 이벤트 팩',p:1500,cnt:5,d:'5장 · 4코스트 이상 · 장마다 골든글러브·올스타·커리어하이 25% · 1장은 특별 카드 확정'},
  {k:'tl',n:'구단 팩',     p:600, cnt:5,d:'5장 · 고른 구단 계보 1개, 연도 상관없이 · 1장은 3코스트 이상'},
  {k:'ty',n:'팀 팩',       p:1000,cnt:3,d:'3장 · 고른 구단의 연도 3개 · 1장은 도감에 없는 그 팀 주전 확정'},
  {k:'b', n:'블록 팩',     p:400, cnt:3,d:'스킬 블록 3개 (C50/B30/A15/S5) · 1개는 B급 이상'},
@@ -70,10 +70,10 @@ const PACKS=[
  {k:'sp',n:'서포트 카드 팩',p:500,cnt:3,d:'서포트 카드 3장'}];
 // 천장: 팩 k를 연속 n팩 열 동안 조건(f)에 맞는 결과가 없으면 n번째 팩 하나를 확정으로 바꿈. 확정이 나오면(자연이든 천장이든) 카운트 0
 // 카드 팩은 buyCards가 처리. 블록·작전·서포트 팩은 UI가 뽑은 뒤 pityTick(S,k,hit) 호출 → true면 결과 하나를 확정 등급으로 바꿀 것
-const isSp=c=>c.v==='GG'||c.v==='AS';
+const isSp=c=>c.v==='GG'||c.v==='AS'||c.v==='CH';
 const PITY={p:{n:20,label:'레전드(9+)',f:c=>c.cost>=9},n:{n:10,label:'스타(6+)',f:c=>c.cost>=6},c1:{n:10,label:'1코 올스타·골글',f:isSp},
   t:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},y:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},tl:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},ty:{n:10,label:'7코스트 이상',f:c=>c.cost>=7},
-  sx:{n:10,label:'9코 이상 골글·올스타',f:c=>c.cost>=9&&isSp(c)},b:{n:10,label:'S급 블록'},tc:{n:10,label:'황금 작전'},t1:{n:30,label:'황금 작전'},sp:{n:10,label:'강화(+) 서포트'}};
+  sx:{n:10,label:'9코 이상 특별 카드',f:c=>c.cost>=9&&isSp(c)},b:{n:10,label:'S급 블록'},tc:{n:10,label:'황금 작전'},t1:{n:30,label:'황금 작전'},sp:{n:10,label:'강화(+) 서포트'}};
 function pityTick(S,k,hit){const P=PITY[k];if(!P)return false;S.pity=S.pity||{};if(hit){S.pity[k]=0;return false}
   const n=(S.pity[k]|0)+1;if(n>=P.n){S.pity[k]=0;return true}S.pity[k]=n;return false}
 // 작전 카드 팩 등급(일반75/특수20/황금5), 3장 중 1장은 특수 이상 보장. 반환 등급 배열 → 해당 등급 TCARDS에서 뽑기
@@ -82,9 +82,9 @@ const FLOOR={n:3,t:3,y:3,tl:3,p:6};
 // 블록 팩 등급(C50/B30/A15/S5), 3개 중 1개는 B 이상 보장. 반환 등급 배열 → mkBlock(t,g)에 넘김
 function blockGrades(n){n=n||3;const g=()=>{const u=rnd();return u<.05?'S':u<.2?'A':u<.5?'B':'C'};const o=[];for(let i=0;i<n;i++)o.push(g());if(o.every(x=>x==='C')){const u=rnd();o[n-1]=u<.1?'S':u<.4?'A':'B'}return o}  // 프리미엄 팩 연속 20팩 동안 레전드가 없으면 그 팩 마지막 장은 레전드
 // 확정권: 뽑기 한 번을 공짜로/확정으로
-const TIX={prem:'프리미엄 팩 1개',block:'블록 팩 1개(1장 이상 A급)',star:'스타(6+) 카드 1장',gg:'골든글러브 카드 1장(연도 지정 가능)',
+const TIX={ch:'커리어하이 카드 1장(연도 지정 가능)',prem:'프리미엄 팩 1개',block:'블록 팩 1개(1장 이상 A급)',star:'스타(6+) 카드 1장',gg:'골든글러브 카드 1장(연도 지정 가능)',
   ex:'EX 카드 1장(구단 지정 가능)',legend:'레전드(9+) 카드 1장',pick:'레전드 선택권(원하는 9+ 카드 1장)'};
-const tixPool={star:c=>c.cost>=6&&!c.mx,gg:c=>c.v==='GG',ex:c=>c.v==='EX'&&!c.mx,legend:c=>c.cost>=9&&!c.mx};
+const tixPool={ch:c=>c.v==='CH',star:c=>c.cost>=6&&!c.mx,gg:c=>c.v==='GG',ex:c=>c.v==='EX'&&!c.mx,legend:c=>c.cost>=9&&!c.mx};
 // 중복 분해: 남는 카드 1장 → 코스트×30P (합성·유학 재료로 쓰지 않을 때)
 const DISMANTLE=30;
 
@@ -104,9 +104,9 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
   opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개 선택'};
   if(k==='tl'&&!opt.line)return {err:'구단 선택'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개 · 연도 3개 선택'};
   if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
-  S.pt-=pk.p;const out=[];const sp=k==='sx'?pool.filter(c=>c.v==='GG'||c.v==='AS'):null,nsp=sp&&pool.filter(c=>!c.v);
+  S.pt-=pk.p;const out=[];const sp=k==='sx'?pool.filter(isSp):null,nsp=sp&&pool.filter(c=>!c.v);
   for(let i=0;i<pk.cnt;i++)out.push(k==='ty'?pool[Math.floor(rnd()*pool.length)]:sp?wpick(rnd()<.25?sp:nsp):wpick(pool));
-  if(sp&&!out.some(c=>c.v==='GG'||c.v==='AS'))out[out.length-1]=wpick(sp);
+  if(sp&&!out.some(isSp))out[out.length-1]=wpick(sp);
   if(k==='ty'){const Y=opt.tyYears.map(Number),miss=SETS.filter(s=>s.kind==='team'&&s.line===opt.line&&Y.includes(s.year)).flatMap(s=>s.ids.filter(id=>!dexHas(S,id)));if(miss.length){const id=miss[Math.floor(rnd()*miss.length)];out[0]=pool.find(c=>c.id===id)||out[0]}}
   // 바닥 보장: 일반·구단·연도 팩은 3코스트 이상 1장, 프리미엄 팩은 스타(6+) 1장 (팩에 없으면 마지막 장을 바꿈)
   const fl=FLOOR[k];if(fl&&!out.some(c=>c.cost>=fl)){const fp=pool.filter(c=>c.cost>=fl);if(fp.length)out[out.length-1]=wpick(fp)}
@@ -116,7 +116,7 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
 // arg: pick→카드 id, gg→연도(선택), ex→구단 계보(선택)
 function useTicket(S,CARDS,k,arg){const pickId=arg;if(!(S.tix&&S.tix[k]>0))return {err:'확정권 없음'};let c;
   if(k==='pick'){c=CARDS.find(x=>x.id===pickId&&x.cost>=9&&!x.mx);if(!c)return {err:'레전드(9+) 카드 선택'}}
-  else if(tixPool[k]){const all=CARDS.filter(c=>tixPool[k](c)&&(arg==null||(k==='gg'&&c.year===+arg)||(k==='ex'&&c.line===arg)||!['gg','ex'].includes(k))),nw=all.filter(x=>!dexHas(S,x.id));c=wpick(nw.length?nw:all)} // 도감에 없는 카드 우선else return {err:'팩형 확정권은 팩 화면에서 써요'};
+  else if(tixPool[k]){const all=CARDS.filter(c=>tixPool[k](c)&&(arg==null||(k==='gg'&&c.year===+arg)||(k==='ex'&&c.line===arg)||(k==='ch'&&c.year===+arg)||!['gg','ex','ch'].includes(k))),nw=all.filter(x=>!dexHas(S,x.id));c=wpick(nw.length?nw:all)} // 도감에 없는 카드 우선else return {err:'팩형 확정권은 팩 화면에서 써요'};
   if(!c)return {err:'조건에 맞는 카드 없음'};S.tix[k]--;return {cards:[c],dex:gain(S,[c.id])}}
 function dismantle(S,byId,id,n){n=n||1;const have=S.owned[id]|0;if(have-n<1)return {err:'1장은 남겨야 함'};
   S.owned[id]=have-n;if(byId[id].v==='EX'){S.exShard=(S.exShard|0)+n;let tk=0;while(S.exShard>=3){S.exShard-=3;tk++}if(tk){S.tix=S.tix||{};S.tix.ex=(S.tix.ex|0)+tk}return {shard:n,tix:tk,left:S.exShard}} // EX 중복 → EX 조각, 3개마다 EX 확정권(구단 지정 가능)
@@ -138,6 +138,8 @@ function buildSets(CARDS){SETS=[];const by=(f)=>{const m={};for(const c of CARDS
   for(const y in gg){const L=gg[y];SETS.push({id:'gg:'+y,kind:'gg',name:`${y} 골든글러브`,year:+y,ids:L.map(c=>c.id),rw:{pt:L.reduce((s,c)=>s+c.cost,0)*DEX.gg,tix:{star:1}}})}
   const ex=by(c=>c.v==='EX'?c.line:null);
   for(const l in ex){const L=ex[l];SETS.push({id:'ex:'+l,kind:'ex',name:`${l} EX`,ids:L.map(c=>c.id),rw:{pt:L.reduce((s,c)=>s+c.cost,0)*DEX.ex,tix:{legend:1}}})}
+  const chs=by(c=>c.v==='CH'?c.line:null);
+  for(const l in chs){const L=chs[l];SETS.push({id:'ch:'+l,kind:'ch',name:`${l} 커리어하이`,line:l,ids:L.map(c=>c.id),rw:{pt:L.reduce((s,c)=>s+c.cost,0)*DEX.gg,tix:{legend:1}}})}
   const nT=SETS.filter(s=>s.kind==='team').length,nG=SETS.filter(s=>s.kind==='gg').length;
   for(const [n,rw] of [[10,{pt:3000,tix:{prem:2}}],[50,{pt:10000,tix:{gg:1}}],[100,{pt:20000,tix:{legend:1}}],[200,{pt:40000,tix:{ex:1}}],[nT,{pt:80000,tix:{pick:2}}]])
     SETS.push({id:'meta:team'+n,kind:'meta',name:n===nT?'팀 세트 전부':`팀 세트 ${n}개`,need:['team',n],rw});
@@ -195,13 +197,33 @@ function redeem(S,code,data){code=String(code||'').trim().toUpperCase();S.coupon
 const PRED_CAP=1500;
 function predCapped(S,rw){const d=today();S.prc=S.prc&&S.prc.day===d?S.prc:{day:d,pt:0};const left=Math.max(0,PRED_CAP-S.prc.pt),pt=Math.min(left,rw.pt|0);
   S.prc.pt+=pt;return {...rw,pt,capped:pt<(rw.pt|0),left:left-pt}}
+// ── 장비(미션 보상 전용) ──────────────────────────────────────
+// 카드 유형별 슬롯 3칸, 언제든 끼웠다 뺄 수 있음. 저코스트 카드일수록 보너스가 큼(덱 운영용): 전설 기준 1코 +20 … 5코 +10 … 10코 +2
+// 등급 배율: 일반 0.35 · 희귀 0.6 · 전설 1. 같은 구단 장비를 그 구단 카드에 끼우면 +10%(최소 +1). 결과는 반올림, 최소 +1
+const EQ_KIND={bp:['B','bat','배트(장타)','pow'],bc:['B','bat','배트(교타)','con'],gl:['B','glove','글러브','def'],sk:['B','spike','스파이크','spd'],
+  ro:['P','rosin','로진','ctl'],bl:['P','ball','공인구','stu'],sh:['P','shoe','투수화','sta']};
+const EQ_SLOTS={B:['bat','glove','spike'],P:['rosin','ball','shoe']},EQ_G={일반:.35,희귀:.6,전설:1};
+const EQ_BASE=[0,20,17,15,12,10,8,6,4,3,2];
+function mkEquip(S,g,line,kind){const ks=Object.keys(EQ_KIND),k=kind||ks[Math.floor(rnd()*ks.length)];S.eq=S.eq||[];S.eqN=(S.eqN|0)+1;
+  const it={u:'e'+S.eqN,k,g,line:line||null,on:null};S.eq.push(it);return it}
+const eqName=it=>`${it.line?it.line+' ':''}${it.g} ${EQ_KIND[it.k][2]}`;
+function eqBonus(it,c){const K=EQ_KIND[it.k];if(!c||c.type!==K[0])return null;let v=EQ_BASE[Math.max(1,Math.min(10,c.cost))]*EQ_G[it.g];
+  if(c.v==='CH')v*=1.25; // 커리어하이 카드는 장비 ×1.25
+  if(it.line&&it.line===c.line)v+=Math.max(1,v*.1);return {stat:K[3],v:Math.max(1,Math.round(v))}}
+function equip(S,u,cardId,byId){const it=(S.eq||[]).find(x=>x.u===u),c=byId[cardId];if(!it||!c)return {err:'없는 장비·카드'};const K=EQ_KIND[it.k];
+  if(c.type!==K[0])return {err:K[0]==='B'?'타자용 장비예요':'투수용 장비예요'};
+  for(const x of S.eq)if(x.on===cardId&&EQ_KIND[x.k][1]===K[1]&&x!==it)x.on=null; // 같은 슬롯에 있던 장비는 빠짐
+  it.on=cardId;return {ok:true,bonus:eqBonus(it,c)}}
+function unequip(S,u){const it=(S.eq||[]).find(x=>x.u===u);if(it)it.on=null;return {ok:!!it}}
+// 카드에 끼운 장비 합계 {stat:+v}. 엔진이 능력치에 더할 때 사용
+function cardEq(S,cardId,byId){const o={},c=byId[cardId];for(const it of S.eq||[])if(it.on===cardId){const b=eqBonus(it,c);if(b)o[b.stat]=(o[b.stat]|0)+b.v}return o}
 // ── 미션 챕터(OOTP식) ─────────────────────────────────────────
 // 구단 계보마다 챕터 1개, 미션 ★1~★5. 미션 3개 → 그 구단 EX 확정권, 5개 → 미션 전용 EX(c.mx, 없으면 EX 확정권+1만P)
 // 챕터 3개 완료 → 레전드 선택권, 전부 → 명예의 전당 보상. 완료 기록 S.ms[챕터id]={m1:시각,...,mid,fin}
 // 제출 미션은 기본적으로 중복만 소모(1장은 남김). S.opt.submitLast=true면 마지막 1장도 제출 가능(도감 기록은 유지)
-const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000}],['m2',2,'그 구단 주전 세트 1개 완성',{pt:2000,tix:{star:1}}],
-  ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,exShard:1}],['m4',4,'그 구단 선수 15명 이상 1군으로 주간 리그 4단계 이상 우승',{pt:4000,tix:{gg:1}}],
-  ['m5',5,'그 구단 레전드(9+) 카드 3장 보유',{pt:5000,tix:{legend:1}}]];
+const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['m2',2,'그 구단 주전 세트 1개 완성',{pt:2000,tix:{star:1},eq:'일반'}],
+  ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,exShard:1,eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 주간 리그 4단계 이상 우승',{pt:4000,tix:{gg:1},eq:'희귀'}],
+  ['m5',5,'그 구단 레전드(9+) 카드 3장 보유',{pt:5000,tix:{legend:1},eq:'희귀'}]];
 const MS_META=[[3,'챕터 3개 완료',{pt:10000,tix:{pick:1}}],['all','모든 챕터 완료 · 명예의 전당',{pt:50000,tix:{pick:2}}]];
 let CHAPTERS=[],CARDS_=[];
 function buildMissions(CARDS){CARDS_=CARDS;const L=[...new Set(CARDS.map(c=>c.line))];
@@ -215,10 +237,11 @@ function msProg(S,ch,mid){const l=ch.line,st=(S.ms&&S.ms[ch.id])||{};if(st[mid])
   if(mid==='m5'){const n=ownedOf(S,c=>c.line===l&&c.cost>=9).length;return {have:Math.min(n,3),need:3}}}
 function msDone(S,ch,mid,out){S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{};if(st[mid])return;st[mid]=Date.now();
   const rw={...MS_DEF.find(m=>m[0]===mid)[3]};if(rw.exShard){S.exShard=(S.exShard|0)+rw.exShard;while(S.exShard>=3){S.exShard-=3;rw.tix={...(rw.tix||{}),ex:((rw.tix||{}).ex|0)+1}}delete rw.exShard}
-  grant(S,rw);out.push({ch:ch.line,what:MS_DEF.find(m=>m[0]===mid)[2]+(mid==='m3'?' (EX 조각 +1)':''),rw});
+  let eqx='';if(rw.eq){const it=mkEquip(S,rw.eq,ch.line);eqx=' · 장비: '+eqName(it);delete rw.eq}
+  grant(S,rw);out.push({ch:ch.line,what:MS_DEF.find(m=>m[0]===mid)[2]+(mid==='m3'?' (EX 조각 +1)':'')+eqx,rw});
   const n=MS_DEF.filter(m=>st[m[0]]).length;
   if(n>=3&&!st.mid){st.mid=Date.now();const r={tix:{ex:1}};grant(S,r);out.push({ch:ch.line,what:'미션 3개 달성',rw:r})}
-  if(n>=5&&!st.fin){st.fin=Date.now();const miss=ch.mx.filter(id=>!(S.owned[id]>0));
+  if(n>=5&&!st.fin){st.fin=Date.now();{const it=mkEquip(S,'전설',ch.line);out.push({ch:ch.line,what:'챕터 완료 · 전설 장비: '+eqName(it),rw:{}})}const miss=ch.mx.filter(id=>!(S.owned[id]>0));
     if(ch.mx.length){const id=(miss.length?miss:ch.mx)[Math.floor(rnd()*(miss.length||ch.mx.length))];gain(S,[id]);out.push({ch:ch.line,what:'챕터 완료',card:id,rw:{}})}
     else{const r={pt:10000,tix:{ex:1}};grant(S,r);out.push({ch:ch.line,what:'챕터 완료',rw:r})}
     const fin=CHAPTERS.filter(c=>S.ms[c.id]&&S.ms[c.id].fin).length;S.msMeta=S.msMeta||{};
@@ -247,6 +270,6 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
   S.dexDone=S.dexDone||{};return S}
 
 const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,pityTick,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
-  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,missionCheck,missionSubmit,missionLeague,isMissionOnly,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
+  DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,missionCheck,missionSubmit,missionLeague,isMissionOnly,EQ_KIND,EQ_SLOTS,EQ_G,EQ_BASE,mkEquip,eqName,eqBonus,equip,unequip,cardEq,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,canStudy,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);
