@@ -10,6 +10,10 @@ service cloud.firestore {
     // 내 구단 저장 데이터: 본인만 읽고 쓰기
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
+      // 저장 데이터 하위 문서(owned·team·rest): 본인만
+      match /save/{part} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
       // 직접 올린 선수 사진(기기 간 연동): 본인만, 사진 1장 200KB 미만
       match /photos/{pid} {
         allow read, delete: if signedIn() && request.auth.uid == uid;
