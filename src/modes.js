@@ -120,7 +120,10 @@ function newSeason(tier){const prev=S.season;tier=tier||(prev&&prev.tier)||1;
   S.season={n:prev?prev.n+1:1,tier,wk:wkStart(),teams,sched:sched3(10),round:0,st:newSt(10),over:false,last:[]};S.last=[];S.lgBest=Math.max(S.lgBest||1,tier);save()}
 function lgClose(s){s.over=true;const rk=lgStand(s).findIndex(x=>x.i===0)+1,first=rk===1&&!(S.lgFirst||{})[s.tier];s.rank=rk;
   const E=EC(),bonus=give(E?E.leagueEnd(s.tier,rk,first):null,[0,6000,4000,3000,2000,1500][rk]||800);if(rk===1)S.lgFirst={...(S.lgFirst||{}),[s.tier]:1};
-  return ` · ${tierName(s.tier)} ${rk}위${bonus?' · 보너스 '+bonus:''}`+titleClose(s,'lg',s.tier)+(rk===1&&s.tier<10?` · 다음 주 ${tierName(s.tier+1)}로 승급`:'')}
+  // 미션 챕터 ★4: 1군(라인업·벤치·선발·불펜)에 같은 구단 15명 이상으로 4단계 이상 우승
+  let msx='';if(rk===1&&E&&E.missionLeague){const T=userT(s),cs=[...(T.lineup||[]).map(x=>x.id),...(T.bench||[]),...(T.rot||[]),...(T.pen||[])].filter(Boolean).map(id=>byId[baseId(id)]).filter(Boolean);
+    const out=E.missionLeague(S,s.tier,cs)||[];if(out.length)msx=' · 미션 달성: '+out.map(o=>`${o.ch} ${o.what}${o.rw&&E.rwText?' ('+E.rwText(o.rw)+')':''}`).join(', ')}
+  return ` · ${tierName(s.tier)} ${rk}위${bonus?' · 보너스 '+bonus:''}`+titleClose(s,'lg',s.tier)+(rk===1&&s.tier<10?` · 다음 주 ${tierName(s.tier+1)}로 승급`:'')+msx}
 // 주가 바뀌었으면 지난 리그를 마감하고(남은 경기는 결과만으로 처리, 보상 없음) 새 리그를 연다.
 function weekTick(){const s=S&&S.season;if(!s)return false;if(!s.tier){s.tier=1;s.wk=wkStart();return false}
   if(s.wk>=wkStart())return false;

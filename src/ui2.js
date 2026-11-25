@@ -4,7 +4,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['setbOpen','sel','modal','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['msSub','msMsg','setbOpen','sel','modal','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -688,8 +688,9 @@ function modal(){if(S.dexView)return dexViewModal();const c=by[S.modal];if(!c)re
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.un?`대학 <b>${esc(c.un)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',!c.rg&&!c.hs?'출신 정보 없음':'',`${esc(lname(c.line))} 계보`,c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null?(abAge(c)?'유학 가능':'유학 불가'):''].filter(Boolean).join(' · ')}</p>${recHTML(c)}${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · <a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
-vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
+vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
  if(abAct(D)||shopAct(D)){render();return}
+ if(D.msn&&S.msSub){const m=S.msSub,v=Math.max(0,(m.sel[D.msn]|0)+(+t.dataset.d));if(v)m.sel[D.msn]=v;else delete m.sel[D.msn];S.msMsg='';render();return}
  if(D.dexk){S.dexK=D.dexk;S.dexLim=0;render();return}
  if(D.bclr){bldSlotSet(D.bclr,null);S.bldSel=null;save();render();return}
  if(D.bslot){S.bldSel=S.bldSel===D.bslot?null:D.bslot;S.msg='';render();return}
@@ -807,10 +808,31 @@ function loginView(){return `<section class="login"><div class="logo big">프로
   ${ON.msg?`<p class="note" style="color:var(--bad)">${esc(ON.msg)}</p>`:''}
   <button class="ghost" data-a="guest">로그인 없이 하기 (이 기기에만 저장)</button></section>`}
 setTimeout(()=>{if(!ON.ready){ON.ready=1;if(S)render()}},8000);
+
+// ===== 미션 챕터 =====
+let msSig='';
+function msTick(){if(!ECON.missionCheck||!(ECON.CHAPTERS||[]).length)return;const sig=Object.keys(S.owned).length+'|'+Object.values(S.owned).reduce((a,b)=>a+(b|0),0)+'|'+Object.keys(S.dexDone||{}).length;if(sig===msSig)return;msSig=sig;const out=ECON.missionCheck(S);if(out.length){S.toast='미션 달성 · '+out.map(x=>`${x.ch?msLn(x.ch)+' ':''}${x.what}${x.card&&byId[x.card]?' '+byId[x.card].name:''}${x.rw&&rwText(x.rw)?' +'+rwText(x.rw):''}`).join(' / ');save()}}
+const msLn=l=>SYN_LN[l]||l;
+function msSubHTML(){const m=S.msSub;if(!m)return '';const last=!!(S.opt&&S.opt.submitLast),st=((S.ms||{})['ch:'+m.line])||{},room=5-(st.sub|0);
+  const L=Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&c.line===m.line&&c.cost>=7).map(c=>({c,n:S.owned[c.id]|0,can:Math.max(0,(S.owned[c.id]|0)-(last?0:1))})).sort((a,b)=>b.can-a.can||b.c.cost-a.c.cost);
+  const tot=Object.values(m.sel).reduce((a,b)=>a+b,0);
+  return `<div class="modal"><div class="mbox"><div class="mhead"><b>${esc(msLn(m.line))} · 7코스트 이상 제출</b><span class="pill">${tot}/${room}</span><button class="ghost" data-a="msclose">닫기</button></div>
+  <p class="note">${last?'마지막 1장까지 제출 가능 (도감 기록 유지)':'중복분만 제출 가능'} · <button class="ghost" data-a="msopt" style="min-height:30px;padding:2px 8px">${last?'중복만 내기로':'마지막 1장도 허용'}</button></p>
+  <div class="scroll"><table class="tbl lul"><thead><tr><th class="l">선수</th><th>연도·구단</th><th>코스트</th><th>보유</th><th>제출 가능</th><th>낼 장수</th></tr></thead><tbody>
+  ${L.map(({c,n,can})=>{const k=m.sel[c.id]|0;return `<tr class="${can?'':'use'}"><td class="l"><b>${esc(c.name)}</b>${c.v?` <small>${esc(VN[c.v]||c.v)}</small>`:''}</td><td>${c.year} ${esc(c.team)}</td><td>${c.cost}</td><td>${n}</td><td>${can}</td><td>${can?`<button class="ghost" data-msn="${esc(c.id)}" data-d="-1" ${k?'':'disabled'}>−</button> <b>${k}</b> <button class="ghost" data-msn="${esc(c.id)}" data-d="1" ${k<can&&tot<room?'':'disabled'}>+</button>`:'-'}</td></tr>`}).join('')||'<tr><td colspan="6">해당 카드 없음</td></tr>'}</tbody></table></div>
+  <div class="tools" style="margin-top:10px"><button data-a="msgo" ${tot?'':'disabled'}>${tot}장 제출</button>${S.msMsg?`<span class="note" style="color:var(--bad)">${esc(S.msMsg)}</span>`:''}</div></div></div>`}
+function vMission(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section class="band"><h2>미션</h2><p class="note">미션 데이터 없음</p></section>`;
+  const fin=CH.filter(c=>(S.ms||{})[c.id]&&S.ms[c.id].fin).length,last=!!(S.opt&&S.opt.submitLast);
+  return `<section class="band ms"><div class="mhead"><h2 style="margin:0;margin-right:auto">미션</h2><span class="pill">챕터 완료 ${fin}/${CH.length}</span><label class="chk"><input type="checkbox" data-msopt="1" ${last?'checked':''}> 제출 때 마지막 1장도 허용</label></div>
+  <div class="msmeta">${ECON.MS_META.map(([k,name,rw])=>{const need=k==='all'?CH.length:k,done=(S.msMeta||{})[k];return `<div class="${done?'done':''}"><b>${esc(name)}</b><span>${Math.min(fin,need)}/${need}</span><small>${esc(rwText(rw))}</small></div>`}).join('')}</div>
+  <div class="msgrid">${CH.map(ch=>{const st=(S.ms||{})[ch.id]||{},n=ECON.MS_DEF.filter(m=>st[m[0]]).length;
+    return `<div class="msch${st.fin?' fin':''}"><div class="msh"><b>${esc(msLn(ch.line))}</b><span class="msn">${n}/5</span>${st.fin?'<em>완료</em>':st.mid?'<em class="mid">3개 달성</em>':''}</div>
+    <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc(desc.replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${mid==='m3'?' · EX 조각 1':''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
+    <p class="note msr">3개 → EX 확정권 · 5개 → ${ch.mx.length?'미션 전용 EX':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
 // ===== 화면 전환 =====
-const ROUTES={home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,lineup:vLineup,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
+const ROUTES={mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,lineup:vLineup,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
 const LEG=new Set(['season','years','online','game','cards']);
-const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['builder','덱 짜보기'],['skill','스킬'],['cards','보유 카드']],cards:[['shop','카드팩'],['synth','합성'],['abroad','유학'],['dex','도감']]};
+const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['builder','덱 짜보기'],['skill','스킬'],['cards','보유 카드']],cards:[['shop','카드팩'],['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']]};
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
@@ -825,7 +847,7 @@ function xlBar(k){const ref=XLC[(k.length*3)%XLC.length]+(k.charCodeAt(0)%40+2);
 const THEMES={LG:['#c30452','#ff8fb8'],두산:['#1a1748','#ff6b72'],삼성:['#074ca1','#8ab8ff'],KIA:['#d8001f','#ff9a9a'],롯데:['#041e42','#ff7b84'],키움:['#6d0a1d','#f0c27b'],한화:['#f26a00','#ffb36b'],SSG:['#ce0e2d','#f6d36b'],NC:['#2b4a80','#d9b48a'],KT:['#1f1f1f','#ff5a4f']};
 function themeSet(){const r=document.documentElement.style,t=THEMES[S.theme];if(t){r.setProperty('--clay',t[0]);r.setProperty('--clay2',`color-mix(in srgb,${t[0]} 80%,#000)`);r.setProperty('--gold',t[1])}else['--clay','--clay2','--gold'].forEach(k=>r.removeProperty(k))}
 function xlSet(){themeSet();const on=!!S.work;document.body.classList.toggle('xl',on);document.title=on?'업무 현황.xlsx':'프로호구 매니저'}
-function render(){if(!S)return;ensureUI();xlSet();if(S.season&&!G){weekTick();ylTick()}restoreLift();syncTeam();rebuildOwn();
+function render(){if(!S)return;ensureUI();xlSet();msTick();if(S.season&&!G){weekTick();ylTick()}restoreLift();syncTeam();rebuildOwn();
   if(FBMODE()&&!ON.user&&!S.guest){document.body.dataset.bg='field';hdr.innerHTML='';vw.innerHTML=loginView();return}
   const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=head(k);let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면 오류</h2><p class="note">${esc(e.message)}</p></section>`}
   vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+cmpBar()+modal();S.toast='';
@@ -833,7 +855,7 @@ function render(){if(!S)return;ensureUI();xlSet();if(S.season&&!G){weekTick();yl
 addEventListener('hashchange',()=>{S&&(S.modal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','coupon','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','luview','decknew','decksave','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','coupon','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -853,11 +875,16 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='rmphoto'){delete S.photos[baseId(S.modal)];delete S.photos[S.modal];save();render()}
   else if(a==='theme'){S.theme=b.dataset.v||'';S.setbOpen=1;save();render()}
   else if(a==='work'){S.work=!S.work;save();render()}
+  else if(a==='mssub'){S.msSub={line:b.dataset.line,sel:{}};S.msMsg='';render()}
+  else if(a==='msclose'){S.msSub=null;render()}
+  else if(a==='msopt'){S.opt=S.opt||{};S.opt.submitLast=!S.opt.submitLast;save();render()}
+  else if(a==='msgo'){const m=S.msSub;if(!m)return;const ids=Object.entries(m.sel).flatMap(([id,n])=>Array(n).fill(id));if(!ids.length){S.msMsg='카드 선택';render();return}const r=ECON.missionSubmit(S,m.line,ids);if(r.err){S.msMsg=r.err;render();return}S.toast=`${r.used}장 제출 · ${r.have}/5`+(r.out&&r.out.length?' · '+r.out.map(x=>x.what+(x.rw?' '+rwText(x.rw):'')).join(' · '):'');S.msSub=null;msTick();save();render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
   else if(a==='load'){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#sv').value.trim()))));if(o&&o.team&&o.season){S=o;ensureUI();save();render()}}catch(e){b.textContent='코드 오류'}}
   else if(a==='reset'){if(b.dataset.c){fresh();packOut=null;G=null;render()}else{b.dataset.c=1;b.textContent='한 번 더 누르면 초기화'}}}
 vw.addEventListener('click',e=>{const ra=e.target.closest('[data-a]');if(ra&&!ra.disabled&&(REALA.has(ra.dataset.a)||/^[om]-/.test(ra.dataset.a))){e.stopImmediatePropagation();realClick(ra)}},true);
 vw.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.msopt){S.opt=S.opt||{};S.opt.submitLast=t.checked;save();render();return}
   if(t.dataset.up&&t.files&&t.files[0]){const id=t.dataset.up,img=new Image();img.onload=()=>{const W=240,H=Math.round(img.height*W/img.width),cv=document.createElement('canvas');cv.width=W;cv.height=H;cv.getContext('2d').drawImage(img,0,0,W,H);
     S.photos=S.photos||{};S.photos[id]=cv.toDataURL('image/jpeg',.82);try{save()}catch(e){};render()};img.src=URL.createObjectURL(t.files[0]);return}
   if(t.dataset.f){flt[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;flt.lim=120;render();return}
@@ -878,7 +905,7 @@ vw.addEventListener('change',e=>{const t=e.target;
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
 fetch('cards.json').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
   for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.rg==null&&c.reg)c.rg=c.reg}
-  LINES=[...new Set(CARDS.map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);
+  LINES=[...new Set(CARDS.map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);if(ECON.buildMissions)ECON.buildMissions(CARDS);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}
   if(!S)fresh();else{migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];S.blocks=S.blocks||[];S.gp=S.gp||{};S.tq=S.tq||{};S.sq=S.sq||{};S.team.bench=S.team.bench||[]}
   ensureUI();const lg=ECON.login(S);if(lg)S.toast=`출석 ${lg.streak}일째 · +${rwText(lg)}`;
