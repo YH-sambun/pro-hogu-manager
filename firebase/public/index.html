@@ -1440,11 +1440,11 @@ function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
     else{const arg=k==='pick'?(document.getElementById('tixpick')||{}).value:undefined,r=ECON.useTicket(S,CARDS,k,arg);if(r.err)S.pkMsg=r.err;else S.pkOut={cards:r.cards,dex:r.dex}}
     return 1}
   if(D.a==='pkbuy'){const k=S.pk||'n',P=PACKS.find(x=>x[0]===k);S.pkMsg='';S.pkOut=null;
-    if(['n','p','t','y','tl','ty','sx'].includes(k)){const r=ECON.buyCards(S,CARDS,k,{lines:S.pkSel.t,years:S.pkSel.y,line:k==='tl'?S.pkSel.tl:S.pkSel.ty.line,tyYears:S.pkSel.ty.years});if(r.err){S.pkMsg=r.err;return 1}S.pkOut={cards:r.cards,dex:r.dex}}
+    if(['n','p','t','y','tl','ty','sx','c1'].includes(k)){const r=ECON.buyCards(S,CARDS,k,{lines:S.pkSel.t,years:S.pkSel.y,line:k==='tl'?S.pkSel.tl:S.pkSel.ty.line,tyYears:S.pkSel.ty.years});if(r.err){S.pkMsg=r.err;return 1}S.pkOut={cards:r.cards,dex:r.dex}}
     else{if(ECON.pay(S,P[2]).err){S.pkMsg='포인트 부족';return 1}
-      if(k==='b')S.pkOut={text:'블록: '+ECON.blockGrades(3).map(g=>{const b=gainBlock(null,g);return `${g}급 ${b.t==='B'?'타자':'투수'}용 ${bname(b)}`}).join(', ')};
-      else if(k==='tc'||k==='t1'){const gs=k==='tc'?ECON.tcGrades(3):[(u=>u<.05?'황금':u<.25?'특수':'일반')(Math.random())];S.pkOut={text:'작전 카드: '+gs.map(g=>{const x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;return `${x[1]}(${g})`}).join(', ')}}
-      else if(k==='sp'){S.pkOut={text:'서포트 카드: '+[0,1,2].map(()=>{const x=pick(SUPS.filter(t=>!t[0].endsWith('+')));S.sq[x[0]]=(S.sq[x[0]]||0)+1;return x[1]}).join(', ')}}}
+      if(k==='b')S.pkOut={text:'블록: '+(gs=>{if(ECON.pityTick(S,'b',gs.includes('S')))gs[gs.length-1]='S';return gs})(ECON.blockGrades(3)).map(g=>{const b=gainBlock(null,g);return `${g}급 ${b.t==='B'?'타자':'투수'}용 ${bname(b)}`}).join(', ')};
+      else if(k==='tc'||k==='t1'){const gs=k==='tc'?ECON.tcGrades(3):[(u=>u<.05?'황금':u<.25?'특수':'일반')(Math.random())];if(ECON.pityTick(S,k,gs.includes('황금')))gs[gs.length-1]='황금';S.pkOut={text:'작전 카드: '+gs.map(g=>{const x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;return `${x[1]}(${g})`}).join(', ')}}
+      else if(k==='sp'){const xs=[0,1,2].map(()=>pick(SUPS.filter(t=>!t[0].endsWith('+'))));if(ECON.pityTick(S,'sp',false)){const up=SUPS.filter(t=>t[0].endsWith('+')),j=xs.length-1,u=up.find(t=>t[0]===xs[j][0]+'+')||(up.length?pick(up):null);if(u)xs[j]=u}S.pkOut={text:'서포트 카드: '+xs.map(x=>{S.sq[x[0]]=(S.sq[x[0]]||0)+1;return x[1]}).join(', ')}}}
     ECON.mission(S,'p1');return 1}
   return 0}
 // 합성 (엔진 synth)
