@@ -20,7 +20,7 @@ const years=[...new Set(base.map(c=>c.y))];
 // EX(구단 균형안): MVP는 항상 EX. 그 외는 구단(계보)마다 역대 최고 OVR 시즌을 골라 계보당 EXQ장(시즌 수 45 기준 비례, 최소 EXMIN)까지. 한 계보에서 한 시즌은 1장, 같은 선수 여러 시즌 가능.
 // 2026-11-24 축소: 계보당 12장(최소 4), MVP 외에는 한 선수 최대 2시즌(같은 선수 독식 방지. 김광현 2시즌·최정 유지). 총 102장
 const EXQ=12,EXMIN=4,EXPC=2,ex=new Set();const lines=[...new Set(base.map(c=>c.l))];
-for(const c of base)if(MVP.has(nm(c)+c.y))ex.add(c);
+{const MB={};for(const c of base){const k=nm(c)+c.y;if(MVP.has(k)&&(!MB[k]||c.o>MB[k].o))MB[k]=c}for(const k in MB)ex.add(MB[k])} // MVP: 이름+연도당 OVR 최고 1장(동명이인 제외)
 for(const l of lines){const L=base.filter(c=>c.l===l),seasons=new Set(L.map(c=>c.y)).size,q=Math.max(EXMIN,Math.round(EXQ*seasons/45));
   const X=[...ex].filter(c=>c.l===l),used=new Set(X.map(c=>c.y)),cnt={};X.forEach(c=>cnt[nm(c)]=(cnt[nm(c)]||0)+1);let n=used.size;
   for(const c of L.slice().sort((a,b)=>b.o-a.o)){if(n>=q)break;if(used.has(c.y)||(cnt[nm(c)]||0)>=EXPC)continue;ex.add(c);used.add(c.y);cnt[nm(c)]=(cnt[nm(c)]||0)+1;n++}}
