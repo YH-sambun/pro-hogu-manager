@@ -211,6 +211,7 @@ function mkEquip(S,g,line,kind){const ks=Object.keys(EQ_KIND),k=kind||ks[Math.fl
 const eqName=it=>`${it.line?it.line+' ':''}${it.g} ${EQ_KIND[it.k][2]}`;
 function eqBonus(it,c){const K=EQ_KIND[it.k];if(!c||c.type!==K[0])return null;let v=EQ_BASE[Math.max(1,Math.min(10,c.cost))]*EQ_G[it.g];
   if(c.v==='CH')v*=1.25; // 커리어하이 카드는 장비 ×1.25
+  if(c.pz)v*=1+.25*c.pz; // 숨은 잠재력(세이버 지표 좋았던 선수) ×1.25/×1.5
   if(it.line&&it.line===c.line)v+=Math.max(1,v*.1);return {stat:K[3],v:Math.max(1,Math.round(v))}}
 function equip(S,u,cardId,byId){const it=(S.eq||[]).find(x=>x.u===u),c=byId[cardId];if(!it||!c)return {err:'없는 장비·카드'};const K=EQ_KIND[it.k];
   if(c.type!==K[0])return {err:K[0]==='B'?'타자용 장비예요':'투수용 장비예요'};

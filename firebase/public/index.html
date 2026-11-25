@@ -778,7 +778,7 @@ function loadCards(json){
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
     const cost=Math.min(10,c.c+(mvp?1:0));
     return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
-      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),bo:c.k==='B'?boOf(r,rates(c.x)):null}});
+      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),bo:c.k==='B'?boOf(r,rates(c.x)):null}});
   // 선수 단위 키: 이름+출신고. 1군 중복 검사는 pkt(c)=pk+유형으로 함(투타 겸업 선수는 타자 1장+투수 1장 가능). 출신고가 없으면 같은 이름·같은 유형 카드에 출신고가 하나뿐일 때 그 값을, 아니면 유형을 씀
   const HS={};for(const c of CARDS)if(c.hs){const k=c.name+'|'+c.type;(HS[k]=HS[k]||new Set()).add(c.hs)}
   for(const c of CARDS){const h=HS[c.name+'|'+c.type];c.pk=c.name+'|'+(c.hs||(h&&h.size===1?[...h][0]:c.type))}
@@ -824,6 +824,8 @@ const ABD=[['d1','국내 2군 캠프',null,2,1,['con','eye','ctl','men'],'처음
 const AB_BY=Object.fromEntries(ABD.map(d=>[d[0],d])),AB_CAP=12,ABG=[['대성공',.15,6],['성공',.6,4],['보통',1,2]];
 // 코스트별 유학 효율(2026-11-24, SJ): 저코스트일수록 상승 폭·상한이 크고 고코스트는 미미. 등급별 기본 상승치 × AB_MUL[코스트](반올림, 최소 1), 상한 = 20 × min(배율,1.5)(최소 2)
 const AB_MUL=[0,1.6,1.45,1.3,1.15,1,.8,.6,.45,.3,.2],abMul=c=>AB_MUL[Math.min(10,Math.max(1,c|0))],abGain=(g,c)=>g>0?Math.max(1,Math.round(g*abMul(c))):0,abCap=c=>Math.max(2,Math.round(20*Math.min(1.5,abMul(c))));
+// 숨은 잠재력(c.pz 0~2, tools/adv.js): 클래식 기록은 평범했지만 세이버 지표가 좋았던 선수. 유학 상승치·한도, 장비 보너스 ×1.25/×1.5
+const potMul=c=>1+.25*((c&&c.pz)|0),abCapC=c=>Math.round(abCap(c.cost)*potMul(c));
 const ageOf=c=>c&&c.b?c.year-c.b:null,abAge=c=>{if(c&&(c.v==='IR'||c.v==='RY'||c.v==='RN'))return false;const a=ageOf(c);return a!=null&&(a<=25||a>=35)};
 // used: 이 카드의 지금까지 유학 상승 합계. 반환 {g:등급, st:{능력:+n}}
 function abRoll(d,c,used){d=AB_BY[d]||d;const u=rnd(),g=ABG.find(x=>u<x[1]),keys=Object.keys(c.r).filter(k=>d[5].includes(k));let pts=Math.max(0,Math.min(g[2]+(d[4]-1),AB_CAP-(used||0)));const st={};
@@ -1222,7 +1224,7 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={NAT_SETS,natHit,ARM_N,armOf,ptGrades,ptLetter,FAT,fatAdd,fatRest,fatSP,FX_TARGETS,FX_T_BY,FA_LINKS,ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={potMul,abCapC,NAT_SETS,natHit,ARM_N,armOf,ptGrades,ptLetter,FAT,fatAdd,fatRest,fatSP,FX_TARGETS,FX_T_BY,FA_LINKS,ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
 
 </script>
 <script>
@@ -1439,6 +1441,7 @@ function mkEquip(S,g,line,kind){const ks=Object.keys(EQ_KIND),k=kind||ks[Math.fl
 const eqName=it=>`${it.line?it.line+' ':''}${it.g} ${EQ_KIND[it.k][2]}`;
 function eqBonus(it,c){const K=EQ_KIND[it.k];if(!c||c.type!==K[0])return null;let v=EQ_BASE[Math.max(1,Math.min(10,c.cost))]*EQ_G[it.g];
   if(c.v==='CH')v*=1.25; // 커리어하이 카드는 장비 ×1.25
+  if(c.pz)v*=1+.25*c.pz; // 숨은 잠재력(세이버 지표 좋았던 선수) ×1.25/×1.5
   if(it.line&&it.line===c.line)v+=Math.max(1,v*.1);return {stat:K[3],v:Math.max(1,Math.round(v))}}
 function equip(S,u,cardId,byId){const it=(S.eq||[]).find(x=>x.u===u),c=byId[cardId];if(!it||!c)return {err:'없는 장비·카드'};const K=EQ_KIND[it.k];
   if(c.type!==K[0])return {err:K[0]==='B'?'타자용 장비예요':'투수용 장비예요'};
@@ -1631,8 +1634,8 @@ const ABU={ai5:[()=>lgTop()>=2,'주간 리그 2단계 도달'],ai3:[()=>lgTop()>
 const abWhy=c=>c.v?'특수 카드는 유학 불가':'유학 불가 (25세 이하·35세 이상만)';
 const dupsOf=c=>OWN.filter(x=>x.dup&&baseId(x.id)===c.id&&!isLocked(x.id));
 function abRoll(a){const d=abd(a.d),c=byId[a.id],r=ECON.studyRoll(a.d),keys=Object.keys(c.r).filter(k=>d[5].includes(k));
-  let pts=Math.max(0,Math.min(abGain(r.gain,c.cost),abCap(c.cost)-abUsed(c)));const st={};while(pts>0&&keys.length){const k=keys[Math.floor(Math.random()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:r.name,st}}
-function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAge(c)||ECON.canStudy(c).err||abUsed(c)>=abCap(c.cost))return;
+  let pts=Math.max(0,Math.min(Math.round(abGain(r.gain,c.cost)*potMul(c)),abCapC(c)-abUsed(c)));const st={};while(pts>0&&keys.length){const k=keys[Math.floor(Math.random()*keys.length)];st[k]=(st[k]||0)+1;pts--}return {g:r.name,st}}
+function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||!abOpen(d)||!abAge(c)||ECON.canStudy(c).err||abUsed(c)>=abCapC(c))return;
   const fee=studyFee(d[0],c.cost);if(ECON.pay(S,fee).err){S.msg='포인트 부족';return}
   S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
@@ -1954,13 +1957,13 @@ const planeB=(c,cls)=>{const t=[...new Set(((S.abHist||{})[c.id]||[]).map(h=>abd
 const abUsed=c=>(S.abSum||{})[c.id]||0;
 const hm=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floor(m/60)}시간 ${m%60}분`:`${m}분`};
 function vAbroad(){const now=Date.now(),d=abd(S.abSel)||ABD[0],cand=OWN.filter(c=>!c.dup&&!c.v&&!used().includes(c.id)&&!abOf(c.id)&&ageOf(c)!=null),pick=by[S.abPick];
- const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&abAge(pick)&&abUsed(pick)<abCap(pick.cost)&&S.pt>=fee,rf=pick?ECON.abResetFee(pick.cost):0,rt=(S.tix||{}).abr|0;
+ const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&abAge(pick)&&abUsed(pick)<abCapC(pick)&&S.pt>=fee,rf=pick?ECON.abResetFee(pick.cost):0,rt=(S.tix||{}).abr|0;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">유학</h2><span class="pill">진행 중 ${S.ab.filter(a=>!a.got).length}명</span></div>
- <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군 미등록 선수만 · 유학 기간 동안 사용 불가. 시간이 끝나면 결과를 확인해 능력치가 올라요. 포인트만 내고 카드는 그대로예요. 특수 카드(올스타·골든글러브·EX 등)는 못 가요. 다 오른 카드는 포인트나 유학 초기화권으로 초기화하고 다시 보낼 수 있어요. 코스트 낮을수록 효율↑: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 카드당 상승 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4예요. </p>
+ <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군 미등록 선수만 · 유학 기간 동안 사용 불가. 시간이 끝나면 결과를 확인해 능력치가 올라요. 포인트만 내고 카드는 그대로예요. 특수 카드(올스타·골든글러브·EX 등)는 못 가요. 다 오른 카드는 포인트나 유학 초기화권으로 초기화하고 다시 보낼 수 있어요. 코스트 낮을수록 효율↑: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 카드당 상승 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4예요. 기록은 평범했지만 세부 지표가 좋았던 선수(잠재력↑)는 유학 상승치·한도와 장비 보너스가 25~50% 더 붙어요. </p>
  ${abMapHTML(d)}<div class="abl"><div class="box"><h3 style="margin-top:0">${d[1]}</h3>${abOpen(d)?`<p class="abm" title="${ABR[d[0]][0].map((p,i)=>ABGN[i]+' '+p+'%'+(i<3?' (+'+ABR[d[0]][1][i]+')':'')).join(' · ')}"><span>${d[3]}시간</span><span>대성공 +${ABR[d[0]][1][0]}</span><span${ABR[d[0]][0][3]?' class="risk"':''}>실패 ${ABR[d[0]][0][3]}%</span><span>${d[5].map(k=>SKN[k]).filter((v,i,a)=>a.indexOf(v)===i).join('·')}</span></p>
-  <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">상승 ${abUsed(pick)}/${abCap(pick.cost)} · 효율 ×${abMul(pick.cost)}</p>
+  <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">상승 ${abUsed(pick)}/${abCapC(pick)} · 효율 ×${+(abMul(pick.cost)*potMul(pick)).toFixed(2)}${pick.pz?` · <b style="color:var(--gold)">숨은 잠재력 +${pick.pz*25}%</b>`:''}</p>
    <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트 부족</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드 유학 불가':ageOf(pick)+'세 · 유학 불가 (25세 이하 또는 35세 이상)'}</p>`:''}${abUsed(pick)?`<div class="tools" style="margin-top:8px"><button class="ghost" data-abreset="pt" ${S.pt<rf?'disabled':''}>유학 초기화 · ${rf.toLocaleString()}P</button><button class="ghost" data-abreset="tix" ${rt?'':'disabled'}>초기화권 사용 (${rt}장)</button></div><p class="note" style="margin:4px 0 0">유학으로 오른 능력치 +${abUsed(pick)}을 모두 지워요</p>`:''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수 선택</p>'}</div>
-  <h3>보낼 선수</h3><div class="abc">${cand.sort((a,b)=>abAge(b)-abAge(a)||b.ovr-a.ovr).slice(0,24).map(c=>`<button class="abr${c.id===S.abPick?' on':''}${abAge(c)?'':' no'}" data-abpick="${esc(c.id)}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><span><b>${esc(c.name)}</b><small>${c.year} · ${ageOf(c)}세${abAge(c)?'':' · 유학 불가'}${abUsed(c)?` · 상승 ${abUsed(c)}/${abCap(c.cost)}`:''}</small></span></button>`).join('')}</div>`
+  <h3>보낼 선수</h3><div class="abc">${cand.sort((a,b)=>abAge(b)-abAge(a)||b.ovr-a.ovr).slice(0,24).map(c=>`<button class="abr${c.id===S.abPick?' on':''}${abAge(c)?'':' no'}" data-abpick="${esc(c.id)}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><span><b>${esc(c.name)}</b><small>${c.year} · ${ageOf(c)}세${abAge(c)?'':' · 유학 불가'}${abUsed(c)?` · 상승 ${abUsed(c)}/${abCapC(c)}`:''}${c.pz?' · 잠재력↑':''}</small></span></button>`).join('')}</div>`
   :`<p class="note">잠김. 여는 조건: <b>${d[6]}</b></p>`}</div></div>
  <h3>유학 중</h3><div class="abq">${S.ab.filter(a=>!a.got).map(a=>{const c=by[a.id],x=abd(a.d),done=now>=a.end,pc=Math.min(100,(now-a.start)/(a.end-a.start)*100);
   return `<div class="abi${done?' done':''}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><div><b>${esc(c.name)}</b> <small>${x[1]}</small><span class="abbar"><i style="width:${pc}%"></i></span>
@@ -2300,7 +2303,7 @@ function simAdd(c){const x=simOf(c.id);if(!x)return {};const a={},put=(k,v)=>{if
  for(const k in x.ab)put(k,x.ab[k]);const m=SK_MUL[c.v]||1;for(const k in x.sk)put(k,Math.round(x.sk[k]*m*10)/10);
  for(const sl in x.eq){const [kind,g]=x.eq[sl].split(':'),b=ECON.eqBonus({k:kind,g,line:null},c);if(b)put(b.stat,b.v)}return a}
 function simCard(c){const a=simAdd(c);if(!Object.keys(a).length)return c;const r={...c.r};for(const k in a)if(r[k]!=null)r[k]=Math.min(120,r[k]+a[k]);return {...c,r}}
-function simPanel(c){const x=simOf(c.id)||{ab:{},sk:{},eq:{}},keys=c.type==='B'?BK:PKEY,ab=abAge(c),cap=abCap(c.cost),sel=(g,k,max,cur)=>`<select data-sim="${g}" data-k="${k}" aria-label="${SKN[k]} ${g==='ab'?'유학':'스킬'}">${Array.from({length:max+1},(_,i)=>`<option value="${i}"${(cur|0)===i?' selected':''}>${i?'+'+i:'-'}</option>`).join('')}</select>`;
+function simPanel(c){const x=simOf(c.id)||{ab:{},sk:{},eq:{}},keys=c.type==='B'?BK:PKEY,ab=abAge(c),cap=abCapC(c),sel=(g,k,max,cur)=>`<select data-sim="${g}" data-k="${k}" aria-label="${SKN[k]} ${g==='ab'?'유학':'스킬'}">${Array.from({length:max+1},(_,i)=>`<option value="${i}"${(cur|0)===i?' selected':''}>${i?'+'+i:'-'}</option>`).join('')}</select>`;
  const EQK=Object.entries(ECON.EQ_KIND).filter(([k,v])=>v[0]===c.type),slots=ECON.EQ_SLOTS[c.type];
  const eqSel=sl=>`<select data-sim="eq" data-k="${sl}" aria-label="${EQSN[sl]} 장비"><option value="">${EQSN[sl]} 없음</option>${EQK.filter(([k,v])=>v[1]===sl).map(([k,v])=>['일반','희귀','전설'].map(g=>`<option value="${k}:${g}"${x.eq[sl]===k+':'+g?' selected':''}>${g} ${v[2]}</option>`).join('')).join('')}</select>`;
  const a=simAdd(c);
@@ -2997,7 +3000,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});
 // ===== 시작 =====
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
-fetch('cards.json?v=145ba9af3c').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
+fetch('cards.json?v=10f16bda7c').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
   for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.rg==null&&c.reg)c.rg=c.reg}
   LINES=[...new Set(CARDS.filter(c=>c.v!=='NT').map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);if(ECON.buildMissions)ECON.buildMissions(CARDS);if(ECON.buildNat&&typeof NAT_SETS!=='undefined')ECON.buildNat(CARDS,NAT_SETS,natHit);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}
