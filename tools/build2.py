@@ -14,8 +14,13 @@ if os.path.exists(od+'cards.json'):
   h=hashlib.md5(open(od+'cards.json','rb').read()).hexdigest()[:10]
   assert s.count("fetch('cards.json')")==1
   s=s.replace("fetch('cards.json')","fetch('cards.json?v=%s')"%h)
-  if fbm:
-    open(od+'sw.js','w').write(open(d+'src/sw.js').read().replace('__VER__',h))
-    s=s.replace('</body>',"<script>if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{})</script></body>")
+  # 서비스 워커: fb·v2(GitHub Pages) 둘 다 (홈 화면 앱 설치에 필요)
+  open(od+'sw.js','w').write(open(d+'src/sw.js').read().replace('__VER__',h))
+  s=s.replace('</body>',"<script>if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{})</script></body>")
+# 홈 화면 앱(PWA): 매니페스트·아이콘 복사
+import shutil
+if os.path.isdir(d+'src/pwa'):
+  for f in os.listdir(d+'src/pwa'):shutil.copy(d+'src/pwa/'+f,od+f)
+if "const BUILD='__BUILD__'" in s:s=s.replace("const BUILD='__BUILD__'","const BUILD='%s'"%hashlib.md5(s.encode()).hexdigest()[:10])  # 새 버전 확인용
 open(out,'w').write(s)
 print('wrote',out)

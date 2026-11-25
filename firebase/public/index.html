@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>프로호구 매니저</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png"><meta name="theme-color" content="#06160e"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="프로호구">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -723,6 +724,11 @@ body.xl .yly.won{background:#e6f2ea!important}body.xl .yly.todo{background:#fff!
 }
 .mhelp{display:none}
 @media(max-width:700px){#nav{display:none}.mhelp{display:inline-grid;place-items:center;width:34px;height:34px;min-height:0;padding:0;border-radius:50%;font-weight:800}.mhelp[aria-pressed=true]{background:var(--clay);color:#fff}}
+body{padding-top:env(safe-area-inset-top)}
+.ntcm .mbox{max-width:460px}.ntcb{margin:0 0 12px;padding-left:18px;line-height:1.6}.ntcr{background:var(--board);border:1px solid var(--gold);border-radius:10px;padding:8px 12px;margin:0 0 12px}.ntcr b{color:var(--gold)}
+.ntcl{display:flex;flex-direction:column;gap:4px}.ntci{text-align:left;justify-content:flex-start;min-height:36px;font-size:14px}.ntci small{color:var(--mute);margin-right:6px}.ntcn{background:var(--clay);color:#fff;border-radius:6px;padding:1px 6px;font-size:11px;margin-left:6px}
+.verb{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:70;background:var(--gold);color:#111;font-weight:700;padding:8px 10px 8px 14px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.4);display:flex;gap:10px;align-items:center}.verb button{min-height:32px;padding:4px 12px}
+@media(min-width:701px){.verb{bottom:20px}}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1567,7 +1573,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['luAna','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['luAna','ntcView','verMsg','ntcHide','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -1757,7 +1763,9 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   ${e.length?`<p class="note" style="color:var(--bad)">라인업 미완성: ${esc(e[0])}</p>`:''}
   <div class="lbl">감독</div><p style="margin:0">${m?`${esc(m.n)} · ${MSTY[m.st]} · [${esc(m.sn)}]`:'없음'}</p><div class="lbl">내 덱 효과</div><p style="margin:0">${d.fx.map(x=>`${esc(x.n)} ${x.g}`).join(' · ')||'팀컬러 없음'} · 야수 +${d.bat} · 투수 +${d.pit} · 코스트 ${d.cost}/${COST_CAP}</p></div>
   <div class="box"><h3>오늘</h3>${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 8px">게스트 플레이 중. 이 기기에만 저장. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
-  <div class="lbl">쿠폰</div><div class="tools" style="flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}</div></section>
+  <div class="lbl">쿠폰</div><div class="tools" style="flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}
+  <div class="lbl">공지사항</div><div class="ntcl">${NOTICES.map(n=>`<button class="ghost ntci" data-ntc="${n.id}"><small>${n.d.slice(5).replace('-','.')}</small> ${esc(n.t)}${!(S.ntc||{})[n.id]&&n.rw?' <b class="ntcn">보상</b>':''}</button>`).join('')}</div>
+  <div class="tools" style="margin-top:10px"><button class="ghost" data-a="vercheck">새 버전 확인</button><span class="note" style="margin:0">${esc(S.verMsg||'')}</span></div></div></section>
   <section class="band setb"><details${S.setbOpen?' open':''}><summary><b>구단 설정 · 테마 · 저장 데이터</b></summary>
   <div class="tools" style="margin-top:10px"><label>구단 이름 <input id="tn" value="${esc(S.team.name)}" maxlength="12"></label></div>
   <div class="thm" role="group" aria-label="테마 색"><b>테마</b><button class="${!S.theme?'on':''}" data-a="theme" data-v="" aria-pressed="${!S.theme}"><i style="--a:#e07a45;--b:#ffd27a"></i>기본</button>${Object.entries(THEMES).map(([k,[a,b2]])=>`<button class="${S.theme===k?'on':''}" data-a="theme" data-v="${k}" aria-pressed="${S.theme===k}"><i style="--a:${a};--b:${b2}"></i>${k}</button>`).join('')}</div>
@@ -2361,6 +2369,20 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b><span class="pill">${S.owned[c.id]?'보유':'미보유'} · 덱 짜보기 덱 효과 야수 +${T.bat} · 투수 +${T.pit}</span>${S.bmslot?'<button data-bswap="1">자리 교체하기</button>':''}<button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',`${esc(lname(c.line))} 계보`].filter(Boolean).join(' · ')}</p>
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1,dfx:{bat:T.bat,pit:T.pit},dids:ids,nocond:1})}</div><div class="face f-back">${backFace(c0,0)}</div></div>${simPanel(c0)}</div></div>`}
+// 공지사항(SJ 2026-11-26): 처음 보는 공지는 자동으로 띄우고, 보상(카드팩 등)은 '받기'로 한 번만 지급. 새 공지는 맨 위에 추가
+const NOTICES=[
+ {id:'n1126',d:'2026-11-26',t:'모바일 화면 개편 · 홈 화면 앱 지원',b:['폰에서는 아래 탭바로 메뉴를 옮겨 다닐 수 있어요.','카드팩은 맨 위 드롭다운에서 고르고 바로 열 수 있어요.','브라우저 공유 메뉴의 "홈 화면에 추가"로 앱처럼 설치할 수 있어요.','유학은 이제 다시 보내면 이전 결과가 새 결과로 바뀌어요.'],rw:{tix:{prem:1}}}
+];
+const ntcOpen=()=>S.ntcView?NOTICES.find(n=>n.id===S.ntcView):NOTICES.find(n=>!(S.ntc||{})[n.id]);
+function noticeHTML(){if(S.modal||S.dexView||S.bmodal||S.ntcHide)return '';const n=ntcOpen();if(!n)return '';const got=(S.ntc||{})[n.id]==='got',rw=n.rw&&!got;
+ return `<div class="modal ntcm" role="dialog" aria-modal="true" aria-label="공지사항"><div class="mbox"><small class="note" style="margin:0">공지 · ${n.d}</small><h2 style="margin:4px 0 10px">${esc(n.t)}</h2><ul class="ntcb">${n.b.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+ ${n.rw?`<p class="ntcr">${got?'받은 보상':'보상'} · <b>${esc(rwText(n.rw))}</b></p>`:''}<div class="tools" style="justify-content:flex-end"><button ${rw?'':'class="ghost"'} data-a="ntcok" data-id="${n.id}">${rw?'보상 받기':'닫기'}</button></div></div></div>`}
+let VERNEW=false;
+async function verCheck(silent){if(!silent){S.verMsg='확인 중…';render()}try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'}),t=await r.text(),m=t.match(/const BUILD='([^']+)'/),nb=m&&m[1];
+ if(nb&&nb!==BUILD&&BUILD!=='__BUILD__'){VERNEW=true;if(silent){S.verMsg='새 버전이 있어요';render();return}S.verMsg='새 버전으로 바꾸는 중…';render();try{const g=await navigator.serviceWorker?.getRegistration();await g?.update()}catch(e){}location.reload();return}
+ if(!silent){S.verMsg='최신 버전이에요';render()}}catch(e){if(!silent){S.verMsg='확인 실패 · 인터넷 연결을 확인해 주세요';render()}}}
+setInterval(()=>{if(!document.hidden&&!VERNEW)verCheck(true)},15*60*1000);
+const verBanner=()=>VERNEW?`<div class="verb" role="status">새 버전이 나왔어요 <button data-a="vercheck">새로고침</button></div>`:'';
 function modal(){if(S.dexView)return dexViewModal();if(S.bmodal)return bldModal();const c=by[S.modal];if(!c)return '';if(S.cmpA&&S.cmpA!==c.id)return cmpView(by[S.cmpA],c);
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button>${(S.owned[baseId(c.id)]|0)>1?`<button class="ghost" data-a="dism" data-id="${esc(baseId(c.id))}" title="${c.v==='EX'?'EX 조각 3개 = 구단 지정 EX 확정권 1장':'코스트 × 30P'}">중복 1장 분해 · ${c.v==='EX'?`EX 조각 ${(S.exShard|0)}/3`:'+'+(c.cost*ECON.DISMANTLE)+'P'}</button>`:''}<button class="ghost mflip" data-mflip="1">${S.mflip?'앞면 보기':'뒷면 보기'}</button><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
@@ -2368,7 +2390,8 @@ function modal(){if(S.dexView)return dexViewModal();if(S.bmodal)return bldModal(
  <div class="faces${S.mflip?' flipped':''}"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  ${eqHTML(c)}
  <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · <a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착하러 가기</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
-vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-tix],[data-abreset],[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bswap],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-synexm],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
+vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-ntc],[data-tix],[data-abreset],[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bswap],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-synexm],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
+ if(D.ntc){S.ntcView=D.ntc;S.ntcHide=false;render();return}
  if(abAct(D)||shopAct(D)){render();return}
  if(D.msn&&S.msSub){const m=S.msSub,v=Math.max(0,(m.sel[D.msn]|0)+(+t.dataset.d));if(v)m.sel[D.msn]=v;else delete m.sel[D.msn];S.msMsg='';render();return}
  if(D.dexk){S.dexK=D.dexk;S.dexLim=0;render();return}
@@ -2974,6 +2997,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
+const BUILD='2c07aea821';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
@@ -2991,12 +3015,12 @@ const SAFE=(f,d)=>{try{return f()}catch(e){console.error('[render]',e);RERR=RERR
 function render(){if(!S)return;RERR='';SAFE(ensureUI);SAFE(xlSet);SAFE(msTick);if(S.season&&!G){SAFE(weekTick);SAFE(ylTick)}SAFE(restoreLift);SAFE(syncTeam);SAFE(rebuildOwn);
   if(FBMODE()&&!ON.user&&!S.guest){document.body.dataset.bg='field';hdr.innerHTML='';vw.innerHTML=loginView();return}
   const k=view(),y=scrollY;document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=SAFE(()=>head(k),'');document.querySelectorAll('body>#tabbar').forEach(e=>e.remove());{const tb=hdr.querySelector('#tabbar');if(tb)document.body.appendChild(tb)}let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면 오류</h2><p class="note">${esc(e.message)}</p></section>`}
-  vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+SAFE(cmpBar,'')+SAFE(()=>modal(),'');if(RERR)vw.insertAdjacentHTML('afterbegin',`<p class="warn" style="margin:8px 0">화면 일부 오류 · ${esc(RERR)} (이 문구를 캡처해 알려 주세요)</p>`);S.toast='';
+  vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+SAFE(cmpBar,'')+SAFE(()=>modal(),'')+SAFE(noticeHTML,'')+verBanner();if(RERR)vw.insertAdjacentHTML('afterbegin',`<p class="warn" style="margin:8px 0">화면 일부 오류 · ${esc(RERR)} (이 문구를 캡처해 알려 주세요)</p>`);S.toast='';
   SAFE(()=>{const sv=$('#sv');if(sv)sv.value=btoa(unescape(encodeURIComponent(JSON.stringify(S,function(kk,v){return this===S&&TRANS.has(kk)?undefined:v}))));});if(S.modal||S.dexView)scrollTo(0,y);saveSoon()}
 addEventListener('hashchange',()=>{S&&(S.modal=null,S.bmodal=null);render();scrollTo(0,0)});
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -3012,6 +3036,8 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(/^deck/.test(a))deckAct(a);
   else if(a==='abonly'){S.abOnly=S.abOnly===false;S.abLim=0;render()}
   else if(a==='abmore'){S.abLim=(S.abLim||48)+48;render()}
+  else if(a==='ntcok'){const n=NOTICES.find(x=>x.id===b.dataset.id);S.ntc=S.ntc||{};if(n){if(n.rw&&S.ntc[n.id]!=='got'){ECON.grant(S,n.rw);S.ntc[n.id]='got';S.toast='공지 보상 · '+rwText(n.rw)}else if(!S.ntc[n.id])S.ntc[n.id]=1}S.ntcView=null;save();render()}
+  else if(a==='vercheck')verCheck(false);
   else if(a==='dexhv'){const F=S.dexF=S.dexF||{},v=b.dataset.v;let H=F.h!=='miss',M=F.h!=='have';if(v==='have')H=!H;else M=!M;if(!H&&!M){if(v==='have')M=true;else H=true}F.h=H&&M?'':H?'have':'miss';S.dexLim=0;render()}
   else if(a==='dexclr'){S.dexF={};S.dexQ='';S.dexLim=0;render()}
   else if(a==='dexmore'){{const st=(S.dexK||'all')==='all'?60:24;S.dexLim=(S.dexLim||st)+st};render()}
