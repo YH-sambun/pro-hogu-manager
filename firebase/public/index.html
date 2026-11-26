@@ -784,7 +784,7 @@ body{padding-top:env(safe-area-inset-top)}
 .ofnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:59;padding:6px 8px;background:rgba(6,22,14,.94);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
 .ofnav button{padding:8px 0;font-size:13px;font-weight:700;border-radius:9px;background:transparent;color:var(--mute);border:1px solid var(--line);min-width:0}
 .ofnav button.on{background:var(--clay);color:#fff;border-color:var(--clay)}
-body:has(.ofnav){padding-bottom:130px}
+body:has(.ofnav){padding-bottom:calc(150px + env(safe-area-inset-bottom))}
 }
 /* iOS 홈 화면 앱(black-translucent): 내용이 짧으면 하단 고정 바가 바닥에서 뜨는 버그 보정 */
 html{min-height:calc(100% + env(safe-area-inset-top))}
@@ -917,6 +917,8 @@ body.xl .cback .pmap{filter:grayscale(1)}
 body.xl .cback .grid4{background:#fff!important;border:1px solid #d4d4d4;border-radius:0!important}
 .blkn{margin-left:6px;padding:0 6px;border-radius:9px;background:#e8691b;color:#fff;font-size:11px;font-weight:800}body.xl .blkn{background:#555!important;color:#fff!important}
 .skface{cursor:pointer}.skface .cell,.skface button{cursor:auto}.skface button.cell:not([disabled]){cursor:pointer}.skft{margin-bottom:8px}.skd{margin-top:10px}.skd table{border-collapse:collapse;width:100%;font-size:13px}.skd th,.skd td{border-bottom:1px solid var(--line,#ddd);padding:4px 6px;text-align:right}.skd th:first-child,.skd td:first-child{text-align:left}.skd .up{color:#1a7f37;font-weight:700}body.xl .skd .up{color:#000!important}
+/* 폰(SJ 2026-11-26): 상단 포인트·블록·리그 칩과 부제 숨김 → 스크롤 줄이기 */
+@media (max-width:700px){#hdr .wallet{display:none}#hdr .logo small{display:none}#hdr .logo{font-size:26px;margin-bottom:4px}}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2741,7 +2743,8 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
- {id:'n1126y',d:'2026-11-26',t:'스킬 블록 모두 4칸으로',b:['스킬 블록이 모두 4칸 모양으로 바뀌어, 16칸에 블록 4개를 꽉 채워 끼울 수 있습니다.','갖고 있던 2·3칸 블록은 같은 등급의 4칸 블록으로 바뀌고 능력치도 4칸 기준으로 올라갑니다. 장착돼 있던 2·3칸 블록은 보관함으로 돌아가니 다시 끼워 주세요.'],rw:{tix:{pk_n:10,block:2}}},
+ {id:'n1126z',d:'2026-11-26',t:'폰에서 경기 시작 버튼 가림 수정',b:['폰에서 리그 감독실의 경기 시작 버튼이 아래 묶음 버튼에 가려 눌리지 않던 문제를 고쳤습니다.','폰 상단의 포인트·블록·리그 표시와 부제를 숨겨 화면을 덜 내려도 되게 했습니다. (포인트·블록은 홈 보유 현황에서 볼 수 있어요)'],rw:{tix:{pk_n:10}}},
+{id:'n1126y',d:'2026-11-26',t:'스킬 블록 모두 4칸으로',b:['스킬 블록이 모두 4칸 모양으로 바뀌어, 16칸에 블록 4개를 꽉 채워 끼울 수 있습니다.','갖고 있던 2·3칸 블록은 같은 등급의 4칸 블록으로 바뀌고 능력치도 4칸 기준으로 올라갑니다. 장착돼 있던 2·3칸 블록은 보관함으로 돌아가니 다시 끼워 주세요.'],rw:{tix:{pk_n:10,block:2}}},
 {id:'n1126x',d:'2026-11-26',t:'스킬 블록 묶음 표시 · 앞면 능력치 보기',b:['모양·등급·능력치가 같은 보관 블록은 하나로 묶어 ×개수로 보여줍니다.','스킬 화면에서 카드를 누르거나 [앞면 (능력치)] 탭을 누르면 앞면으로 뒤집혀, 스킬로 바뀐 능력치(원래 → 스킬 후)를 볼 수 있습니다.'],rw:{tix:{pk_n:10}}},
 {id:'n1126w',d:'2026-11-26',t:'업무 모드 스킬 칸 회색 음영',b:['업무 모드에서 장착한 스킬 블록이 보드에 회색 음영으로 보입니다 (C 연한 회색 → S 진한 회색).','블록 목록과 카드 뒷면의 색을 빼고 회색으로 바꿨습니다. 잠긴 칸은 빗금으로 표시됩니다.'],rw:{tix:{pk_n:10}}},
 {id:'n1126v',d:'2026-11-26',t:'스킬 블록 필터',b:['스킬 화면에서 끼울 블록을 종류(능력치)와 등급으로 거를 수 있어요. 높은 등급이 앞에 오고, 이미 장착한 블록은 필터와 관계없이 항상 보여요.'],rw:{tix:{pk_n:10,pk_b:1}}},
@@ -3613,7 +3616,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='98be1572fd';
+const BUILD='e273b8ca4c';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
