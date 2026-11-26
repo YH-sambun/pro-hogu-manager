@@ -847,6 +847,9 @@ body.xl .ofnav{background:#f3f3f3!important;border-top:1px solid #c6c6c6!importa
 body.xl .ofnav button.on{background:#217346!important;color:#fff!important}
 body.xl .ofhead h2{color:#222!important}
 .mstabs{margin:0 0 10px}
+.ludk{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
+.ludk input{width:170px;min-width:0}
+@media (max-width:700px){.ludk{width:100%}.ludk input{flex:1;width:auto}}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1940,7 +1943,7 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   const rot=(S.rot||[]).map((id,i)=>{const c=byId[id];return `<tr><td>${i+1}</td><td class="ps">SP</td><td class="l">${c?esc(c.name):'<span class="note">빈칸</span>'}</td><td class="v">${c?c.ovr:''}</td></tr>`}).join('');
   const deck=`<div class="ofdk"><table class="ofldt"><tbody>${lu}</tbody></table><table class="ofldt"><tbody>${rot}${(S.pen||[]).filter(Boolean).length?`<tr><td></td><td class="ps">RP</td><td class="l" colspan="2">불펜 ${(S.pen||[]).filter(Boolean).length}명</td></tr>`:''}</tbody></table></div>`;
   const club=`${e.length?`<p class="note" style="color:var(--bad);margin:0 0 6px">라인업 미완성: ${esc(e[0])} · <a href="#lineup">고치기</a></p>`:''}<table class="oft"><tr><td>구단</td><td><b>${esc(S.team.name)}</b></td></tr><tr><td>감독</td><td>${m?`${esc(m.n)} <small>${MSTY[m.st]} · ${esc(m.sn)}</small>`:'없음'}</td></tr><tr><td>팀컬러</td><td>${d.fx.map(x=>`${esc(x.n)} ${x.g}`).join(' · ')||'없음'} <small>야수 +${d.bat} · 투수 +${d.pit}</small></td></tr><tr><td>코스트</td><td>${d.cost} / ${COST_CAP}</td></tr></table>
-  <div class="quick" style="margin-top:8px"><a href="#lineup"><button class="ghost" style="width:100%">라인업</button></a><a href="#builder"><button class="ghost" style="width:100%">덱 짜보기</button></a></div>`;
+  <div class="quick" style="margin-top:8px"><a href="#lineup"><button class="ghost" style="width:100%">라인업</button></a><a href="#builder"><button class="ghost" style="width:100%">덱</button></a></div>`;
   const miss=`${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 6px">게스트 플레이 중. 이 기기에만 저장. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0 0 6px">출석 <b>${D.streak||1}일째</b> <small class="note">7일마다 프리미엄 팩 확정권</small></p><div class="miss">${mis}</div><a href="#mission" class="note">미션 전체 보기 →</a>`;
   const sR=s&&s.teams?lgStand(s):[],sMe=sR.findIndex(x=>x.i===0)+1,sMy=sR.find(x=>x.i===0)||{},yR=Y&&Y.teams?lgStand(Y):[],yMe=yR.findIndex(x=>x.i===0)+1,yMy=yR.find(x=>x.i===0)||{};
   const lgs=`<a class="ofli" href="#season"><b>주간 리그</b><span>${s&&s.teams?`${esc(tierName(s.tier))} · ${sMe}위 · ${sMy.w||0}승 ${sMy.l||0}패 · ${s.over?'이번 주 종료':`${Math.min(s.round+1,s.sched.length)}/${s.sched.length}경기`}`:'시작 전'}</span></a>
@@ -2340,6 +2343,8 @@ function luList(pool,ids,dupC,B,rec){const keys=B?BK:PKEY,st=!!S.luStat,f3=v=>v.
 // 저장 덱 표시(SJ 2026-11-25): 없는 카드가 있으면 가상덱(감상·목표용)으로 보유 장수 표시
 const deckMgr=d=>{const m=MG.find(x=>x.id===(d.t.mgr||S.team.mgr));return m?m.n:''};
 const deckTag=d=>{const ids=deckIds(d.t),own=ids.filter(id=>S.owned[id]).length;return own<ids.length?` · 가상 (보유 ${own}/${ids.length})`:deckOk(d)?'':' (지금 사용 불가)'};
+// 라인업 좌상단 덱 이름 + 저장(SJ 2026-11-26)
+function luDeckHTML(){const cur=S.deckSel&&(S.decks||[]).find(x=>x.id===S.deckSel);return `<div class="ludk"><input id="ludn" placeholder="${cur?esc(cur.name):'덱 이름'}" maxlength="14" aria-label="덱 이름" value="${esc(S.deckName||'')}"><button data-a="decknew" title="지금 라인업·벤치·투수진·감독을 새 덱으로 저장">덱으로 저장</button>${cur?`<button class="ghost" data-a="decksave" title="고른 덱 '${esc(cur.name)}'에 지금 라인업 덮어쓰기">덮어쓰기</button>`:''}</div>`}
 function presetBar(){const D=S.decks||[],M=S.modeDeck||{},cur=S.deckSel&&D.find(x=>x.id===S.deckSel);
  const opt=(v,n,sel)=>`<option value="${esc(v)}"${String(sel||'')===String(v)?' selected':''}>${esc(n)}</option>`;
  return `<div class="box presets"><div class="tools"><b style="margin-right:4px">덱 저장</b><select id="decksel" aria-label="저장한 덱">${opt('','저장한 덱 고르기',S.deckSel)}${D.map(d=>opt(d.id,d.name+' · '+deckMgr(d)+deckTag(d),S.deckSel)).join('')}</select>${cur?`<label class="mdk">감독 <select id="deckmgr" aria-label="이 덱의 감독">${MG.map(m=>opt(m.id,m.n,cur.t.mgr||S.team.mgr)).join('')}</select></label>`:''}
@@ -2347,10 +2352,10 @@ function presetBar(){const D=S.decks||[],M=S.modeDeck||{},cur=S.deckSel&&D.find(
  <span style="flex:1"></span><input id="deckname" placeholder="덱 이름 (새 덱/이름 바꾸기)" maxlength="14" style="max-width:190px" value="${esc(S.deckName||'')}"><button data-a="decknew">지금 라인업을 새 덱으로</button></div>
  </div>`}
 function deckAct(a){const D=S.decks=S.decks||[],d=D.find(x=>x.id===S.deckSel);
- if(a==='decknew'){const n=(S.deckName||'').trim()||`덱 ${D.length+1}`;const id='d'+Date.now().toString(36);D.push({id,name:n,t:snapT()});S.deckSel=id;S.deckName='';S.msg=`'${n}' 저장 완료`}
+ if(a==='decknew'){S.pdetOpen=1;const n=(S.deckName||'').trim()||`덱 ${D.length+1}`;const id='d'+Date.now().toString(36);D.push({id,name:n,t:snapT()});S.deckSel=id;S.deckName='';S.msg=`'${n}' 저장 완료`}
  else if(a==='deckren'&&d){const n=(S.deckName||'').trim();if(!n){S.msg='오른쪽 이름 칸에 새 이름을 쓰고 눌러 주세요';document.getElementById('deckname')?.focus()}else{const o=d.name;d.name=n;S.deckName='';S.msg=`'${o}' → '${n}' 이름 변경`}}
  else if(a==='decksave'&&d){d.t=snapT();S.msg=`'${d.name}' 덮어쓰기 완료`}
- else if(a==='deckload'&&d){const xe=exErr(deckIds(d.t));if(!deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))){const B=bldInit(),t=d.t,L=t.lineup||[],pad=(x,n)=>[...(x||[]),...Array(n).fill(null)].slice(0,n);B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=pad(t.bench,5);B.rot=pad(t.rot,5);B.pen=pad(t.pen,6);B.fxsel=[...(t.fxsel||[])];B.mgr=t.mgr||'';S.bldSel=null;S.msg=`'${d.name}'에 없는 카드가 있어 덱 짜보기에서 열었어요`;save();location.hash='builder';render();return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}' 불러오기 완료`+(xe.length?` · ${xe.join(' · ')}. EX 교체 후 덮어쓰기`:'')}
+ else if(a==='deckload'&&d){const xe=exErr(deckIds(d.t));if(!deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))){const B=bldInit(),t=d.t,L=t.lineup||[],pad=(x,n)=>[...(x||[]),...Array(n).fill(null)].slice(0,n);B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=pad(t.bench,5);B.rot=pad(t.rot,5);B.pen=pad(t.pen,6);B.fxsel=[...(t.fxsel||[])];B.mgr=t.mgr||'';S.bldSel=null;S.msg=`'${d.name}'에 없는 카드가 있어 덱 화면에서 열었어요`;save();location.hash='builder';render();return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}' 불러오기 완료`+(xe.length?` · ${xe.join(' · ')}. EX 교체 후 덮어쓰기`:'')}
  else if(a==='deckdel'&&d){if(!S.deckDel){S.deckDel=1;render();return}S.decks=D.filter(x=>x!==d);S.deckGone=[...(S.deckGone||[]),d.id].slice(-200);for(const k in S.modeDeck||{})if(S.modeDeck[k]===d.id)S.modeDeck[k]='';S.deckSel='';S.deckDel=0}
  save();render()}
 // ===== 덱 짜보기: 보유 여부와 관계없이 전체 카드로 25명을 짜 보고 코스트·덱 효과를 확인 =====
@@ -2381,7 +2386,7 @@ function vBuilder(){const B=bldInit(),cards=bldCards(),ids=new Set(bldIds()),cos
   return L.sort(SO[F.s]||SO.ovr)})(),lim=S.bldLim||40;
  const YS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a),TS=[...new Set(CARDS.filter(yIn).map(c=>c.team))].sort(),o=(v,n,cur)=>`<option value="${esc(v)}"${String(cur||'')===String(v)?' selected':''}>${esc(n)}</option>`;
  const full=cards.length===25,allOwn=full&&own===25;
- return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">덱 짜보기</h2><button class="ghost" data-a="bldfrom">지금 라인업 가져오기</button><button class="ghost" data-a="bldclr">${S.bldClr?'한 번 더 누르면 비움':'모두 비우기'}</button><button data-a="bldapply" ${allOwn?'':'disabled'} title="${allOwn?'':'25명 모두 보유해야 적용 가능'}">라인업에 적용</button><button class="ghost" data-a="bldsave" ${full?'':'disabled'}>덱으로 저장</button></div>
+ return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">덱</h2><button class="ghost" data-a="bldfrom">지금 라인업 가져오기</button><button class="ghost" data-a="bldclr">${S.bldClr?'한 번 더 누르면 비움':'모두 비우기'}</button><button data-a="bldapply" ${allOwn?'':'disabled'} title="${allOwn?'':'25명 모두 보유해야 적용 가능'}">라인업에 적용</button><button class="ghost" data-a="bldsave" ${full?'':'disabled'}>덱으로 저장</button></div>
  <div class="tools bshare"><b>공유</b><button class="ghost" data-a="bldcode" ${cards.length?'':'disabled'}>공유 코드 복사</button><button class="ghost" data-a="bldimg" ${cards.length?'':'disabled'}>덱 이미지 저장</button><input id="bldimp" placeholder="받은 공유 코드 붙여넣기" aria-label="공유 코드" value=""><button class="ghost" data-a="bldimp">코드로 불러오기</button>${S.bldCode?`<input readonly class="bcode" value="${esc(S.bldCode)}" aria-label="내 공유 코드" onclick="this.select()">`:''}${S.bldImpMsg?`<span class="note" style="margin:0">${esc(S.bldImpMsg)}</span>`:''}</div>
  <div class="tools" style="margin-top:8px"><select data-bf="rx" aria-label="추천 목표 덱 효과">${o('','덱 효과 지정 안 함',F.rx)}${[...new Set(FX_TARGETS.map(t=>t.g))].map(g=>`<optgroup label="${esc(g)}">${FX_TARGETS.filter(t=>t.g===g).map(t=>o(t.k,t.n,F.rx)).join('')}</optgroup>`).join('')}</select><button class="ghost" data-a="bldrec">전체 카드로 추천</button><span class="note" style="margin:0">없는 선수도 포함해 코스트 ${COST_CAP} 안에서 채움. 지금 짠 덱은 바뀜</span></div>
  <div class="bsum"><span>코스트 <b class="${cost>COST_CAP?'bad':''}">${cost}</b>/${COST_CAP}</span><span>인원 <b>${cards.length}</b>/25</span><span>보유 <b>${own}</b>/${cards.length}</span><span>EX 타자 <b class="${ex.B>EX_MAX.B?'bad':''}">${ex.B}</b>/${EX_MAX.B} · 투수 <b class="${ex.P>EX_MAX.P?'bad':''}">${ex.P}</b>/${EX_MAX.P}</span><span title="주전 20명 기준. 커리어하이는 ${CH_WILD}장까지 같은 계보 최다 연도에 합류, 영구결번은 모두 최다 연도·구단에 합류">${wildTxt(bldStart())}</span><span>덱 효과 야수 <b>+${T.bat}</b> · 투수 <b>+${T.pit}</b></span></div>
@@ -2427,7 +2432,7 @@ function bldAct(a){const B=bldInit();
  else if(a==='bldclr'){if(!S.bldClr){S.bldClr=1;render();return}S.bld=null;S.bldClr=0;S.bldSel=null;bldInit()}
  else if(a==='bldfrom'){syncTeam();const T=S.team,L=T.lineup||[];B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=[...(T.bench||[]),null,null,null,null,null].slice(0,5);B.rot=[...(T.rot||[]),null,null,null,null,null].slice(0,5);B.pen=[...(T.pen||[]),null,null,null,null,null,null].slice(0,6);B.fxsel=[...(T.fxsel||[])];B.mgr=T.mgr||'';S.msg='현재 라인업 불러옴'}
  else if(a==='bldapply'){if(bldCards().some(c=>!S.owned[c.id]))return;Object.assign(S.team,{lineup:B.lu.map(([pos,id])=>({id,pos})),bench:[...B.bench],rot:[...B.rot],pen:[...B.pen],fxsel:[...B.fxsel]});pullTeam();S.msg='라인업 적용 완료';save();go('lineup');return}
- else if(a==='bldsave'){const D=S.decks=S.decks||[],id='d'+Date.now().toString(36);D.push({id,name:'짜본 덱 '+(D.length+1),t:JSON.parse(JSON.stringify({lineup:B.lu.map(([pos,id])=>({id,pos})),bench:B.bench,rot:B.rot,pen:B.pen,fxsel:B.fxsel,mgr:B.mgr||S.team.mgr,tsel:S.team.tsel}))});S.msg=`'짜본 덱 ${D.length}' 저장 완료. 라인업 > 덱 저장에서 확인`}
+ else if(a==='bldsave'){const D=S.decks=S.decks||[],id='d'+Date.now().toString(36);D.push({id,name:'짜본 덱 '+(D.length+1),t:JSON.parse(JSON.stringify({lineup:B.lu.map(([pos,id])=>({id,pos})),bench:B.bench,rot:B.rot,pen:B.pen,fxsel:B.fxsel,mgr:B.mgr||S.team.mgr,tsel:S.team.tsel}))});S.msg=`'짜본 덱 ${D.length}' 저장 완료. 라인업 > 저장한 덱에서 확인`}
  save();render()}
 function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','라인업'],['mgr','감독'],['tcard','작전 카드'],['sup','서포트 카드']].map(([k,n])=>`<button role="tab" aria-selected="${S.sub===k}" class="${S.sub===k?'on':''}" data-sub="${k}">${n}</button>`).join('')}</div>`;
  if(S.sub==='sup')return `<section class="band">${sub}<h2 style="margin-top:16px">서포트 카드</h2>${vSup()}</section>`;
@@ -2446,10 +2451,10 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  const lq=(LF.q||'').trim(),pool=base.filter(c=>!c.dup).filter(c=>(S.fteam==='all'||c.team===S.fteam)&&(S.fyear==='all'||c.year===+S.fyear)&&(!LF.cost||LF.cost==='all'||(LF.cost[0]==='='?c.cost===+LF.cost.slice(1):c.cost<=+LF.cost))&&(!LF.v||LF.v==='all'||(LF.v==='n'?!c.v:c.v===LF.v))&&(!LF.hand||LF.hand==='all'||(B?c.bh===LF.hand:c.ph===LF.hand))&&(!LF.reg||LF.reg==='all'||(LF.reg==='in')===ids.has(c.id))&&(!LF.ab||LF.ab==='all'||(LF.ab==='y')===!!abAge(c))&&(!lq||c.name.includes(lq))).sort(ord[S.sort]);
  const FN=B?[['all','전체 야수'],['C','포수'],['IF','내야수'],['OF','외야·지명']]:[['all','전체 투수'],['SP','선발'],['RP','불펜']];
  const SIDE=B?[['line','타선 분석'],['field','수비 위치']]:[['bat','배터리 분석']],side=SIDE.some(x=>x[0]===S.side)?S.side:SIDE[0][0];
- return `<section class="band">${sub}<div class="tools" style="margin-top:12px">${nextOpp()}<button class="ghost" data-a="luana" data-k="B" style="margin-left:auto">타선 분석</button><button class="ghost" data-a="luana" data-k="P">배터리 분석</button><button class="ghost" data-rec="${S.recm||'power'}">추천 라인업</button>${S.undo?'<button class="ghost" data-a="recundo">되돌리기</button>':''}</div>${recPanel()}
+ return `<section class="band">${sub}<div class="tools" style="margin-top:12px">${luDeckHTML()}${nextOpp()}<button class="ghost" data-a="luana" data-k="B" style="margin-left:auto">타선 분석</button><button class="ghost" data-a="luana" data-k="P">배터리 분석</button><button class="ghost" data-rec="${S.recm||'power'}">추천 라인업</button>${S.undo?'<button class="ghost" data-a="recundo">되돌리기</button>':''}</div>${recPanel()}
  ${`<div class="strip${B?' cur':''}"><div class="sh" data-tb="B" title="아래 보유 카드를 야수로">야수</div><div class="row scroll">${S.lu.map((x,i)=>oc('lu',i,'',{num:(i+1)+'번',under:posSel(i)})).join('')}<span class="gap"></span>${S.bench.map((x,i)=>oc('bench',i,'벤치',{num:(i+1)+'번'})).join('')}</div></div>`
  +`<div class="strip pit${B?'':' cur'}"><div class="sh" data-tb="P" title="아래 보유 카드를 투수로">투수</div><div class="row scroll">${S.rot.map((x,i)=>(i?'<span class="arr" aria-hidden="true">›</span>':'')+oc('rot',i,'선발',{num:(i+1)+'번',cls:'sp'})).join('')}<span class="gap"></span>${[2,3,4,5].map((j,n)=>oc('pen',j,'중계',{num:(n+1)+'번',cls:'rp'})).join('')}<span class="gap"></span>${oc('pen',1,'셋업',{cls:'su'})}${oc('pen',0,'마무리',{cls:'cl'})}</div></div>`+tcRow()}
- ${deckBar()}<details class="pdet"${S.pdetOpen?' open':''}><summary>덱 저장 · 모드별 덱</summary>${presetBar()}</details>
+ ${deckBar()}<details class="pdet"${S.pdetOpen?' open':''}><summary>저장한 덱 · 모드별 덱${(S.decks||[]).length?` <small>(${S.decks.length}개)</small>`:''}</summary>${presetBar()}</details>
  <p class="note hint${S.sel||S.msg?' on':''}" aria-live="polite">${S.msg?esc(S.msg):S.sel?'바꿀 자리나 넣을 카드 선택. 같은 자리 다시 누르면 취소.':''}</p><p class="note help">${S.sel?'같은 줄의 다른 자리를 누르면 서로 바뀌고, 아래 보유 카드를 누르면 그 카드가 들어갑니다. 같은 자리를 다시 누르면 선택 해제.':'PC: 카드·자리를 끌어 놓아 교체 가능. 카드를 누르면 상세 정보가 뜨고, 거기서 [자리 교체하기]를 누른 다음 다른 자리(타순 교체·벤치 교대)나 보유 카드를 누르면 바뀝니다. 빈 자리는 바로 선택. 수비 위치는 카드 아래 메뉴에서 바꾸고, 메뉴 옆 등급은 그 위치 수비 적성입니다.'}</p></section>
  <section class="band lu2 one"><div><div class="tools"><h2 style="margin:0">보유 카드</h2><div class="tabs tb" role="tablist">${[['B','야수'],['P','투수']].map(([k,n])=>`<button role="tab" aria-selected="${S.tb===k}" class="${S.tb===k?'on':''}" data-tb="${k}">${n}</button>`).join('')}</div>
  <div class="tabs" role="tablist">${FN.map(([k,n])=>`<button role="tab" aria-selected="${pf===k}" class="${pf===k?'on':''}" data-pf="${k}">${n}</button>`).join('')}</div>
@@ -2582,14 +2587,14 @@ function simPanel(c){const x=simOf(c.id)||{ab:{},sk:{},eq:{}},keys=c.type==='B'?
  const EQK=Object.entries(ECON.EQ_KIND).filter(([k,v])=>v[0]===c.type),slots=ECON.EQ_SLOTS[c.type];
  const eqSel=sl=>`<select data-sim="eq" data-k="${sl}" aria-label="${EQSN[sl]} 장비"><option value="">${EQSN[sl]} 없음</option>${EQK.filter(([k,v])=>v[1]===sl).map(([k,v])=>['일반','희귀','전설'].map(g=>`<option value="${k}:${g}"${x.eq[sl]===k+':'+g?' selected':''}>${g} ${v[2]}</option>`).join('')).join('')}</select>`;
  const a=simAdd(c);
- return `<details class="simp"${simOf(c.id)?' open':''}><summary>가정해 보기 · 유학·스킬·장비 (덱 짜보기 안에서만)${Object.keys(a).length?' · '+Object.entries(a).map(([k,v])=>SKN[k]+' +'+v).join(' '):''}</summary>
+ return `<details class="simp"${simOf(c.id)?' open':''}><summary>가정해 보기 · 유학·스킬·장비 (덱 화면 안에서만)${Object.keys(a).length?' · '+Object.entries(a).map(([k,v])=>SKN[k]+' +'+v).join(' '):''}</summary>
  <div class="scroll"><table class="tbl"><thead><tr><th class="l">능력</th>${keys.map(k=>`<th>${SKN[k]}</th>`).join('')}</tr></thead><tbody>
  <tr><td class="l">유학${ab?` <small>(최대 +${cap})</small>`:' <small>불가</small>'}</td>${keys.map(k=>`<td>${ab?sel('ab',k,cap,x.ab[k]):'-'}</td>`).join('')}</tr>
  <tr><td class="l">스킬${(SK_MUL[c.v]||1)!==1?` <small>×${SK_MUL[c.v]}</small>`:''}</td>${keys.map(k=>`<td>${sel('sk',k,12,x.sk[k])}</td>`).join('')}</tr></tbody></table></div>
  <div class="tools" style="margin-top:6px">${slots.map(eqSel).join('')}</div><p class="note" style="margin:4px 0 0">유학은 카드 연도 기준 25세 이하·35세 이상만, 코스트가 낮을수록 상한이 커요. 장비는 저코스트일수록 보너스가 커요(같은 구단 장비 +10%는 빼고 계산).</p></details>`}
 function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0),T=teamColor(bldStart(),bldInit().fxsel,(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean)),ids=bldIds();
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
- <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b><span class="pill">${S.owned[c.id]?'보유':'미보유'} · 덱 짜보기 덱 효과 야수 +${T.bat} · 투수 +${T.pit}</span>${S.bmslot?'<button data-bswap="1">자리 교체하기</button>':''}<button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
+ <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b><span class="pill">${S.owned[c.id]?'보유':'미보유'} · 덱 화면 덱 효과 야수 +${T.bat} · 투수 +${T.pit}</span>${S.bmslot?'<button data-bswap="1">자리 교체하기</button>':''}<button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg0&&c.rg0!==c.rg?c.rg0+' · '+c.rg:c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',`${esc(lname(c.line))} 계보`].filter(Boolean).join(' · ')}</p>
  <div class="faces${S.mflip?' flipped':''}" data-mflip="1" title="탭하면 앞/뒷면"><div class="face f-front">${card(c,{full:1,dfx:{bat:T.bat,pit:T.pit},dids:ids,nocond:1})}</div><div class="face f-back">${backFace(c0,0)}</div></div>${simPanel(c0)}</div></div>`}
 // 공지사항(SJ 2026-11-26): 처음 보는 공지는 자동으로 띄우고, 보상(카드팩 등)은 '받기'로 한 번만 지급. 새 공지는 맨 위에 추가
@@ -2607,6 +2612,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126n',d:'2026-11-26',t:'라인업을 덱으로 저장 · 덱 짜보기 → 덱',b:['라인업 화면 왼쪽 위에 덱 이름을 쓰고 "덱으로 저장"을 누르면 지금 라인업이 덱으로 저장돼요. 고른 덱이 있으면 "덮어쓰기"도 바로 할 수 있어요.','팀 메뉴의 "덱 짜보기"는 "덱"으로 이름을 바꿨어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126m',d:'2026-11-26',t:'확정권 구단·연도 지정 수정',b:['EX 카드 확정권의 구단 지정, 골든글러브·커리어하이 확정권의 연도 지정이 고른 뒤 풀려 버리던 문제를 고쳤어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126l',d:'2026-11-26',t:'도감 구단 필터 유지',b:['도감에서 구단을 고른 뒤 연도를 바꿔도 구단 필터가 유지돼요. 그해 이름이 다르면 같은 계보 구단으로 바뀌어요(예: 해태 → KIA).'],rw:{tix:{pk_n:10}}},
  {id:'n1126k',d:'2026-11-26',t:'도감 종류 필터에 국가대표',b:['도감 > 전체 선수의 "전체 종류" 필터에서 국가대표를 고르면 대표팀에 뽑혔던 선수 카드만 모아 볼 수 있어요.','대회별 명단은 도감 위 국가대표 탭에서 볼 수 있어요.'],rw:{tix:{pk_n:10}}},
@@ -2731,7 +2737,7 @@ vw.addEventListener('dragover',e=>{const c=e.target.closest&&e.target.closest('[
 
 vw.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('[data-cell]');if(!c)return;e.preventDefault();vw.dataset.foot='';tapBlk(+c.dataset.cell,location.hash==='#skill'?S.skc:S.cardId);render()});
 vw.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&(e.target.dataset.pick||e.target.dataset.dexv||e.target.dataset.bslot||e.target.dataset.bput)){e.preventDefault();e.target.click()}});
-vw.addEventListener('change',e=>{const t=e.target;if(t.id==='bldimp')return;if(t.id==='deckname'){S.deckName=t.value;return}if(t.id==='cpn')return;if(t.id.startsWith('tixarg-')){S.tixArg={...(S.tixArg||{}),[t.id.slice(7)]:t.value};return}if(t.id==='tixpick'){S.tixPick=t.value;return} // 쿠폰 입력칸: 다시 그리면 입력값과 받기 버튼 클릭이 사라짐
+vw.addEventListener('change',e=>{const t=e.target;if(t.id==='bldimp')return;if(t.id==='deckname'||t.id==='ludn'){S.deckName=t.value;return}if(t.id==='cpn')return;if(t.id.startsWith('tixarg-')){S.tixArg={...(S.tixArg||{}),[t.id.slice(7)]:t.value};return}if(t.id==='tixpick'){S.tixPick=t.value;return} // 쿠폰 입력칸: 다시 그리면 입력값과 받기 버튼 클릭이 사라짐
   S.msg='';if(t.id==='sort')S.sort=t.value;if(t.id==='fteam')S.fteam=t.value;if(t.id==='fyear')S.fyear=t.value;if(t.dataset.bau){S.bau={...BAU0,...(S.bau||{}),[t.dataset.bau]:t.value};if(t.dataset.bau==='t')S.bau.key=(t.value==='B'?BK:PKEY)[0];S.bauRes=null}if(t.dataset.sf){S.sf={...(S.sf||SF0),[t.dataset.sf]:t.value};S.mat=[]}if(t.id==='cpick'){S.cardId=t.value;S.back=false}if(t.dataset.pos)setPos(+t.dataset.pos,t.value);if(t.id==='t-live')S.tacLive=t.checked;render()});
 
 const abd=id=>ABD.find(d=>d[0]===id),abOpen=d=>!d[2]||(ABU[d[2]]?ABU[d[2]][0]():false);
@@ -3286,11 +3292,11 @@ function vMission0(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section c
 // ===== 화면 전환 =====
 const ROUTES={lineup:()=>mtTabs()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,shop_sp:vShop,shop_tc:vShop,shop_b:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
 const LEG=new Set(['season','years','online','game','cards']);
-const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['builder','덱 짜보기'],['skill','스킬'],['cards','보유 카드']],cards:[['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']],store:[['shop','선수 카드팩'],['shop_sp','서포트'],['shop_tc','작전'],['shop_b','스킬 블록']]};
+const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['builder','덱'],['skill','스킬'],['cards','보유 카드']],cards:[['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']],store:[['shop','선수 카드팩'],['shop_sp','서포트'],['shop_tc','작전'],['shop_b','스킬 블록']]};
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='b0dbbfa629';
+const BUILD='47d8147f19';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
@@ -3369,7 +3375,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.lf){S.lf=S.lf||{};S.lf[t.dataset.lf]=t.value;render();return}
   if(t.dataset.sim){const B=bldInit(),id=S.bmodal;B.sim=B.sim||{};const x=B.sim[id]=B.sim[id]||{ab:{},sk:{},eq:{}};const g=t.dataset.sim,k=t.dataset.k;if(t.value&&t.value!=='0')x[g][k]=g==='eq'?t.value:+t.value;else delete x[g][k];if(!Object.keys(x.ab).length&&!Object.keys(x.sk).length&&!Object.keys(x.eq).length)delete B.sim[id];save();render();return}
   if(t.id==='decksel'){S.deckSel=t.value;S.deckDel=0;render();return}
-  if(t.id==='deckname'){S.deckName=t.value;return}
+  if(t.id==='deckname'||t.id==='ludn'){S.deckName=t.value;return}
   if(t.id==='deckmgr'){const d=(S.decks||[]).find(x=>x.id===S.deckSel),m=MG.find(x=>x.id===t.value);if(d&&m){d.t.mgr=m.id;S.msg=`'${d.name}' 감독을 ${m.n}(으)로 바꿨어요`;save()}render();return}
   if(t.dataset.mdeck){S.modeDeck=S.modeDeck||{};S.modeDeck[t.dataset.mdeck]=t.value;save();render();return}
   if(t.id==='tll'){S.pkSel.tl=t.value;render();return}
