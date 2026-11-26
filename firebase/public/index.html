@@ -876,6 +876,12 @@ body.xl .lgtabs2 button.on{background:#217346!important;color:#fff!important;bor
 .tsr.top{border-color:#4fbf7d}.tsr.top b{color:#7fe0a3}.tsr.low{border-color:#c8233a}.tsr.low b{color:#ff8a7a}
 .thb{background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}.thb.on{color:var(--gold)}
 body.xl .tsr{background:#fff!important;border-radius:0!important;border-color:#d4d4d4!important}body.xl .tsr b{color:#222!important}body.xl .tsr.top b{color:#107c10!important}body.xl .tsr.low b{color:#c00!important}body.xl .tsrow>b{color:#217346}
+body.xl .xls{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:start}
+body.xl .xlst{width:100%!important;table-layout:auto}
+body.xl .xlst th.l{text-align:left!important;font-weight:400!important}
+body.xl .xlst td{text-align:right!important}body.xl .xlst td.l{text-align:left!important}
+@media (max-width:700px){body.xl .xls{grid-template-columns:minmax(0,1fr)!important}}
+body.xl .xls>.xlsl{grid-column:1/-1!important}body.xl .xls>.xlsl table{width:100%!important}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2672,6 +2678,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126t',d:'2026-11-26',t:'업무 모드 카드 상세 일람표',b:['업무 모드에서 카드를 누르면 앞·뒷면 대신 엑셀 표 한 장으로 보여요. 기본 정보, 수비 위치, 스킬 블록, 능력치(기본·덱·스킬·장비·합계), 시즌 기록이 색 없이 나와요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126s',d:'2026-11-26',t:'팀 기록 · 항목별 우리 팀 순위',b:['리그 > 기록실 맨 위에 팀 기록이 생겼어요. 공격(타율·출루율·홈런·득점·도루)과 수비(평균자책·실점·탈삼진·세이브·실책)에서 우리 팀이 몇 위인지 한눈에 보고, 모든 팀 기록을 항목별로 정렬해 볼 수 있어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126r',d:'2026-11-26',t:'리그 탭을 제목줄로',b:['리그 탭이 감독실 제목 옆으로 올라가고 감독실 · 라인업 · 일정 · 기록실 · 리그 정보로 정리됐어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126q',d:'2026-11-26',t:'리그 화면 탭 나누기',b:['주간·연도별 리그 화면 위에 탭이 생겼어요. 감독실, 매치업(연도별은 선발·예상), 내 팀 기록, 경기 결과, 선수 기록, 순위표를 한 화면에 하나씩 넘겨 봐요.'],rw:{tix:{pk_n:10}}},
@@ -2713,11 +2720,20 @@ let revFT=0;function revFlash(L){let el=document.getElementById('revfl');if(!el)
 function revTag(c){const t=[];if(c.v==='EX')t.push('EX');else if(c.v==='GG')t.push('골든글러브');else if(c.v==='AS')t.push('올스타');else if(c.v==='CH')t.push('커리어하이');else if(c.v==='RN')t.push('영구결번');if(c.cost>=10)t.push('10코스트');else if(c.cost>=9)t.push('9코스트 레전드');return t.join(' · ')+'!'}
 function revealHTML(){const c=by[S.reveal[0]]||byId[S.reveal[0]];if(!c){S.reveal.shift();return S.reveal.length?revealHTML():''}const n=S.reveal.length;
  return `<div class="modal reveal${c.cost>=10||c.v==='EX'?' r10':''}" data-revx="1" role="dialog" aria-modal="true" aria-label="${esc(revTag(c))} ${esc(c.name)}"><div class="revbox"><div class="revtag">${esc(revTag(c))}</div><div class="revcard">${card(c,{full:1})}</div><p class="revn">${esc(c.year+' '+c.team+' '+c.name)}<br><small>${n>1?`탭하면 다음 (${n-1}장 더)`:'탭해서 닫기'}</small></p></div></div>`}
+// 업무 모드 카드 상세(SJ 2026-11-26): 앞·뒷면 대신 엑셀 일람표 한 장 · 색 없음
+function xlSheet(c){const B=c.type==='B',keys=B?BK:PKEY,d=deckFx(),bn=used().includes(c.id)?(B?d.bat:d.pit):0,EQ=ECON.cardEq?ECON.cardEq(S,baseId(c.id),byId):{},SK=skillOf(c.id),ag=ageOf(c);
+ const info=[['선수',esc(c.name)],['연도·구단',`${c.year} ${esc(c.team)}`],['포지션',`${PFULL[c.pos]||c.pos}${c.tw?' · 겸업':''}`],['투타',HAND[c.h]||'-'],['나이',ag!=null?ag+'세':'-'],['종류',c.v?esc(VN[c.v]||c.v):'일반'],['코스트',c.cost],['능력',c.ovr],...(c.bo?[['타순 적성',c.bo.map(x=>BO[x]).join('·')]]:[]),...(c.st?[['출루율 · OPS',`${c.st.obp.toFixed(3).slice(1)} · ${c.st.ops.toFixed(3)} (${c.st.pa}타석)`]]:[])];
+ const rows=keys.map(k=>{const v=c.r[k],p=k==='sta'?0:bn,sk=SK[k]||0,eq=EQ[k]||0;return `<tr><td class="l">${SKN[k]||k}</td><td>${v}</td><td>${p?'+'+p:''}</td><td>${sk?'+'+sk:''}</td><td>${eq?'+'+eq:''}</td><td><b>${Math.min(120,v+p+sk+eq)}</b></td></tr>`}).join('');
+ const fp=B?POS.filter(p=>p!=='DH'&&FXY[p]&&fit(c,p)!=='X').map(p=>`${p} ${fit(c,p)}·${c.ps[p]}`).join(' / '):'';
+ const bl=(S.blocks||[]).filter(b=>b.on===c.id).map(b=>`${b.g}급 ${esc(bname(b))}`).join(', ');
+ return `<div class="xls"><table class="tbl xlst"><tbody>${info.map(([k,v])=>`<tr><th class="l">${k}</th><td class="l">${v}</td></tr>`).join('')}${fp?`<tr><th class="l">수비 위치</th><td class="l">${fp}</td></tr>`:''}<tr><th class="l">스킬 블록</th><td class="l">${bl||'없음'}</td></tr></tbody></table>
+ <table class="tbl xlst"><thead><tr><th class="l">능력치</th><th>기본</th><th>덱</th><th>스킬</th><th>장비</th><th>합계</th></tr></thead><tbody>${rows}</tbody></table>
+ <div class="xlsl">${seasonLine(c)}</div></div>`}
 function modal(){if(S.reveal&&S.reveal.length)return revealHTML();if(S.dexView)return dexViewModal();if(S.bmodal)return bldModal();const c=by[S.modal];if(!c)return '';if(S.cmpA&&S.cmpA!==c.id)return cmpView(by[S.cmpA],c);
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b>${c.bo?`<span class="pill">타순 적성 ${c.bo.map(x=>BO[x]).join('·')}${c.st?` · 출루율 ${c.st.obp.toFixed(3).slice(1)} · OPS ${c.st.ops.toFixed(3)} · ${c.st.pa}타석`:''}</span>`:''}${S.mslot?'<button data-mswap="1">자리 교체하기</button>':''}<button class="ghost lockt" data-lock="${esc(c.id)}" aria-pressed="${isLocked(c.id)}" aria-label="${isLocked(c.id)?'잠금 해제':'잠그기'}" title="${isLocked(c.id)?'잠금 해제':'잠그기'}">${LOCKI(isLocked(c.id))}</button><button class="ghost" data-cmp="${esc(c.id)}">비교하기</button>${(S.owned[baseId(c.id)]|0)>1?`<button class="ghost" data-a="dism" data-id="${esc(baseId(c.id))}" title="${c.v==='EX'?'EX 조각 3개 = 구단 지정 EX 확정권 1장':'코스트 × 30P'}">중복 1장 분해 · ${c.v==='EX'?`EX 조각 ${(S.exShard|0)}/3`:'+'+(c.cost*ECON.DISMANTLE)+'P'}</button>`:''}<button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
  <p class="mmeta">${[c.v==='IR'?`철인 · ${c.type==='B'?'전 경기 출장':'최다 등판'} · 스킬 효과 ×1.5`:c.v==='GG'?`골든글러브 ${({OF:'외야수',P:'투수'})[c.gg]||PFULL[c.gg]||c.gg}`:'',c.v==='EX'?'EX · 스킬 효과 ×1.25 · 같은 계보 덱 인원으로 셈':'',c.v==='RY'?'신인왕 · 컨디션이 보통 아래로 안 떨어짐':'',c.tw?`투타 겸업 · 같은 선수의 ${c.type==='P'?'타자':'투수'} 카드와 함께 1군 등록 가능`:'',ageOf(c)!=null&&!abAge(c)?'유학 불가':''].filter(Boolean).join(' · ')}</p>${recHTML(c)}${abHistText(c.id)?`<p class="mmeta abh">${PLANE}유학 다녀옴: ${esc(abHistText(c.id).replace(/\n/g,' / '))}</p>`:''}
- <div class="faces${S.mflip?' flipped':''}" data-mflip="1" title="탭하면 앞/뒷면"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
+ ${S.work?xlSheet(c):`<div class="faces${S.mflip?' flipped':''}" data-mflip="1" title="탭하면 앞/뒷면"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>`}
  ${eqHTML(c)}
  <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · <a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
 vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-revx],[data-ntc],[data-tix],[data-abreset],[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bswap],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-synexm],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face]');if(!t)return;const D=t.dataset;
@@ -3460,7 +3476,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='63979b6ef6';
+const BUILD='7d9bedea32';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
