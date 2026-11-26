@@ -16,10 +16,10 @@ const baseId=id=>String(id).replace(/~\d+$/,''); // 보유 중복 카드 id는 '
 // EX 제한(2026-11-24, SJ): 1군 25명 중 EX는 타자 1명·투수 1명까지
 // 이름 붙은 라이벌 덱 효과(계보 키 기준)
 const RIVALS=[['롯데','NC','낙동강 더비'],['SK','KT','통신사 더비'],['두산','LG','잠실 더비'],['삼성','롯데','클래식 시리즈'],['KIA','삼성','영호남 더비']];
-// FA 이적 인연 덱 효과(A): 그 선수 카드(아무 시즌) 1장 이상 + 두 계보 각 8명 이상·합계 20명 이상(주전 20명). [선수, 계보A, 계보B]
+// FA 이적 인연 덱 효과(A): 그 선수 카드(아무 시즌) 1장 이상 + 두 계보 각 10명 이상·합계 25명 이상(벤치 포함 25명). [선수, 계보A, 계보B]
 const FA_LINKS=[['강민호','롯데','삼성'],['최형우','삼성','KIA'],['김현수','두산','LG'],['양의지','두산','NC'],['손아섭','롯데','NC'],['정근우','SK','한화'],['이용규','KIA','한화'],['박석민','삼성','NC'],['차우찬','삼성','LG'],['황재균','롯데','KT'],['민병헌','두산','롯데'],['채은성','LG','한화'],['박건우','두산','NC'],['나성범','NC','KIA'],['유강남','LG','롯데'],['홍성흔','두산','롯데'],['심정수','키움','삼성'],['박진만','키움','삼성'],['안치홍','KIA','롯데'],['오재일','두산','삼성'],['최주환','두산','SK'],['박해민','삼성','LG'],['정우람','SK','한화'],['손승락','키움','롯데'],['정수근','두산','롯데'],['김주찬','롯데','KIA'],['장원준','롯데','두산']];
 // 묶음 계보 덱 효과: 엘롯기 = LG·롯데·KIA(각 4명 이상). 구도 인천 = 삼미·청보·태평양·현대·우리·히어로즈·넥센·키움(키움 계보) + 쌍방울·SK·SSG(SK 계보). 흥참동(흥행 참패 동맹) = SK·KT·키움·NC 계보(각 3명 이상)
-// [이름, 계보들, 계보별 최소 인원]. 합계 20명 이상
+// [이름, 계보들, 계보별 최소 인원]. 합계 25명 이상(벤치 포함)
 const LINE_UNIONS=[['구도 인천',['키움','SK'],1,'인천 연고 구단'],['엘롯기',['LG','롯데','KIA'],4,'LG·롯데·KIA'],['흥참동',['SK','KT','키움','NC'],3,'SSG·KT·키움·NC'],['아섭동맹',['롯데','NC','한화'],3,'손아섭이 뛴 롯데·NC·한화']];
 // 이름 세트(SJ 2026-11-25): [이름, 계보(null이면 무관), 선수('이름' 또는 '이름:연도'), A 인원, S 인원]. 같은 선수는 1명으로 셈
 // 히어로즈 메이저리거: 메이저리그로 가기 전 대표 시즌(강정호 2014 40홈런, 박병호 2015 53홈런, 김하성 2020 30홈런, 이정후 2022 MVP, 송성문 2025)
@@ -30,20 +30,20 @@ const NAME_SETS=[['히어로즈 메이저리거','키움',['강정호:2014','박
 const NAT_SETS=[["1998 방콕 AG 금메달",1998,"백재호 장영균 조인성 최원호 홍성흔 황우구 진갑용 강봉규 강철민 강혁 김병현 김동주 김원형 경헌호 이병규 임창용 박찬호 박한이 박재홍 서재응 심재학 신명철"],["2002 부산 AG 금메달",2002,"노장진 이승호 송진우 박명환 임창용 김진우 조용준 정재복 이상훈@LG/P 김상훈 홍성흔 장성호 박진만 김한수 김동주 김민재 김종국 이승엽 이종범 이병규 이영우 박재홍"],["2008 베이징 올림픽 금메달",2008,"윤석민 오승환 송승준 한기주 김광현 류현진 권혁 봉중근 장원삼 정대현 진갑용 강민호 정근우 김동주 고영민 김민재 박진만 이대호 이승엽 이진영 김현수 이종욱 이용규 이택근"],["2010 광저우 AG 금메달",2010,"류현진 임태훈 양현종 봉중근 윤석민 안지만 송은범 김명성 정대현 고창성 박경완 강민호 김태균 이대호 정근우 최정 조동찬 손시헌 강정호 김현수 이종욱 이용규 김강민 추신수"],["2014 인천 AG 금메달",2014,"안지만 유원상 이태양@한화 홍성무 김광현 봉중근 양현종 차우찬 이재학 임창용 한현희 강민호 이재원 박병호 오재원 김민성 황재균 강정호 김상수 김현수 민병헌 나성범 나지완 손아섭"],["2015 프리미어12 우승",2015,"장원준 이대은 이태양@NC 우규민 차우찬 김광현 심창민 조상우 조무근 임창민 정대현 정우람 이현승 양의지 강민호 박병호 이대호 정근우 오재원 박석민 황재균 김상수 김재호 민병헌 나성범 김현수 손아섭 이용규"],["2018 자카르타 AG 금메달",2018,"박병호 김현수 양현종 양의지 김재환 손아섭 정우람 안치홍 오지환 박해민 김하성 박민우 이용찬 임찬규 박종훈 임기영 박치국 최충연 함덕주 이재원 이정후 황재균 최원태 장필준"],["2022 항저우 AG 금메달",2023,"고우석 정우영 박영현 원태인 나균안 박세웅 곽빈 문동주 장현석 최지민 김영규 김동헌 김형준 박성한 김혜성 문보경 강백호 김주원 김지찬 노시환 최지훈 최원준@KIA/B 김성윤 윤동희"],["2026 나고야 AG 금메달",2026,"김영우 조병현 배찬승 박영현 소형준 오원석 최준용 김진욱 성영탁 곽빈 최민석 조형우 김건희 문보경 노시환 정준재 이재현 김주원 김도영 박준순 문현빈 김지찬 윤동희 박재현"]];
 const natHit=(c,y,e)=>{const [n,q]=e.split('@'),[l,t]=(q||'').split('/');return c.year===y&&(c.on||c.name)===n&&(!l||c.line===l)&&(!t||c.type===t)};
 const nsHit=(c,e)=>{const [n,y]=e.split(':');return (c.on||c.name)===n&&(!y||c.year===+y)};
-// 시대 덱 효과: [이름, 계보, 시작 연도, 끝 연도, 필요 인원(주전 20명 중)]. 비밀번호 8888577 = 롯데 2001~2007 순위(8·8·8·8·5·7·7)
+// 시대 덱 효과: [이름, 계보, 시작 연도, 끝 연도, 필요 인원(벤치 포함 25명 중)]. 비밀번호 8888577 = 롯데 2001~2007 순위(8·8·8·8·5·7·7)
 const ERA_SETS=[['비밀번호 8888577','롯데',2001,2007,25]]; // 2026-11-25(SJ): 벤치 포함 25명 전원. EX·영구결번·커리어하이(같은 계보)는 와일드카드로 셈
 // 덱 추천 목표(SJ 2026-11-25): 원하는 덱 효과를 고르면 그 조건에 맞는 카드를 우선. m=조건 카드, s=꼭 넣을 선수(FA 이적)
 const FX_LINES=['KIA','KT','LG','NC','SK','두산','롯데','삼성','키움','한화'],FX_LN={SK:'SSG(SK)',키움:'키움(현대·넥센)'};
 const FX_TARGETS=[...FX_LINES.map(l=>({k:'L:'+l,g:'단일구단',n:FX_LN[l]||l,m:c=>c.line===l,ls:[l]})),
  ...LINE_UNIONS.map(([n,ls,mn,lb])=>({k:'U:'+n,g:'묶음',n:`${n} (${lb||ls.join('·')})`,m:c=>ls.includes(c.line),ls,q:Object.fromEntries(ls.map(l=>[l,mn||1]))})),
- ...RIVALS.map(([a,b,n])=>({k:'R:'+n,g:'라이벌',n:`${n} (${FX_LN[a]||a}·${FX_LN[b]||b})`,m:c=>c.line===a||c.line===b,ls:[a,b],q:{[a]:8,[b]:8}})),
+ ...RIVALS.map(([a,b,n])=>({k:'R:'+n,g:'라이벌',n:`${n} (${FX_LN[a]||a}·${FX_LN[b]||b})`,m:c=>c.line===a||c.line===b,ls:[a,b],q:{[a]:10,[b]:10}})),
  ...ERA_SETS.map(([n,l,y0,y1])=>({k:'E:'+n,g:'시대',n:`${n} (${l} ${y0}~${y1})`,m:c=>c.line===l&&c.year>=y0&&c.year<=y1,ls:[l]})),
  {k:'S:AS',g:'특별',n:'올스타덱',m:c=>c.v==='AS'},{k:'S:GG',g:'특별',n:'골든글러브덱',m:c=>c.v==='GG'},
  // 이름 세트: 풀은 전체 카드(loose), 명단 선수는 must로 꼭 넣음. 좌완 왕국·좌타 라인업: 투수/타자만 왼손으로 제한(EX 와일드카드 없음)
  ...NAME_SETS.map(([n,l,names])=>({k:'N:'+n,g:'특별',n,m:c=>(!l||c.line===l)&&names.some(e=>nsHit(c,e)),loose:1,must:names})),
  ...NAT_SETS.map(([n,y,ls])=>{const L=ls.split(' ');return {k:'K:'+n,g:'국가대표',n,m:c=>c.year===y,ls:[],must:L,mhit:(c,e)=>natHit(c,y,e)}}),
  {k:'H:잠수함 군단',g:'특별',n:'잠수함 군단 (언더·사이드 투수)',m:c=>c.type!=='P'||!!c.arm,ls:[]},{k:'H:좌완 왕국',g:'특별',n:'좌완 왕국 (투수 전원 좌투)',m:c=>c.type!=='P'||c.ph==='L',ls:[]},{k:'H:좌타 라인업',g:'특별',n:'좌타 라인업 (타자 전원 좌타·스위치)',m:c=>c.type!=='B'||c.bh==='L'||c.bh==='S',ls:[]},
- ...FA_LINKS.map(([p,a,b])=>({k:'F:'+p,g:'FA 이적',n:`${p} (${a}·${b})`,m:c=>c.line===a||c.line===b,ls:[a,b],s:p,q:{[a]:8,[b]:8}}))];
+ ...FA_LINKS.map(([p,a,b])=>({k:'F:'+p,g:'FA 이적',n:`${p} (${a}·${b})`,m:c=>c.line===a||c.line===b,ls:[a,b],s:p,q:{[a]:10,[b]:10}}))];
 const FX_T_BY=Object.fromEntries(FX_TARGETS.map(t=>[t.k,t]));
 const CH_WILD=1; // 커리어하이: 연도 무관으로 단일연도 인원에 넣을 수 있는 장수
 const EX_MAX={B:1,P:1},exCount=ids=>{const n={B:0,P:0};for(const id of ids){const c=byId[baseId(id)];if(c&&c.v==='EX')n[c.type]++}return n},
@@ -149,6 +149,9 @@ const yearKey=c=>(c.year<=1987?'1982-87':String(c.year))+' '+c.line;
 // 덱 효과(팀컬러): 계열마다 하나씩, 등급 S>A>B. Y=연도 계열, F=구단 계열, E=인연 계열(동문)
 const FX_FAM={Y:'연도',F:'구단',E:'인연'};
 function teamColor(cards,sel,bench){
+  // 2026-11-26(SJ 확정): 팀컬러 기본은 벤치 포함 25명. 25명이 불가능한 올스타덱·골든글러브덱만 주전 20명(st).
+  // 국가대표·이름 세트·좌완/좌타/잠수함·동문은 명단·보직 기준이라 주전(st)으로 셈. 코스트 보너스도 주전 기준 그대로
+  const st=cards;cards=[...cards,...(bench||[]).filter(c=>c&&!cards.includes(c))];
   const cnt=f=>{const m={};for(const c of cards){const k=f(c);if(k)m[k]=(m[k]||0)+1}return Object.entries(m).sort((a,b)=>b[1]-a[1])};
   // EX 카드는 같은 계보의 가장 많은 연도에 들어가 단일연도 인원으로 셈
   // 커리어하이(CH)는 CH_WILD장까지 같은 계보 최다 연도에 합류(EX와 같은 방식), 영구결번(RN)은 계보와 무관하게 최다 연도에 합류
@@ -157,7 +160,7 @@ function teamColor(cards,sel,bench){
   const yk=(()=>{const m={};for(const c of cards)if(!wild(c)&&!any(c)){const k=yearKey(c);m[k]=(m[k]||0)+1}
     for(const c of cards)if(wild(c)){let b=null;for(const k in m)if(k.split(' ')[1]===c.line&&(!b||m[k]>m[b]))b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
     for(const c of cards)if(any(c)){let b=null;for(const k in m)if(!b||m[k]>m[b])b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
-    return Object.entries(m).sort((a,b)=>b[1]-a[1])})(),ln=(()=>{const a=cnt(c=>any(c)?null:c.line),n=cards.filter(any).length;if(n){if(a[0])a[0][1]+=n;else a.push([cards.find(any).line,n])}return a})(),rg=cnt(REGION_OF),cost=cards.reduce((s,c)=>s+c.cost,0),fx=[];
+    return Object.entries(m).sort((a,b)=>b[1]-a[1])})(),ln=(()=>{const a=cnt(c=>any(c)?null:c.line),n=cards.filter(any).length;if(n){if(a[0])a[0][1]+=n;else a.push([cards.find(any).line,n])}return a})(),rg=cnt(REGION_OF),cost=st.reduce((s,c)=>s+c.cost,0),fx=[];
   // 표시용 이름: 계보 키 대신 실제 구단명(그 연도 카드에서 가장 많은 팀)
   const tname=k=>{const [yr,l]=k.split(' '),m={};for(const c of cards)if(c.line===l&&yearKey(c).startsWith(yr+' '))m[c.team]=(m[c.team]||0)+1;
     return yr+' '+(Object.entries(m).sort((a,b)=>b[1]-a[1])[0]||[l])[0]};
@@ -166,34 +169,34 @@ function teamColor(cards,sel,bench){
   // 2026-11-25(SJ): 덱 효과는 1군 주전 20명(타순 9·선발 5·불펜 6) 기준. 계열 구분 없이 달성한 효과(all) 중 등급(S·A·B)별로 하나씩, 최대 3개(sel=고른 key, 없으면 그 등급 최고 자동)
   const byLine={};for(const [k,n] of yk){const l=k.split(' ')[1];(byLine[l]=byLine[l]||[]).push([k,n])}
   const [l1,m1]=ln[0]||[],lc=Object.fromEntries(ln);
-  const uniq=f=>{const m={};for(const c of cards){const k=f(c);if(!k)continue;(m[k]=m[k]||new Set()).add(c.pk)}return Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])};
-  const hs=uniq(c=>c.hs),un=uniq(c=>c.un),nv=v=>cards.filter(c=>c.v===v).length;
+  const uniq=f=>{const m={};for(const c of st){const k=f(c);if(!k)continue;(m[k]=m[k]||new Set()).add(c.pk)}return Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])};
+  const hs=uniq(c=>c.hs),un=uniq(c=>c.un),nv=v=>st.filter(c=>c.v===v).length;
   const all=[];const add=x=>{if(x&&!all.some(y=>y.key===x.key))all.push(x)};
-  {const yy=yk[0];if(yy){const n=yy[1];if(n>=20)add(mk('Y','S','단일연도',tname(yy[0]),8,6));else if(n>=16)add(mk('Y','A','단일연도',tname(yy[0]),5,4));else if(n>=10)add(mk('Y','B','단일연도',tname(yy[0]),3,2))}}
-  for(const l in byLine){const a=byLine[l];if(a.length>=2&&a[0][1]>=7&&a[1][1]>=7&&a[0][1]+a[1][1]>=20)add(mk('Y','A','연도 듀얼',`${a[0][0].split(' ')[0]}+${a[1][0].split(' ')[0]} ${lname(l)}`,5,4))}
-  if(m1>=20)add(mk('F','A','단일구단',lname(l1),5+(cost>=125?2:0),3+(cost>=125?2:0)));else if(m1>=12)add(mk('F','B','단일구단',lname(l1),3,2));
+  {const yy=yk[0];if(yy){const n=yy[1];if(n>=25)add(mk('Y','S','단일연도',tname(yy[0]),8,6));else if(n>=20)add(mk('Y','A','단일연도',tname(yy[0]),5,4));else if(n>=12)add(mk('Y','B','단일연도',tname(yy[0]),3,2))}}
+  for(const l in byLine){const a=byLine[l];if(a.length>=2&&a[0][1]>=9&&a[1][1]>=9&&a[0][1]+a[1][1]>=25)add(mk('Y','A','연도 듀얼',`${a[0][0].split(' ')[0]}+${a[1][0].split(' ')[0]} ${lname(l)}`,5,4))}
+  if(m1>=25)add(mk('F','A','단일구단',lname(l1),5+(cost>=125?2:0),3+(cost>=125?2:0)));else if(m1>=15)add(mk('F','B','단일구단',lname(l1),3,2));
   // 이름 붙은 라이벌(A): 두 구단 각 8명 이상, 합계 20명 이상. 그 외 두 구단 조합은 일반 라이벌 듀얼(B)
-  {const nm=new Set(cards.map(c=>c.name));for(const [p,a,b] of FA_LINKS)if(nm.has(p)&&(lc[a]||0)>=8&&(lc[b]||0)>=8&&lc[a]+lc[b]>=20)add(mk('F','A','FA 이적: '+p,`${lname(a)}+${lname(b)}`,5,4))}
-  for(const [a,b,n] of RIVALS)if((lc[a]||0)>=8&&(lc[b]||0)>=8&&lc[a]+lc[b]>=20)add(mk('F','A',n,`${lname(a)}+${lname(b)}`,5,4));
-  if(ln.length>=2&&ln[0][1]>=8&&ln[1][1]>=8&&ln[0][1]+ln[1][1]>=20&&!all.some(x=>x.fam==='F'&&x.g==='A'&&x.name!=='단일구단'))add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
-  if(rg[0]&&rg[0][1]>=20)add(mk('F','B','지역',rg[0][0],3,2));
+  {const nm=new Set(cards.map(c=>c.name));for(const [p,a,b] of FA_LINKS)if(nm.has(p)&&(lc[a]||0)>=10&&(lc[b]||0)>=10&&lc[a]+lc[b]>=25)add(mk('F','A','FA 이적: '+p,`${lname(a)}+${lname(b)}`,5,4))}
+  for(const [a,b,n] of RIVALS)if((lc[a]||0)>=10&&(lc[b]||0)>=10&&lc[a]+lc[b]>=25)add(mk('F','A',n,`${lname(a)}+${lname(b)}`,5,4));
+  if(ln.length>=2&&ln[0][1]>=10&&ln[1][1]>=10&&ln[0][1]+ln[1][1]>=25&&!all.some(x=>x.fam==='F'&&x.g==='A'&&x.name!=='단일구단'))add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
+  if(rg[0]&&rg[0][1]>=25)add(mk('F','B','지역',rg[0][0],3,2));
   // 묶음 계보(A): 여러 계보를 합쳐 20명 이상(각 계보 1명 이상)
-  for(const [n,ls,mn,lb] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=20&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,lb||ls.map(lname).join('+'),5,4))}
+  for(const [n,ls,mn,lb] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=25&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,lb||ls.map(lname).join('+'),5,4))}
   // 시대 세트는 S 칸(SJ 2026-11-25): 같은 구단이라 A 칸의 단일구단과 함께 켤 수 있게
-  for(const [n,l,y0,y1,need] of ERA_SETS){const k=[...cards,...(bench||[])].filter(c=>c&&(any(c)||c.line===l&&(chW.has(c)||c.year>=y0&&c.year<=y1))).length;if(k>=need)add(mk('Y','S',n,`${y0}~${y1} ${lname(l)} ${k}명`,5,4))}
+  for(const [n,l,y0,y1,need] of ERA_SETS){const k=cards.filter(c=>c&&(any(c)||c.line===l&&(chW.has(c)||c.year>=y0&&c.year<=y1))).length;if(k>=need)add(mk('Y','S',n,`${y0}~${y1} ${lname(l)} ${k}명`,5,4))}
   // 올스타덱·골든글러브덱: 연도·구단이 섞여도 특별 카드 장수로
   // 2026-11-25(SJ): 주전 20명을 다 채우면 최고 등급(S). EX·영구결번도 와일드카드로 셈
   {const w=nv('EX')+nv('RN');
   {const n=nv('AS')+w;if(n>=20)add(mk('E','S','올스타덱',`올스타 ${n}명`,8,6));else if(n>=12)add(mk('E','A','올스타덱',`올스타 ${n}명`,5,4));else if(n>=8)add(mk('E','B','올스타덱',`올스타 ${n}명`,3,2))}
   {const n=nv('GG')+w;if(n>=20)add(mk('E','S','골든글러브덱',`골든글러브 ${n}명`,8,6));else if(n>=8)add(mk('E','A','골든글러브덱',`골든글러브 ${n}명`,5,4));else if(n>=5)add(mk('E','B','골든글러브덱',`골든글러브 ${n}명`,3,2))}}
   // 이름 세트: 지정 선수들을 계보 안에서 모으기
-  for(const [n,l,names,na,ns,nb] of NAME_SETS){const k=new Set(cards.filter(c=>(!l||c.line===l)&&names.some(e=>nsHit(c,e))).map(c=>c.name)).size;if(k>=ns)add(mk('E','S',n,`${k}/${names.length}명`,6,5));else if(k>=na)add(mk('E','A',n,`${k}/${names.length}명`,4,3));else if(nb&&k>=nb)add(mk('E','B',n,`${k}/${names.length}명`,2,1))}
+  for(const [n,l,names,na,ns,nb] of NAME_SETS){const k=new Set(st.filter(c=>(!l||c.line===l)&&names.some(e=>nsHit(c,e))).map(c=>c.name)).size;if(k>=ns)add(mk('E','S',n,`${k}/${names.length}명`,6,5));else if(k>=na)add(mk('E','A',n,`${k}/${names.length}명`,4,3));else if(nb&&k>=nb)add(mk('E','B',n,`${k}/${names.length}명`,2,1))}
   // 국가대표 우승: 15명 S · 10명 A · 6명 B
-  for(const [n,y,ls] of NAT_SETS){const L=ls.split(' '),k=new Set(cards.filter(c=>L.some(x=>natHit(c,y,x))).map(c=>c.pk)).size;if(k>=15)add(mk('E','S',n,`국가대표 ${k}명`,6,5));else if(k>=10)add(mk('E','A',n,`국가대표 ${k}명`,4,3));else if(k>=6)add(mk('E','B',n,`국가대표 ${k}명`,2,2))}
+  for(const [n,y,ls] of NAT_SETS){const L=ls.split(' '),k=new Set(st.filter(c=>L.some(x=>natHit(c,y,x))).map(c=>c.pk)).size;if(k>=15)add(mk('E','S',n,`국가대표 ${k}명`,6,5));else if(k>=10)add(mk('E','A',n,`국가대표 ${k}명`,4,3));else if(k>=6)add(mk('E','B',n,`국가대표 ${k}명`,2,2))}
   // 잠수함 군단(SJ 2026-11-25): 투수 중 언더·사이드 수
-  {const n=cards.filter(c=>c.type==='P'&&c.arm).length;if(n>=6)add(mk('E','A','잠수함 군단',`언더·사이드 ${n}명`,1,6));else if(n>=4)add(mk('E','B','잠수함 군단',`언더·사이드 ${n}명`,0,3))}
+  {const n=st.filter(c=>c.type==='P'&&c.arm).length;if(n>=6)add(mk('E','A','잠수함 군단',`언더·사이드 ${n}명`,1,6));else if(n>=4)add(mk('E','B','잠수함 군단',`언더·사이드 ${n}명`,0,3))}
   // 좌완 왕국·좌타 라인업(SJ 2026-11-25): 투수 11명·타자 9명 중 왼손 수. 스위치히터는 좌타로 셈
-  {const P=cards.filter(c=>c.type==='P'),B=cards.filter(c=>c.type==='B'),lp=P.filter(c=>c.ph==='L').length,lb=B.filter(c=>c.bh==='L'||c.bh==='S').length;
+  {const P=st.filter(c=>c.type==='P'),B=st.filter(c=>c.type==='B'),lp=P.filter(c=>c.ph==='L').length,lb=B.filter(c=>c.bh==='L'||c.bh==='S').length;
    if(P.length>=11&&lp===P.length)add(mk('E','A','좌완 왕국',`좌투수 ${lp}명`,1,7));else if(lp>=8)add(mk('E','B','좌완 왕국',`좌투수 ${lp}명`,0,4));
    if(B.length>=9&&lb===B.length)add(mk('E','A','좌타 라인업',`좌타자 ${lb}명`,7,1));else if(lb>=7)add(mk('E','B','좌타 라인업',`좌타자 ${lb}명`,4,0))}
   if(hs[0]&&hs[0][1]>=6)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=4)add(mk('E','B','고교 동문',hs[0][0],2,1));

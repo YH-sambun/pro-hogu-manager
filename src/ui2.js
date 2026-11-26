@@ -4,7 +4,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['luAna','ntcView','verMsg','ntcHide','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','eqMore','eqSlot','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['luAna','phMsg','ntcView','verMsg','ntcHide','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','eqMore','eqSlot','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -225,7 +225,16 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   <div class="thm" role="group" aria-label="테마 색"><b>테마</b><button class="${!S.theme?'on':''}" data-a="theme" data-v="" aria-pressed="${!S.theme}"><i style="--a:#e07a45;--b:#ffd27a"></i>기본</button>${Object.entries(THEMES).map(([k,[a,b2]])=>`<button class="${S.theme===k?'on':''}" data-a="theme" data-v="${k}" aria-pressed="${S.theme===k}"><i style="--a:${a};--b:${b2}"></i>${k}</button>`).join('')}</div>
   <div class="tools"><button class="ghost" data-a="work">업무 모드 ${S.work?'끄기':'켜기'}</button><span class="note" style="margin:0">PC에서는 \` 키</span></div>
   <p class="note">브라우저 자동 저장${FBMODE()&&ON.user?' · 계정 동기화':''}. 다른 기기: 코드 복사 후 붙여넣기.</p>
-  <textarea id="sv" rows="3" style="width:100%"></textarea><div class="tools"><button class="ghost" data-a="copy">코드 복사</button><button class="ghost" data-a="load">붙여 넣은 코드 불러오기</button><button class="ghost danger" data-a="reset" style="margin-left:auto">처음부터 다시</button></div></details></section>`}
+  <textarea id="sv" rows="3" style="width:100%"></textarea><div class="tools"><button class="ghost" data-a="copy">코드 복사</button><button class="ghost" data-a="load">붙여 넣은 코드 불러오기</button><button class="ghost danger" data-a="reset" style="margin-left:auto">처음부터 다시</button></div>
+  <div class="lbl">사진 묶음</div><p class="note" style="margin:0 0 6px">내가 올린 사진 ${Object.keys(S.photos||{}).length}장을 파일 하나로 내보내거나, 받은 파일을 불러와요. 다른 사람에게 넘길 때는 <b>직접 찍은 사진이나 CC 라이선스 사진만</b> 넣어 주세요(기자·구단 사진은 저작권 문제).</p>
+  <div class="tools"><button class="ghost" data-a="phexp" ${Object.keys(S.photos||{}).length?'':'disabled'}>사진 묶음 내보내기</button><label class="ghost phup" style="cursor:pointer">사진 묶음 불러오기<input type="file" id="phimp" accept=".json,application/json" hidden></label><label class="mdk"><input type="checkbox" id="phover"${S.phOver?' checked':''}> 이미 있는 사진도 덮어쓰기</label></div>${S.phMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.phMsg)}</p>`:''}</details></section>`}
+// 사진 묶음(SJ 2026-11-26): S.photos만 JSON 파일로 내보내고 불러옴. 카드 id 기준이라 받는 쪽 게임에도 같은 카드에 들어감
+function phExport(){const P=S.photos||{},n=Object.keys(P).length;if(!n)return;const blob=new Blob([JSON.stringify({kind:'phm-photos',v:1,n,at:new Date().toISOString().slice(0,10),photos:P})],{type:'application/json'}),name=`프로호구-사진묶음-${n}장.json`,file=new File([blob],name,{type:'application/json'});
+ if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'프로호구 사진 묶음'}).then(()=>{S.phMsg=`${n}장 공유`;render()}).catch(()=>{});return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);S.phMsg=`${n}장 내보냄 · ${name}`;render()}
+function phImport(f){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result),P=d&&d.kind==='phm-photos'&&d.photos;if(!P||typeof P!=='object')throw 0;S.photos=S.photos||{};let add=0,skip=0,bad=0;
+  for(const [id,u] of Object.entries(P)){if(!byId[baseId(id)]||typeof u!=='string'||!/^data:image\/(jpeg|png|webp);base64,/.test(u)||u.length>400000){bad++;continue}if(S.photos[id]&&!S.phOver){skip++;continue}S.photos[id]=u;add++}
+  try{save()}catch(e){S.phMsg='저장 공간 부족 · 일부만 들어갔을 수 있어요'}S.phMsg=`사진 ${add}장 불러옴${skip?` · 이미 있어서 건너뜀 ${skip}`:''}${bad?` · 맞지 않는 항목 ${bad}`:''}`}catch(e){S.phMsg='사진 묶음 파일이 아니에요'}render()};r.readAsText(f)}
 async function redeemCoupon(){const el=document.getElementById('cpn'),code=((el&&el.value)||'').trim().toUpperCase();if(!code){S.cpMsg='코드 입력';render();return}
   const F=window.FB;if(!F){S.cpMsg='쿠폰은 온라인 전용';render();return}
   if((S.coupons||{})[code]){S.cpMsg='이미 사용한 쿠폰';render();return}
@@ -499,10 +508,10 @@ function recStar(r,t){if(t&&t.must){for(const e of t.must){const [n,y]=e.split('
  const room=COST_CAP-recCost(r),C=CARDS.filter(c=>(c.on||c.name)===t.s&&t.m(c)&&c.v!=='EX').sort((a,b)=>b.ovr-a.ovr);
  for(const c of C)for(const s of sl.filter(s=>{const o=byId[get(s)];return o&&o.type===c.type&&o.v!=='EX'&&!(t.keep&&t.keep.has(o.on||o.name))&&c.cost<=o.cost+room&&(s[0]==='lu'?canPos(c,r.lu[s[1]][0]):s[0]==='rot'?c.pos==='SP':true)}).sort((a,b)=>byId[get(a)].ovr-byId[get(b)].ovr)){const o=byId[get(s)];if(t.q&&t.q[o.line]&&o.line!==c.line)continue;set(s,c.id);r.bench=r.bench.filter(id=>!id||(byId[id].on||byId[id].name)!==t.s);return r}
  return r}
-// 계보별 최소 인원(t.q)이 모자라면 주전 중 남는 계보의 낮은 능력 선수를 같은 자리에 설 수 있는 부족 계보 선수로 바꿈(코스트 상한 안에서)
-function recFix(r,t){if(!t||!t.q)return r;const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
+// 계보별 최소 인원(t.q)이 모자라면 벤치 포함 25명 중(2026-11-26 SJ: 팀컬러 25명 기준) 남는 계보의 낮은 능력 선수를 같은 자리에 설 수 있는 부족 계보 선수로 바꿈(코스트 상한 안에서)
+function recFix(r,t){if(!t||!t.q)return r;const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i]),...r.bench.map((x,i)=>['bench',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
  for(let it=0;it<30;it++){const lc={};for(const s of sl){const c=byId[get(s)];if(c){const l=c.v==='RN'||c.v==='EX'?'*':c.line;lc[l]=(lc[l]||0)+1}}const lc2={...lc};delete lc2['*'];const top=Object.entries(lc2).sort((a,b)=>b[1]-a[1])[0];if(top&&lc['*'])lc2[top[0]]+=lc['*'];
-  const ql=Object.keys(t.q),need=ql.find(l=>(lc[l]||0)<t.q[l])||(ql.reduce((x,l)=>x+(lc2[l]||0),0)<20?ql.sort((a,b)=>(lc2[a]||0)-(lc2[b]||0))[0]:null);if(!need)break;
+  const ql=Object.keys(t.q),need=ql.find(l=>(lc[l]||0)<t.q[l])||(ql.reduce((x,l)=>x+(lc2[l]||0),0)<25?ql.sort((a,b)=>(lc2[a]||0)-(lc2[b]||0))[0]:null);if(!need)break;
   const names=new Set([...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean).map(id=>byId[id].name)),room=COST_CAP-recCost(r);let ok=false;
   const dn=f=>sl.filter(s=>{const c=byId[get(s)];return c&&c.v!=='EX'&&!(c.name===t.s&&t.m(c))&&f(c)}).sort((a,b)=>byId[get(a)].ovr-byId[get(b)].ovr),don=dn(c=>c.v!=='RN'&&(!(c.line in t.q)||(lc[c.line]||0)>t.q[c.line]&&c.line!==need));
   for(const s of don.length?don:dn(c=>c.v==='RN')){const o=byId[get(s)];
@@ -639,7 +648,7 @@ function bldDecode(code){const m=String(code||'').trim().match(/PHD1\.([A-Za-z0-
 async function bldImage(B){try{await document.fonts.ready}catch(e){}
   const W=1080,H=1380,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),F='"IBM Plex Sans KR",sans-serif',FH='"Barlow Condensed","IBM Plex Sans KR",sans-serif';
   g.fillStyle='#0d3a27';g.fillRect(0,0,W,H);g.fillStyle='#195a3a';g.fillRect(0,0,W,150);
-  const cards=bldCards(),cost=cards.reduce((t,c)=>t+c.cost,0),T=teamColor(bldStart(),B.fxsel);
+  const cards=bldCards(),cost=cards.reduce((t,c)=>t+c.cost,0),T=teamColor(bldStart(),B.fxsel,(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean));
   g.fillStyle='#ffd27a';g.font=`700 54px ${FH}`;g.fillText(S.team&&S.team.name||'내 덱',48,82);
   g.fillStyle='#d2e7d9';g.font=`500 26px ${F}`;g.fillText(`코스트 ${cost}/${COST_CAP} · ${cards.length}/25명 · 야수 +${T.bat} · 투수 +${T.pit}`,48,126);
   const fx=(T.fx||[]).map(f=>`${f.g} ${f.name||f.n||''}`).join('   ');if(fx){g.fillStyle='#fff';g.font=`600 22px ${F}`;g.fillText(fx.slice(0,70),48,186)}
@@ -1048,7 +1057,7 @@ addEventListener('hashchange',()=>{closePops();render();scrollTo(0,0)});
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#nav a,#tabbar a,#nav button,#tabbar button')&&S&&(S.modal||S.dexView||S.bmodal)){closePops();render()}},true);
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -1062,6 +1071,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='synview'){S.synView=b.dataset.v;render()}
   else if(a==='lustat'){S.luStat=b.dataset.v;render()}
   else if(/^deck/.test(a))deckAct(a);
+  else if(a==='phexp')phExport();
   else if(a==='abonly'){S.abOnly=S.abOnly===false;S.abLim=0;render()}
   else if(a==='abmore'){S.abLim=(S.abLim||48)+48;render()}
   else if(a==='ntcok'){const n=NOTICES.find(x=>x.id===b.dataset.id);S.ntc=S.ntc||{};if(n){if(n.rw&&S.ntc[n.id]!=='got'){ECON.grant(S,n.rw);S.ntc[n.id]='got';S.toast='공지 보상 · '+rwText(n.rw)}else if(!S.ntc[n.id])S.ntc[n.id]=1}S.ntcView=null;save();render()}
@@ -1105,6 +1115,8 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='tll'){S.pkSel.tl=t.value;render();return}
   if(t.id==='tyl'){S.pkSel.ty={line:t.value,years:[]};render();return}
   if(t.id==='dexq'){S.dexQ=t.value;S.dexLim=0;render();return}
+  if(t.id==='phimp'&&t.files&&t.files[0]){phImport(t.files[0]);return}
+  if(t.id==='phover'){S.phOver=t.checked;render();return}
   if(t.id==='lucol'){S.luCol=+t.value;render();return}
   if(t.id==='pksel'){S.pk=t.value;S.pkMsg='';S.pkOut=null;render();return}
   if(t.id==='abq'){S.abQ=t.value;S.abLim=0;render();return}

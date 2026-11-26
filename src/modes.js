@@ -215,6 +215,13 @@ function ylFinish(){const L=S.yl;let res,msg;L.man=(L.man||0)+1;L.steps=(L.steps
   if(L.post){res=seriesGame(L,G);msg=userReward(res,'yl')+ylAdvance(L)}
   else{res=lgPlay(L,G);msg=userReward(res,'yl')+midAS(L);if(L.round>=L.sched.length){const inP=ylStartPost(L);msg+=` · 정규시즌 ${L.rank}위${L.titleMsg||''}${inP?' · 포스트시즌 진출':' · 포스트시즌 진출 실패'}`+ylAdvance(L)}}
   S.toast=msg;rollCond();G=null;save();go('years')}
+// 다음 휴식일까지 자동(SJ 2026-11-26): 내 경기가 없는 라운드·포스트시즌 진입·시즌 종료 직전에 멈춤. 반복 보상은 ECON 일일 상한 그대로
+const YL_RUN_MAX=10;
+function ylToRest(){useMode('yl');if(validate().length){location.hash='lineup';render();return}let n=0,w=0,l=0,t=0;const msgs=[];
+  while(n<YL_RUN_MAX){const L=S.yl;if(!L||L.done||L.post)break;const pr=curPair(L);if(!pr)break;
+    G=mkGame(simT(L,pr[0]),simT(L,pr[1]));G.pair=pr;G.me=pr.indexOf(0);G.ctrl=null;G.mode='yl';simAll(G);ylFinish();n++;msgs.push(S.toast||'');
+    const h=S.yl&&S.yl.hl;if(h){const my=h.a===0?h.sc[0]:h.sc[1],op=h.a===0?h.sc[1]:h.sc[0];if(my>op)w++;else if(my<op)l++;else t++}}
+  if(n){S.toast=`${n}경기 자동 진행 · ${w}승 ${l}패${t?` ${t}무`:''}`+(msgs.some(m=>/상한/.test(m))?' · 오늘 반복 보상 상한 도달':'')+(S.yl&&S.yl.post?' · 포스트시즌 진출':'');save()}render()}
 // --- 화면 ---
 function tableHTML(L,title){L=L||S.season;const R=lgStand(L),top=R[0],me=R.findIndex(x=>x.i===0)+1;
   if(!S.showStand)return `<div class="standbar"><button data-a="m-stand" aria-expanded="false">${title||'순위표'} 보기 · 현재 ${me}위</button></div>`;
@@ -248,7 +255,7 @@ function vYears(){useMode('yl');const L=S.yl,won=S.ylWon||{};ranked();
      <div class="btns fixbtn">${pr?`<button class="big" data-a="m-start">하이라이트 보기</button><button data-a="m-auto">결과만 보기</button>`:`<button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 넘어가요">휴식 넘기기</button>`}</div>
      ${pr?`<p class="mini">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
           ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
-     <div class="btns" style="margin-top:10px"><button data-a="m-quit" class="ghost">이 리그 포기</button></div></section>
+     <div class="btns" style="margin-top:10px">${pr&&!L.post?`<button data-a="m-torest" title="휴식 라운드나 포스트시즌 직전, 최대 ${YL_RUN_MAX}경기까지 결과만 보기로 이어서 진행">다음 휴식일까지 자동</button>`:''}<button data-a="m-quit" class="ghost">이 리그 포기</button></div></section>
      ${myTeamHTML(L,'yl')}${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${lastHTML(L)}${tableHTML(L,L.post?'정규시즌 최종 순위':'순위표')}${titleHTML(L)}${asHTML(L)}`}
   const Y=YL_YEARS(),res=L&&L.done?`<section class="band"><h3>${L.year} 리그 결과</h3><p>정규시즌 ${L.rank}위 · 우승 <b>${esc(tname(L.champ,L))}</b>${L.champ===0?' (우승)':''}</p>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>${tableHTML(L,'정규시즌 최종 순위')}${titleHTML(L)}${asHTML(L)}`:'';
   return `<section class="hero"><h1>연도별 리그</h1><p class="mini" title="그해 실제 구단들과 팀당 144경기 + 포스트시즌. 08~23시 15분마다 자동 진행(약 2~3일). 숫자는 구단 수·평균 전력">144경기 · 15분마다 자동 · 우승 ${Object.keys(won).length}/${Y.length}</p>
@@ -258,7 +265,7 @@ function mAct(a,b){
   if(a==='m-stand'){S.showStand=!S.showStand;render();return}
   if(a==='m-ylf'){S.ylF=b.dataset.v;render();return}
   if(a==='m-pred'){const L=location.hash==='#years'?S.yl:S.season;if(L){L.pk=b.dataset.k;save();render()}return}
-  if(a==='m-start')startGame(false,'yl');else if(a==='m-auto')startGame(true,'yl');else if(a==='m-bye'){if(S.yl&&!S.yl.done)ylBye(S.yl)}
+  if(a==='m-torest')ylToRest();else if(a==='m-start')startGame(false,'yl');else if(a==='m-auto')startGame(true,'yl');else if(a==='m-bye'){if(S.yl&&!S.yl.done)ylBye(S.yl)}
   else if(a==='m-join'){ylNew(+b.dataset.y);render()}
   else if(a==='m-quit'){if(b.dataset.c){S.yl=null;save();render()}else{b.dataset.c=1;b.textContent='한 번 더 누르면 포기'}}}
 
