@@ -490,7 +490,15 @@ body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 .faces .card.big .st{padding-top:4px;padding-bottom:4px}.faces .card.big .sr{min-height:0;line-height:1.25}
 .mbox .eqp{margin:6px 0;padding:8px}.mbox .eqh{margin-bottom:4px}.mbox .eqslot{min-height:42px;padding:3px 6px}
 .mbox .mfoot{margin:4px 0 0;font-size:12px}.faces{cursor:pointer}
-.faces .cback{gap:6px;padding:8px}.faces .cback .fmap{height:120px;width:100%}.faces .cback .sk2{zoom:.5}.faces .cback .cbh{padding-top:4px;padding-bottom:4px}}
+.faces .cback{gap:6px;padding:8px}.faces .cback .cbh{padding-top:4px;padding-bottom:4px}}
+/* 카드 뒷면 2단 배치 */
+.cb2{gap:8px}.cb2 .cbtop{display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);gap:8px;align-items:start}
+.cb2 .cbph{position:relative;aspect-ratio:1;overflow:hidden;border-radius:6px;background:var(--tc);container-type:size;border:2px solid var(--tc)}.cb2 .cbph img.facecrop{object-position:50% 15%}
+.cb2 .cbinfo{list-style:none;margin:4px 0 0;padding:0;font-size:11px;line-height:1.3;font-weight:700;color:#444}
+.cb2 .cbr{display:grid;gap:6px}.cb2 .cbr svg{width:100%;height:auto;max-height:170px;display:block;border-radius:8px}
+.cb2 .vel{padding:4px 8px;display:flex;align-items:baseline;justify-content:center;gap:6px}.cb2 .vel b{font-size:20px;display:inline}
+.cb2:not(.live) .sk2{grid-template-columns:auto minmax(0,1fr)!important;gap:8px}.cb2:not(.live) .sk2 .grid4{width:100px;padding:4px;gap:3px;margin:0!important}
+.cb2 .sk2 .eq{font-size:12px}.cb2 table{font-size:11px}.cb2 table th,.cb2 table td{padding:3px 4px}
 #hdr .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;margin:0;max-width:min(92vw,680px);box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none;animation:tst 6s forwards}@keyframes tst{0%,85%{opacity:1}100%{opacity:0}}
 /* 그림이 보이게: 막은 옅게, 글자 있는 묶음에만 반투명 바탕 */
 #hdr{background:rgba(6,14,10,.62);border-radius:0 0 16px 16px;padding:14px 18px 12px;border-bottom:0;backdrop-filter:blur(3px)}
@@ -2301,9 +2309,12 @@ function seasonLine(c){const H=c.type==='B'?['타율','홈런','타점','도루'
  return `<div class="scroll"><table class="sl"><thead><tr><th>연도</th>${H.map(h=>`<th>${h}</th>`).join('')}${X.map(h=>`<th class="sxh">${h}</th>`).join('')}</tr></thead><tbody><tr><td>${c.year}</td>${c.s.map((v,i)=>`<td>${i===0?(c.type==='B'?Number(v).toFixed(3).replace(/^0/,''):Number(v).toFixed(2)):v}</td>`).join('')}${X.map((h,i)=>`<td>${sxF(c.type,i,c.sx[i])}</td>`).join('')}</tr></tbody></table></div>`}
 function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells(b).forEach(([r,q])=>occ[(r+b.at[0])*4+q+b.at[1]]=b)});const op=open(c),os=openSet(c),pt=patOf(c);
  const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g:''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g:''}"></span>`}).join('');
- return `<div class="cback" style="--tc:${c.col}"><div class="cbh"><b>${esc(c.name)}</b><span>${c.year} ${esc(c.team)} · ${PFULL[c.pos]}</span></div><div class="cbm">${[ageOf(c)!=null?`${ageOf(c)}세`:'',HAND[c.h]||'',c.rg||'',c.hs||'',c.un||''].filter(Boolean).map(esc).join(' · ')||'출신 정보 없음'}</div>
-  ${c.type==='P'?`<div class="pv">${pitchMap(c)}<div class="vel"><small>최고구속</small><b>${c.kmh??'–'}</b><small>km/h</small></div></div>`:fieldMap(c)}
-  ${seasonLine(c)}<div class="lbl">스킬</div><div class="sk2"><div class="grid4">${grid}</div>
+ const no=c.no!=null&&c.no!==''?String(c.no):'',info=[ageOf(c)!=null?`${ageOf(c)}세`:'',c.hs||'',c.un||'',HAND[c.h]||'',no?`No. ${no}`:'',PFULL[c.pos]||c.pos,c.rg||''].filter(Boolean);
+ // 뒷면(SJ 2026-11-26): 위 2단(사진+프로필 | 수비 위치·구종) → 시즌 기록 → 아래 2단(스킬 칸 | 장착 스킬·서포트)
+ return `<div class="cback cb2${live?' live':''}" style="--tc:${c.col}"><div class="cbh"><b>${no?esc(no)+'. ':''}${esc(c.name)}</b><span>${c.year} ${esc(c.team)}</span></div>
+  <div class="cbtop"><div class="cbl"><div class="cbph">${photo(c,0,0)}</div><ul class="cbinfo">${info.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+  <div class="cbr">${c.type==='P'?`${pitchMap(c)}<div class="vel"><small>최고구속</small><b>${c.kmh??'–'}</b><small>km/h</small></div>`:`${fieldMap(c)}<div class="vel"><small>선호타선</small><b>${c.bo&&c.bo.length?c.bo.map(x=>BOS[x]||x).join('·'):'–'}</b></div>`}</div></div>
+  ${seasonLine(c)}<div class="sk2"><div class="grid4">${grid}</div>
   <div class="eq">${S.blocks.filter(b=>b.on===c.id).map(b=>`<div><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))}<small>${Object.entries(b.st).map(([k,v])=>SKN[k]+'+'+v).join(' ')}</small></div>`).join('')||'<div class="none">장착한 스킬 없음</div>'}
   <div class="sup2"><span>SUPPORT CARD</span>${supOn(c.id)?`<b>${esc(sp(supOn(c.id).id)[1])}</b><small>${esc(sp(supOn(c.id).id)[3])} · ${supOn(c.id).left}경기 남음</small>`:'<small>없음</small>'}</div></div></div></div>`}
 function blkInv(c){const sk=skillOf(c.id),sel=S.blocks.find(b=>b.u===S.blkSel),mine=S.blocks.filter(b=>b.t===c.type&&(b.on===c.id||(b.on===null&&(!b.home||b.home.cid===c.id))));
@@ -3016,7 +3027,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='5b3d5500e7';
+const BUILD='f2a77c3021';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>

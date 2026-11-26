@@ -717,9 +717,12 @@ function seasonLine(c){const H=c.type==='B'?['타율','홈런','타점','도루'
  return `<div class="scroll"><table class="sl"><thead><tr><th>연도</th>${H.map(h=>`<th>${h}</th>`).join('')}${X.map(h=>`<th class="sxh">${h}</th>`).join('')}</tr></thead><tbody><tr><td>${c.year}</td>${c.s.map((v,i)=>`<td>${i===0?(c.type==='B'?Number(v).toFixed(3).replace(/^0/,''):Number(v).toFixed(2)):v}</td>`).join('')}${X.map((h,i)=>`<td>${sxF(c.type,i,c.sx[i])}</td>`).join('')}</tr></tbody></table></div>`}
 function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells(b).forEach(([r,q])=>occ[(r+b.at[0])*4+q+b.at[1]]=b)});const op=open(c),os=openSet(c),pt=patOf(c);
  const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g:''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g:''}"></span>`}).join('');
- return `<div class="cback" style="--tc:${c.col}"><div class="cbh"><b>${esc(c.name)}</b><span>${c.year} ${esc(c.team)} · ${PFULL[c.pos]}</span></div><div class="cbm">${[ageOf(c)!=null?`${ageOf(c)}세`:'',HAND[c.h]||'',c.rg||'',c.hs||'',c.un||''].filter(Boolean).map(esc).join(' · ')||'출신 정보 없음'}</div>
-  ${c.type==='P'?`<div class="pv">${pitchMap(c)}<div class="vel"><small>최고구속</small><b>${c.kmh??'–'}</b><small>km/h</small></div></div>`:fieldMap(c)}
-  ${seasonLine(c)}<div class="lbl">스킬</div><div class="sk2"><div class="grid4">${grid}</div>
+ const no=c.no!=null&&c.no!==''?String(c.no):'',info=[ageOf(c)!=null?`${ageOf(c)}세`:'',c.hs||'',c.un||'',HAND[c.h]||'',no?`No. ${no}`:'',PFULL[c.pos]||c.pos,c.rg||''].filter(Boolean);
+ // 뒷면(SJ 2026-11-26): 위 2단(사진+프로필 | 수비 위치·구종) → 시즌 기록 → 아래 2단(스킬 칸 | 장착 스킬·서포트)
+ return `<div class="cback cb2${live?' live':''}" style="--tc:${c.col}"><div class="cbh"><b>${no?esc(no)+'. ':''}${esc(c.name)}</b><span>${c.year} ${esc(c.team)}</span></div>
+  <div class="cbtop"><div class="cbl"><div class="cbph">${photo(c,0,0)}</div><ul class="cbinfo">${info.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+  <div class="cbr">${c.type==='P'?`${pitchMap(c)}<div class="vel"><small>최고구속</small><b>${c.kmh??'–'}</b><small>km/h</small></div>`:`${fieldMap(c)}<div class="vel"><small>선호타선</small><b>${c.bo&&c.bo.length?c.bo.map(x=>BOS[x]||x).join('·'):'–'}</b></div>`}</div></div>
+  ${seasonLine(c)}<div class="sk2"><div class="grid4">${grid}</div>
   <div class="eq">${S.blocks.filter(b=>b.on===c.id).map(b=>`<div><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))}<small>${Object.entries(b.st).map(([k,v])=>SKN[k]+'+'+v).join(' ')}</small></div>`).join('')||'<div class="none">장착한 스킬 없음</div>'}
   <div class="sup2"><span>SUPPORT CARD</span>${supOn(c.id)?`<b>${esc(sp(supOn(c.id).id)[1])}</b><small>${esc(sp(supOn(c.id).id)[3])} · ${supOn(c.id).left}경기 남음</small>`:'<small>없음</small>'}</div></div></div></div>`}
 function blkInv(c){const sk=skillOf(c.id),sel=S.blocks.find(b=>b.u===S.blkSel),mine=S.blocks.filter(b=>b.t===c.type&&(b.on===c.id||(b.on===null&&(!b.home||b.home.cid===c.id))));
