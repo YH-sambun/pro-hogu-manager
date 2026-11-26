@@ -1192,7 +1192,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='lucol'){S.luCol=+t.value;render();return}
   if(t.id==='pksel'){S.pk=t.value;S.pkMsg='';S.pkOut=null;render();return}
   if(t.id==='abq'){S.abQ=t.value;S.abLim=0;render();return}
-  if(/^dex(y|t|st|h|p|v)$/.test(t.id)){S.dexF=S.dexF||{};S.dexF[t.id.slice(3)]=t.value;if(t.id==='dexy')S.dexF.t='';S.dexLim=0;render();return}
+  if(/^dex(y|t|st|h|p|v)$/.test(t.id)){S.dexF=S.dexF||{};S.dexF[t.id.slice(3)]=t.value;if(t.id==='dexy'&&S.dexF.t&&t.value){const y=+t.value,o=S.dexF.t;if(!CARDS.some(c=>c.year===y&&c.team===o)){const ln=(CARDS.find(c=>c.team===o)||{}).line,n=ln&&CARDS.find(c=>c.year===y&&c.line===ln);S.dexF.t=n?n.team:''}}S.dexLim=0;render();return}
   if(t.id==='t-live'){S.tacLive=t.checked;render();return}});
 // ===== 시작 =====
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
