@@ -72,6 +72,10 @@ function ensureUI(){if(S.__ui)return;Object.defineProperty(S,'__ui',{value:1,enu
   const D={locks:[],tq:{},sq:{},blocks:[],gp:{},cond:{},ab:[],abHist:{},abSt:{},abSum:{},photos:{},mat:[],sub:'order',tb:'B',pf:'all',side:'line',sort:'ovr',fteam:'all',fyear:'all',sk:'p',dexK:'all',back:false,pt:0};
   for(const k in D)if(S[k]==null)S[k]=D[k];
   migSpecial(S);
+  // 2·3칸 블록 → 4칸 블록으로 바꿈 (능력치는 4칸 기준으로 다시 계산, 장착돼 있었으면 보관함으로)
+  for(const b of S.blocks||[]){if(!SHAPES[b.sh]||SHAPES[b.sh].length>=4)continue;const sh=pick(SH4),ks=Object.keys(b.st||{}),pts=Math.max(1,Math.round(4*((GRADES[b.g]||{}).m||1))),st={};
+   if(!ks.length)ks.push(b.t==='P'?'ctl':'con');for(let i=0;i<pts;i++){const k=ks[i%ks.length];st[k]=(st[k]||0)+1}
+   b.sh=sh;b.st=st;b.rot=0;if(b.home){delete b.home}if(b.on){b.on=null;b.at=null}if(b.name)b.name=b.name.replace(/-[A-Z0-9]+형$/,'-'+sh+'형')}
   S.locks=S.locks.map(x=>{const m=/^(.*)#(\d+)$/.exec(x);return m&&!byId[x]&&byId[m[1]]?m[1]+'~'+m[2]:x}); // 예전 저장의 중복 카드 잠금('#k')을 '~k'로
   if(!MG.some(m=>m.id===S.team.mgr))S.team.mgr=MG[0].id;
   pullTeam();if(!byId[S.cardId])S.cardId=used()[0]||Object.keys(S.owned)[0]}

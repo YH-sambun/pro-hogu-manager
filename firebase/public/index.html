@@ -1152,7 +1152,9 @@ function teamColor(cards,sel,bench){
 const SHAPES={I2:[[0,0],[0,1]],I3:[[0,0],[0,1],[0,2]],V3:[[0,0],[1,0],[1,1]],O:[[0,0],[0,1],[1,0],[1,1]],I4:[[0,0],[0,1],[0,2],[0,3]],T:[[0,0],[0,1],[0,2],[1,1]],L:[[0,0],[1,0],[2,0],[2,1]],J:[[0,1],[1,1],[2,1],[2,0]],S:[[0,1],[0,2],[1,0],[1,1]],Z:[[0,0],[0,1],[1,1],[1,2]]};
 const GRADES={C:{m:.75,w:50},B:{m:1,w:30},A:{m:1.25,w:15},S:{m:1.5,w:5}};
 const GRID=4;
-function mkBlock(t,g){const sh=pick(Object.keys(SHAPES));
+// 블록은 모두 4칸(SJ 2026-11-26): 16칸에 최대 4개
+const SH4=Object.keys(SHAPES).filter(k=>SHAPES[k].length===4);
+function mkBlock(t,g){const sh=pick(SH4);
   if(!g){let u=rnd()*100;g='C';for(const k of ['S','A','B','C']){if((u-=GRADES[k].w)<0){g=k;break}}}
   const keys=t==='B'?BK:PKEY,pts=Math.max(1,Math.round(SHAPES[sh].length*GRADES[g].m)),ks=[...keys].sort(()=>rnd()-.5).slice(0,g==='S'?2:1),st={};
   for(let i=0;i<pts;i++){const k=ks[i%ks.length];st[k]=(st[k]||0)+1}
@@ -1858,6 +1860,10 @@ function ensureUI(){if(S.__ui)return;Object.defineProperty(S,'__ui',{value:1,enu
   const D={locks:[],tq:{},sq:{},blocks:[],gp:{},cond:{},ab:[],abHist:{},abSt:{},abSum:{},photos:{},mat:[],sub:'order',tb:'B',pf:'all',side:'line',sort:'ovr',fteam:'all',fyear:'all',sk:'p',dexK:'all',back:false,pt:0};
   for(const k in D)if(S[k]==null)S[k]=D[k];
   migSpecial(S);
+  // 2·3칸 블록 → 4칸 블록으로 바꿈 (능력치는 4칸 기준으로 다시 계산, 장착돼 있었으면 보관함으로)
+  for(const b of S.blocks||[]){if(!SHAPES[b.sh]||SHAPES[b.sh].length>=4)continue;const sh=pick(SH4),ks=Object.keys(b.st||{}),pts=Math.max(1,Math.round(4*((GRADES[b.g]||{}).m||1))),st={};
+   if(!ks.length)ks.push(b.t==='P'?'ctl':'con');for(let i=0;i<pts;i++){const k=ks[i%ks.length];st[k]=(st[k]||0)+1}
+   b.sh=sh;b.st=st;b.rot=0;if(b.home){delete b.home}if(b.on){b.on=null;b.at=null}if(b.name)b.name=b.name.replace(/-[A-Z0-9]+형$/,'-'+sh+'형')}
   S.locks=S.locks.map(x=>{const m=/^(.*)#(\d+)$/.exec(x);return m&&!byId[x]&&byId[m[1]]?m[1]+'~'+m[2]:x}); // 예전 저장의 중복 카드 잠금('#k')을 '~k'로
   if(!MG.some(m=>m.id===S.team.mgr))S.team.mgr=MG[0].id;
   pullTeam();if(!byId[S.cardId])S.cardId=used()[0]||Object.keys(S.owned)[0]}
@@ -2730,7 +2736,8 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
- {id:'n1126x',d:'2026-11-26',t:'스킬 블록 묶음 표시 · 앞면 능력치 보기',b:['모양·등급·능력치가 같은 보관 블록은 하나로 묶어 ×개수로 보여줍니다.','스킬 화면에서 카드를 누르거나 [앞면 (능력치)] 탭을 누르면 앞면으로 뒤집혀, 스킬로 바뀐 능력치(원래 → 스킬 후)를 볼 수 있습니다.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126y',d:'2026-11-26',t:'스킬 블록 모두 4칸으로',b:['스킬 블록이 모두 4칸 모양으로 바뀌어, 16칸에 블록 4개를 꽉 채워 끼울 수 있습니다.','갖고 있던 2·3칸 블록은 같은 등급의 4칸 블록으로 바뀌고 능력치도 4칸 기준으로 올라갑니다. 장착돼 있던 2·3칸 블록은 보관함으로 돌아가니 다시 끼워 주세요.'],rw:{tix:{pk_n:10,block:2}}},
+{id:'n1126x',d:'2026-11-26',t:'스킬 블록 묶음 표시 · 앞면 능력치 보기',b:['모양·등급·능력치가 같은 보관 블록은 하나로 묶어 ×개수로 보여줍니다.','스킬 화면에서 카드를 누르거나 [앞면 (능력치)] 탭을 누르면 앞면으로 뒤집혀, 스킬로 바뀐 능력치(원래 → 스킬 후)를 볼 수 있습니다.'],rw:{tix:{pk_n:10}}},
 {id:'n1126w',d:'2026-11-26',t:'업무 모드 스킬 칸 회색 음영',b:['업무 모드에서 장착한 스킬 블록이 보드에 회색 음영으로 보입니다 (C 연한 회색 → S 진한 회색).','블록 목록과 카드 뒷면의 색을 빼고 회색으로 바꿨습니다. 잠긴 칸은 빗금으로 표시됩니다.'],rw:{tix:{pk_n:10}}},
 {id:'n1126v',d:'2026-11-26',t:'스킬 블록 필터',b:['스킬 화면에서 끼울 블록을 종류(능력치)와 등급으로 거를 수 있어요. 높은 등급이 앞에 오고, 이미 장착한 블록은 필터와 관계없이 항상 보여요.'],rw:{tix:{pk_n:10,pk_b:1}}},
  {id:'n1126u',d:'2026-11-26',t:'라인업은 리그 안으로 · 다른 팀 보기',b:['라인업은 이제 각 리그 화면의 라인업 탭에서 바로 고쳐요. 팀 메뉴의 라인업과 "편집 중인 라인업" 전환 버튼은 없앴어요(친구 리그는 리그 화면의 "이 리그 라인업 수정"으로).','순위표·팀 기록에서 다른 구단 이름을 누르면 그 팀 라인업과 투수진, 시즌 기록을 볼 수 있어요.','내 팀 선수별 기록은 기록실로 옮겼어요.'],rw:{tix:{pk_n:10,prem:1}}},
@@ -3554,7 +3561,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='6076dd3841';
+const BUILD='2a62d8f1bd';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
