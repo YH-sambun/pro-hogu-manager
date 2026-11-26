@@ -52,6 +52,7 @@ function validate(){syncTeam();
   for(const c of regCards(T))if((S.ab||[]).some(a=>a.id===c.id&&!a.got))e.push(`${c.name}은(는) 유학 중`);
   e.push(...exErr(regCards(T).map(c=>c.id)));
   const cost=regCards(T).reduce((s,c)=>s+c.cost,0);if(cost>COST_CAP)e.push(`1군 코스트 ${cost} / 상한 ${COST_CAP} 초과`);
+  {const bn=T.bench.map(id=>byId[id]).filter(Boolean);if(!bn.some(c=>c.type==='B'&&canPlay(c,'C'))){const rn=new Set(regCards(T).map(pkt)),mx=bn.length<5?0:Math.max(...bn.map(c=>c.cost)),spare=OWN.some(c=>c.type==='B'&&!c.dup&&canPlay(c,'C')&&!rn.has(pkt(c))&&!abOf(c.id)&&cost-mx+c.cost<=COST_CAP);if(spare)e.push('벤치에 백업 포수 1명이 필요합니다')}}
   return e}
 // 화면용 라인업 사본(S.lu=[[포지션,id]], S.bench/rot/pen 고정 칸) ↔ S.team
 function pullTeam(){const T=S.team,pad=(a,n)=>{a=[...(a||[])];while(a.length<n)a.push(null);return a.slice(0,n)};
@@ -572,11 +573,19 @@ function recCap(r,t){if(!t||!t.ycap)return r;const sl=[...r.lu.map((x,i)=>['lu',
    if(c){set(s,c.id);ok=true;break}}
   if(!ok)break}
  return r}
-function recommend(mode){return recCap(recommend0(mode),recFx())}
+// 벤치 백업 포수 1명 고정: 추천 결과 벤치에 포수 가능 선수가 없으면 가장 약한(팀컬러 비해당 우선) 벤치 타자와 교체, 1번 칸에 배치
+function recBenchC(r,t){const has=r.bench.findIndex(id=>id&&canPos(byId[id],'C')&&byId[id].type==='B');if(has>=0){if(has>0)r.bench.unshift(r.bench.splice(has,1)[0]);return r}
+ const pool=REC_ALL?CARDS:OWN.filter(c=>!c.dup&&!abOf(c.id)),ids=[...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean),names=new Set(ids.map(id=>byId[id].on||byId[id].name)),room=COST_CAP-recCost(r);
+ const yc={};if(t&&t.ycap)for(const id of ids){const c=byId[id];if(t.m(c))yc[c.year]=(yc[c.year]||0)+1}
+ const slots=r.bench.map((id,i)=>[i,id?byId[id]:null]).sort((a,b)=>(!a[1]?-1:0)-(!b[1]?-1:0)||(t&&a[1]&&t.m(a[1])?1:0)-(t&&b[1]&&t.m(b[1])?1:0)||((a[1]?a[1].ovr:0)-(b[1]?b[1].ovr:0)));
+ for(const [i,o] of slots){const oc=o?o.cost:0,c=pool.filter(c=>c.type==='B'&&c.v!=='EX'&&canPos(c,'C')&&!names.has(c.on||c.name)&&c.cost<=oc+room&&!(t&&t.ycap&&t.m(c)&&(yc[c.year]||0)-(o&&t.m(o)&&o.year===c.year?1:0)>=t.ycap)).sort((a,b)=>(t&&t.m(b)?1:0)-(t&&t.m(a)?1:0)||b.ovr-a.ovr)[0];
+  if(c){r.bench.splice(i,1);r.bench.unshift(c.id);break}}
+ return r}
+function recommend(mode){const t=recFx();return recBenchC(recCap(recommend0(mode),t),t)}
 function recommend0(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)return r;let lo=0,hi=recFx()&&recFx().must?40:12,best=recommend1(mode,hi);for(let i=0;i<14;i++){const m=(lo+hi)/2,x=recommend1(mode,m);if(recCost(x)<=COST_CAP){hi=m;best=x}else lo=m}return best}
 const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||c.v==='EX'&&(!t.ls||t.ls.includes(c.line)))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
 // 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
-let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{let r=recommend('power');if(recCost(r)>COST_CAP){REC_ALL=2;r=recommend('power')}return recFix(recStar(r,recFx()),recFx())}finally{S.recF=keep;REC_ALL=0}}
+let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{let r=recommend('power');if(recCost(r)>COST_CAP){REC_ALL=2;r=recommend('power')}return recBenchC(recFix(recStar(r,recFx()),recFx()),recFx())}finally{S.recF=keep;REC_ALL=0}}
 // FA 이적 목표: 그 선수(t.s)가 주전에 없으면 같은 자리에 설 수 있는 가장 약한 주전과 바꿔 넣음(코스트 상한 안에서)
 function recStar(r,t){if(t&&t.must){for(const e of t.must){const [n,y]=e.split(':'),nm=n.split('@')[0];r=recStar(r,{s:nm,m:t.mhit?c=>t.mhit(c,e):c=>t.m(c)&&(!y||c.year===+y),keep:new Set(t.must.map(e=>e.split(/[:@]/)[0]))})}return r}if(!t||!t.s)return r;const ids=[...r.lu.map(x=>x[1]),...r.rot,...r.pen].filter(Boolean);if(ids.some(id=>byId[id]&&(byId[id].on||byId[id].name)===t.s&&t.m(byId[id])))return r;
  const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
@@ -1075,7 +1084,7 @@ function vGame(){
   <tbody>${[0,1].map(s=>`<tr class="${!g.done&&g.half===s?'up':''}"><td class="l"><i class="dot" style="background:${g.t[s].color}"></i>${esc(g.t[s].name)}</td>${ls(s).map(v=>`<td>${v}</td>`).join('')}<td class="rr">${g.sc[s]}</td><td>${g.hits[s]}</td></tr>`).join('')}</tbody></table></div>
   <div class="gfield">${diamond(g)}<div class="outs">아웃 ${[0,1,2].map(i=>`<i class="${i<g.outs?'on':''}"></i>`).join('')}</div>
    <div class="duel">${cur?`<div><small>타자</small><b>${esc(cur.name)}</b><span>${yy(cur.year)} ${esc(cur.team)} · 교타 ${Math.round(cur.r.con)} 장타 ${Math.round(cur.r.pow)}</span></div><div><small>투수</small><b>${esc(P.name)}</b><span>${g.pit[1-bat].bf}타자 상대 · 구위 ${Math.round(P.r.stu)} 제구 ${Math.round(P.r.ctl)}</span></div>`:`<div><b class="final">${g.res<0?'무승부':esc(g.t[g.res].name)+' 승리'}</b></div>`}</div></div>
-  ${tk}<div class="btns gb">${g.done?`<button class="big" data-a="fin">${g.friendly?'친선전 결과 저장':'결과 반영하고 다음 라운드'}</button>`:`<button class="big" data-a="pa">다음 타석</button><button data-a="inn">이닝 끝까지</button><button data-a="end">경기 끝까지</button>`}</div></section>
+  ${tk}<div class="btns gb">${g.done?`<button class="big" data-a="fin">${g.friendly?(g.friendly.sw?`시리즈 ${g.friendly.sw[0]}:${g.friendly.sw[1]} 결과 저장`:'친선전 결과 저장'):'결과 반영하고 다음 라운드'}</button>`:`<button class="big" data-a="pa">다음 타석</button><button data-a="inn">이닝 끝까지</button><button data-a="end">경기 끝까지</button>`}</div></section>
   <section class="band cols2"><div><h3>${g.hl?'하이라이트 <small>득점·홈런·보살·실책·교체</small>':'문자 중계'}</h3>${g.done&&gameMVP(g)?`<p class="gmvp"><b>경기 MVP</b> ${esc(gameMVP(g))}</p>`:''}<ol class="glog">${logHTML(g)}</ol></div><div><details open><summary>박스스코어</summary>${box(0)}${box(1)}</details></div></section>`}
 /*MODES*/
 /*ONLINE*/

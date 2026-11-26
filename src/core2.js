@@ -546,7 +546,8 @@ function bestLineup(ids){
   const rps=ps.filter(c=>c.pos==='RP'&&!used.has(pkt(c))).sort((a,b)=>(b.r.men+b.ovr)-(a.r.men+a.ovr));
   for(const c of rps)if(pen.length<6){pen.push(c.id);used.add(pkt(c))}
   for(const c of ps)if(!used.has(pkt(c))){if(rot.length<5)rot.push(c.id);else if(pen.length<6)pen.push(c.id);else continue;used.add(pkt(c))}
-  const bench=bats.filter(c=>!used.has(pkt(c))).sort((a,b)=>b.ovr-a.ovr).slice(0,5).map(c=>{used.add(pkt(c));return c.id});
+  const restB=bats.filter(c=>!used.has(pkt(c))).sort((a,b)=>b.ovr-a.ovr),bc=restB.find(c=>canPlay(c,'C'));
+  const bench=[...(bc?[bc]:[]),...restB.filter(c=>c!==bc)].slice(0,5).map(c=>{used.add(pkt(c));return c.id});
   return {lineup:order(slots).map(x=>({id:x.c.id,pos:x.pos})),bench,rot,pen}}
 function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[0]];
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
