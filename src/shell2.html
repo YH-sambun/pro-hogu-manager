@@ -919,6 +919,8 @@ body.xl .cback .grid4{background:#fff!important;border:1px solid #d4d4d4;border-
 .skface{cursor:pointer}.skface .cell,.skface button{cursor:auto}.skface button.cell:not([disabled]){cursor:pointer}.skft{margin-bottom:8px}.skd{margin-top:10px}.skd table{border-collapse:collapse;width:100%;font-size:13px}.skd th,.skd td{border-bottom:1px solid var(--line,#ddd);padding:4px 6px;text-align:right}.skd th:first-child,.skd td:first-child{text-align:left}.skd .up{color:#1a7f37;font-weight:700}body.xl .skd .up{color:#000!important}
 /* 폰(SJ 2026-11-26): 상단 포인트·블록·리그 칩과 부제 숨김 → 스크롤 줄이기 */
 @media (max-width:700px){#hdr .wallet{display:none}#hdr .logo small{display:none}#hdr .logo{font-size:26px;margin-bottom:4px}}
+/* 아이폰(SJ 2026-11-26): 팝업 위쪽 버튼이 상태표시줄에 가려 안 눌림 → 위 안전 영역만큼 띄움 */
+.modal{padding-top:calc(8px + env(safe-area-inset-top,0px))!important}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
