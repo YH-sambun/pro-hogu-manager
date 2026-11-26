@@ -335,15 +335,50 @@ function dsTeam(k,color){let t,name;if(!k)return null;
 function dsRun(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8fe0'),n=+o.n||10;
   if(!A||!B){S.dsRes={err:'양쪽 덱을 골라 주세요'};return}if(A.err||B.err){S.dsRes={err:A.err||B.err};return}
   if(o.a===o.b)B.name+=' (복제)';
-  const R={n,w:[0,0],t:0,rs:[0,0],bat:[{},{}],pit:[{},{}],names:[A.name,B.name],last:null},T=[A,B];
+  const R={n,w:[0,0],t:0,rs:[0,0],bat:[{},{}],pit:[{},{}],names:[A.name,B.name],last:null},T=[A,B],G=[];
   for(let i=0;i<n;i++){const aw=i%2,away=aw?1:0,home=1-away;T[0].rotIdx=i;T[1].rotIdx=i;
     const g=simAll(mkGame(simTeam(T[away]),simTeam(T[home])));const side=[away,home]; // g 쪽 s(0 원정,1 홈) → 덱 번호
     for(let s=0;s<2;s++){const d=side[s];R.rs[d]+=g.sc[s];
       for(const b of Object.values(g.bx[s])){const x=R.bat[d][b.c.id]=R.bat[d][b.c.id]||{c:b.c,g:0,ab:0,h:0,hr:0,rbi:0,bb:0};x.g++;x.ab+=b.ab;x.h+=b.h;x.hr+=b.hr;x.rbi+=b.rbi;x.bb+=b.bb}
       for(const p of g.px[s]){const x=R.pit[d][p.c.id]=R.pit[d][p.c.id]||{c:p.c,g:0,outs:0,r:0,k:0,bb:0,h:0};x.g++;x.outs+=p.outs;x.r+=p.r;x.k+=p.k;x.bb+=p.bb;x.h+=p.h}}
-    if(g.res<0)R.t++;else R.w[side[g.res]]++;
+    if(g.res<0)R.t++;else R.w[side[g.res]]++;G.push(dsRec(g,away));
     if(i===n-1)R.last={away,sc:g.sc,log:hlOf(g,[away,home]).log}}
-  S.dsRes=R;save()}
+  const P=S.dsPred;if(P&&P.key===dsKey()&&P.pick!=null){const x=P.opts[P.pick],hit=dsTest(x,dsStat(G));let msg=hit?'예측 적중':'예측 실패';
+    if(hit){const t=dsGive(x);if(t)msg+=' · '+t}R.pred={label:x.label,hit,msg}}
+  S.dsPred=null;S.dsRes=R;save()}
+// 덱 대결 예측(SJ 2026-11-26): 매번 무작위 3개(종류·기준값 랜덤). 보상은 적중 확률에 반비례(미리 30경기 몰래 돌려 부트스트랩으로 확률 추정) → 뻔한 예측은 적게, 어려운 예측은 많이. 연도 리그 예측과 같은 하루 상한
+const dsKey=()=>{const o=S.ds||{};return `${o.a}|${o.b}|${o.n}`};
+function dsRec(g,away){const me=away===0?0:1,bx=Object.values(g.bx[me]);return {w:g.res<0?0:g.res===me?1:-1,r:g.sc[me],ra:g.sc[1-me],hr:bx.reduce((s,b)=>s+b.hr,0),k:g.px[me].reduce((s,p)=>s+p.k,0)}}
+function dsStat(G){const n=G.length||1;return {n,w:G.filter(x=>x.w>0).length,r:G.reduce((s,x)=>s+x.r,0)/n,ra:G.reduce((s,x)=>s+x.ra,0)/n,hr:G.reduce((s,x)=>s+x.hr,0),k:G.reduce((s,x)=>s+x.k,0),so:G.filter(x=>x.w>0&&x.ra===0).length,big:G.filter(x=>x.r>=10).length,mx:Math.max(...G.map(x=>x.r-x.ra))}}
+function dsTest(x,t){return x.ty==='w'?t.w>=x.th:x.ty==='r'?t.r>=x.th:x.ty==='ra'?t.ra<=x.th:x.ty==='hr'?t.hr>=x.th:x.ty==='k'?t.k>=x.th:x.ty==='so'?t.so>=x.th:x.ty==='big'?t.big>=x.th:x.ty==='mx'?t.mx>=x.th:false}
+const DS_TY=[['w',n=>{const k=Math.max(1,Math.round(n*(.35+Math.random()*.4)));return [k,n===1?'내 덱 승리':`내 덱 ${k}승 이상`]}],
+  ['r',n=>{const v=(6+Math.floor(Math.random()*9))/2;return [v,n===1?`내 덱 ${Math.ceil(v)}점 이상`:`내 덱 경기당 ${v.toFixed(1)}점 이상`]}],
+  ['ra',n=>{const v=(4+Math.floor(Math.random()*8))/2;return [v,n===1?`상대 ${Math.floor(v)}점 이하로 막기`:`상대 경기당 ${v.toFixed(1)}점 이하`]}],
+  ['hr',n=>{const k=Math.max(1,Math.round(n*(.4+Math.random()*1.4)));return [k,`내 덱 홈런 ${k}개 이상`]}],
+  ['k',n=>{const k=Math.max(4,Math.round(n*(5+Math.random()*5)));return [k,`내 투수진 탈삼진 ${k}개 이상`]}],
+  ['so',n=>{const k=Math.max(1,Math.round(n*Math.random()*.12));return [k,k===1?'완봉승 1번 이상':`완봉승 ${k}번 이상`]}],
+  ['big',n=>{const k=Math.max(1,Math.round(n*Math.random()*.25));return [k,k===1?'10득점 경기 1번 이상':`10득점 경기 ${k}번 이상`]}],
+  ['mx',n=>{const k=5+Math.floor(Math.random()*6);return [k,`${k}점 차 이상 승리 1번 이상`]}]];
+// 예측 보상 종류(SJ 2026-11-26): 포인트만이 아니라 스킬 블록·서포트·작전 카드도. 어려울수록(확률 낮을수록) 등급이 높음. 아이템 보상은 하루 DS_ITEM_DAY개까지(넘으면 포인트로)
+const DS_ITEM_DAY=6;
+function dsRw(p){const u=Math.random();if(p>.6||u<.4)return {k:'pt'};if(u<.65)return {k:'blk',g:p<.12?'A':p<.35?'B':'C'};if(u<.83)return {k:'sup'};return {k:'tc',g:p<.15?'특수':'일반'}}
+const dsRwTxt=x=>!x.rw||x.rw.k==='pt'?`${x.pt}P`:x.rw.k==='blk'?`${x.rw.g}급 스킬 블록`:x.rw.k==='sup'?'서포트 카드':`${x.rw.g} 작전 카드`;
+function dsGive(x){const d=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);S.dsIt=S.dsIt&&S.dsIt.day===d?S.dsIt:{day:d,n:0};
+  if(x.rw&&x.rw.k!=='pt'&&S.dsIt.n<DS_ITEM_DAY){S.dsIt.n++;
+    if(x.rw.k==='blk'){const b=gainBlock(null,x.rw.g);return `${x.rw.g}급 ${b.t==='B'?'타자':'투수'}용 ${bname(b)}`}
+    if(x.rw.k==='sup'){const c=pick(SUPS.filter(t=>!t[0].endsWith('+')));S.sq[c[0]]=(S.sq[c[0]]||0)+1;return '서포트 카드 '+c[1]}
+    const c=pick(TCARDS.filter(t=>t[3]===x.rw.g));S.tq[c[0]]=(S.tq[c[0]]||0)+1;return `${x.rw.g} 작전 카드 ${c[1]}`}
+  const E=EC();let rw={pt:x.pt};if(E&&E.predCapped)rw=E.predCapped(S,rw);return (rw.pt?(give(rw,0,false)||rw.pt+'P'):'')+(rw.capped?' (오늘 예측 보상 상한)':'')+(x.rw&&x.rw.k!=='pt'?' (오늘 아이템 보상은 다 받아서 포인트로)':'')}
+function dsPredGen(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8fe0'),n=+o.n||10;if(!A||!B||A.err||B.err)return null;
+  const T=[A,B],G=[];for(let i=0;i<30;i++){const away=i%2;T[0].rotIdx=i;T[1].rotIdx=i;G.push(dsRec(simAll(mkGame(simTeam(T[away]),simTeam(T[1-away]))),away))}
+  const boot=[];for(let j=0;j<240;j++){const X=[];for(let i=0;i<n;i++)X.push(G[Math.floor(Math.random()*G.length)]);boot.push(dsStat(X))}
+  const opts=[],used=new Set();for(let tries=0;tries<60&&opts.length<3;tries++){const [ty,gen]=DS_TY[Math.floor(Math.random()*DS_TY.length)];if(used.has(ty))continue;
+    const [th,label]=gen(n),x={ty,th,label},p=boot.filter(t=>dsTest(x,t)).length/boot.length;if(p<.04||p>.92)continue;
+    used.add(ty);opts.push({...x,p,pt:Math.max(10,Math.min(300,Math.round((10+25*(1-p)/p)/5)*5)),rw:dsRw(p)})}
+  return {key:dsKey(),opts,pick:null}}
+function dsPredHTML(){let P=S.dsPred;if(!P||P.key!==dsKey()){P=S.dsPred=dsPredGen();if(!P)return ''}if(!P.opts.length)return '';
+  return `<div class="btns pred" style="justify-content:center" aria-label="덱 대결 예측 고르기"><small>예측</small>${P.opts.map((x,i)=>`<button data-a="ds-pred" data-i="${i}" class="${P.pick===i?'big':'ghost'}" aria-pressed="${P.pick===i}" title="적중 확률 약 ${Math.round(x.p*100)}%">${esc(x.label)} · ${esc(dsRwTxt(x))}</button>`).join('')}<button class="ghost" data-a="ds-reroll" title="예측 선택지 다시 뽑기">새로 뽑기</button></div>
+   <p class="note" style="text-align:center;margin:4px 0 0">하나 골라 두고 시뮬레이션하면 결과로 판정해요. 어려운 예측일수록 보상이 커요. 포인트는 연도 리그 예측과 같은 하루 상한, 블록·서포트·작전 카드는 하루 ${DS_ITEM_DAY}개까지예요.</p>`}
 function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.decks[0].id:'m:yl',n:10},O=dsOpts(),R=S.dsRes,f3=v=>v.toFixed(3).replace(/^0/,'');
   const sel=(k)=>`<select data-ds="${k}" aria-label="${k==='a'?'내 덱':'상대 덱'}">${O.map(([v,nm])=>`<option value="${esc(v)}"${o[k]===v?' selected':''}>${esc(nm)}</option>`).join('')}</select>`;
   const side=d=>{const B=Object.values(R.bat[d]).sort((x,y)=>(y.h+y.bb)/Math.max(1,y.ab+y.bb)-(x.h+x.bb)/Math.max(1,x.ab+x.bb)),P=Object.values(R.pit[d]).sort((x,y)=>y.outs-x.outs);
@@ -353,9 +388,9 @@ function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.dec
     ${P.map(x=>`<tr><td class="l">${esc(x.c.name)} <small>${String(x.c.year).slice(2)}' ${esc(x.c.team)}</small></td><td>${x.g}</td><td>${Math.floor(x.outs/3)}.${x.outs%3}</td><td>${x.outs?(x.r*27/x.outs).toFixed(2):'-'}</td><td>${x.k}</td><td>${x.outs?((x.h+x.bb)*3/x.outs).toFixed(2):'-'}</td></tr>`).join('')}</tbody></table></div></div>`};
   return `<section class="hero"><h1>덱 대결</h1><p class="mini">보유 덱, 덱 짜보기로 만든 가상 덱, 리그별 라인업끼리 붙여 봐요. 보상·기록·피로는 없어요.</p>
    <div class="tools" style="flex-wrap:wrap;gap:6px;justify-content:center">${sel('a')}<b style="align-self:center">VS</b>${sel('b')}
-   <select data-ds="n" aria-label="경기 수">${DS_N.map(v=>`<option value="${v}"${+o.n===v?' selected':''}>${v}경기</option>`).join('')}</select><button class="big" data-a="ds-go">시뮬레이션</button></div>
+   <select data-ds="n" aria-label="경기 수">${DS_N.map(v=>`<option value="${v}"${+o.n===v?' selected':''}>${v}경기</option>`).join('')}</select><button class="big" data-a="ds-go">시뮬레이션</button></div>${dsPredHTML()}
    <p class="note" style="text-align:center">홈·원정은 번갈아, 선발은 로테이션 순서대로 나와요. 스킬 블록·유학·장비는 양쪽 다 지금 내 것이 그대로 붙어요.</p></section>
    ${R?R.err?`<section class="band"><p class="note" style="color:#ff8a7a">${esc(R.err)}</p></section>`:`<section class="band"><h2>${esc(R.names[0])} ${R.w[0]} : ${R.w[1]} ${esc(R.names[1])}${R.t?` <small>(무 ${R.t})</small>`:''}</h2>
-   <p class="mini">${R.n}경기 · 승률 ${f3(R.w[0]/Math.max(1,R.w[0]+R.w[1]))} · 경기당 ${(R.rs[0]/R.n).toFixed(1)} : ${(R.rs[1]/R.n).toFixed(1)}</p>
+   ${R.pred?`<p class="mini" style="color:${R.pred.hit?'#3fb950':'#ff8a7a'}">예측 「${esc(R.pred.label)}」 · ${esc(R.pred.msg)}</p>`:''}<p class="mini">${R.n}경기 · 승률 ${f3(R.w[0]/Math.max(1,R.w[0]+R.w[1]))} · 경기당 ${(R.rs[0]/R.n).toFixed(1)} : ${(R.rs[1]/R.n).toFixed(1)}</p>
    ${R.last?`<details><summary>마지막 경기 하이라이트 · ${esc(R.names[R.last.away])} ${R.last.sc[0]} : ${R.last.sc[1]} ${esc(R.names[1-R.last.away])}</summary><ol class="log">${R.last.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
    <div class="dsg" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px">${side(0)}${side(1)}</div></section>`:''}`}
