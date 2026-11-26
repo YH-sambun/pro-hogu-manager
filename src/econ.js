@@ -9,16 +9,20 @@ let rnd=Math.random;
 // ── 1. 모드별 보상 ───────────────────────────────────────────
 // 주간 AI 리그 10단계. 단계 배율 m = 1 + 0.25×(단계-1) → 1단계 1.0, 10단계 3.25
 const tierMul=t=>1+0.25*(Math.max(1,Math.min(10,t))-1);
-const LEAGUE={game:{w:70,d:35,l:20},            // 경기당 기본 P × 배율 (주 27경기 = AI 9팀×3)
-  rank:[0,1500,900,600,400,400,200,200,200,200,200], // 최종 순위 보너스 × 배율
+// SJ 2026-11-26: 리그가 3일 주기(정규 2일+포스트시즌 1일)로 바뀌어 시즌이 주 1회 → 약 2.3회. 경기당 ×0.43, 정규 순위 보너스 ×0.33으로 낮춰(매 시즌 다 하면 주당 약 1.4배)  승급 보상은 포스트시즌 우승으로 옮김
+const LEAGUE={game:{w:30,d:15,l:8},            // 경기당 기본 P × 배율 (정규 27경기 = AI 9팀×3, 포스트시즌 경기도 같음)
+  rank:[0,500,300,200,150,150,80,80,80,80,80], // 정규시즌 최종 순위 보너스 × 배율
   promo:{1:{tix:{prem:1}},2:{tix:{block:1}},3:{tix:{star:1}},4:{tix:{prem:2}},5:{tix:{gg:1}},  // 단계 첫 우승(승급) 1회 보상
          6:{tix:{star:2}},7:{tix:{legend:1}},8:{tix:{gg:2}},9:{tix:{ex:1}},10:{pt:10000,tix:{pick:1}}},
   top:{tix:{star:1}}};                           // 10단계 재우승(더 올라갈 곳 없음)마다
 const leagueGame=(tier,res)=>({pt:Math.round(LEAGUE.game[res]*tierMul(tier))});
 // 우승 보너스: 그 단계 첫 우승 3,000P×배율 + 확정권, 재우승 1,000P×배율 (rank 표의 1위 값은 쓰지 않음)
-const WIN={first:3000,again:1000};
-function leagueEnd(tier,rank,firstWin){const base=rank===1?(firstWin?WIN.first:WIN.again):(LEAGUE.rank[rank]||200);const r={pt:Math.round(base*tierMul(tier)),tix:{}};
-  if(rank===1){const x=firstWin?LEAGUE.promo[tier]:tier>=10?LEAGUE.top:null;if(x){r.pt+=x.pt||0;r.tix={...x.tix}}}return r}
+const WIN={first:3000,again:1000},POST={first:3000,again:600,final:300,semi:150}; // WIN: 예전 1위 보상(연도 리그 등 참조용) · POST: 포스트시즌 우승·준우승·4강 × 배율
+// 정규시즌 마감 순위 보너스(승급·확정권은 포스트시즌 우승 쪽으로)
+function leagueEnd(tier,rank,firstWin){return {pt:Math.round((LEAGUE.rank[rank]||80)*tierMul(tier)),tix:{}}}
+// 포스트시즌: place 1 우승, 2 준우승, 3 4강 탈락. firstChamp = 그 단계 첫 우승(승급) → LEAGUE.promo 확정권, 10단계 재우승은 LEAGUE.top
+function leaguePost(tier,place,firstChamp){const m=tierMul(tier);if(place===1){const r={pt:Math.round((firstChamp?POST.first:POST.again)*m),tix:{}};const x=firstChamp?LEAGUE.promo[tier]:tier>=10?LEAGUE.top:null;if(x){r.pt+=x.pt||0;r.tix={...x.tix}}return r}
+  return {pt:Math.round((place===2?POST.final:POST.semi)*m),tix:{}}}
 
 // 단일팀 도전(팀컬러 팀, 난이도 1~10): 첫 클리어 300×난이도 + 난이도 5·10 첫 클리어 확정권. 반복 클리어는 하루 5회까지 40×난이도
 const CHAL={first:300,rep:40,daily:5,firstTix:{5:{star:1},10:{legend:1}}};
@@ -295,7 +299,7 @@ function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{}
     for(const s of SETS)if(s.kind==='meta'&&setProgress(S,s).have>=s.need[1])S.dexDone[s.id]=-1}
   S.dexDone=S.dexDone||{};return S}
 
-const ECON={tierMul,LEAGUE,WIN,leagueGame,leagueEnd,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,pityTick,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
+const ECON={tierMul,LEAGUE,WIN,POST,leagueGame,leagueEnd,leaguePost,CHAL,challenge,TITLES,TITLE_PT,MVP_PT,titleBonus,AWARD_PT,seasonAwards,PRED,predOffer,predSettle,yearGame,yearLeague,W,PACKS,PITY,FLOOR,pityTick,blockGrades,tcGrades,TIX,DISMANTLE,buyCards,useTicket,dismantle,wpick,
   DEX,buildSets,get SETS(){return SETS},get SET_BY(){return SET_BY},setsOf:id=>IN_SETS[id]||[],setProgress,dexHas,gain,grant,rwText,migrate,DAILY,login,mission,CAP,capped,PRED_CAP,predCapped,redeem,MS_DEF,MS_META,buildMissions,get CHAPTERS(){return CHAPTERS},msProg,msText,msReq,msCyc,missionCheck,missionSubmit,missionLeague,isMissionOnly,buildNat,get NATS(){return NATS},natProg,natCheck,EQ_KIND,EQ_SLOTS,EQ_G,EQ_BASE,mkEquip,eqName,eqBonus,equip,unequip,cardEq,STUDY,STUDY_BY,RUSH,studyFee,studyRoll,studyOdds,canStudy,abResetFee,rushFee,pay,setRnd:f=>{rnd=f}};
 if(typeof module!=='undefined'&&module.exports)module.exports=ECON;else root.ECON=ECON;
 })(typeof window!=='undefined'?window:globalThis);
