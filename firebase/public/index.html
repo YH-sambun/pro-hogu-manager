@@ -820,6 +820,32 @@ body{min-height:100vh;min-height:100dvh}
 @media (max-width:700px){.ofnav{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}
 .ofls th,.ofls td{padding:2px 2px!important;font-size:12px!important;min-width:0!important;width:auto!important}
 .ofls td.l,.ofls th.l{max-width:58px}
+/* 업무 모드(엑셀 톤): 감독실·홈 대시보드 칸 */
+body.xl .ofp{background:#fff!important;border:1px solid #c6c6c6!important;border-radius:0!important;padding:4px 6px!important;color:#222!important;box-shadow:none!important}
+body.xl .ofp h3{color:#fff!important;background:#217346;border:0!important;margin:-4px -6px 4px!important;padding:3px 6px!important;font:700 12px var(--fb)!important;letter-spacing:0!important;text-transform:none!important}
+body.xl .ofp h3 small{color:#dfeee5!important}
+body.xl .ofb,body.xl .ofb *{color:#222}
+body.xl .ofb .note,body.xl .ofldt td:first-child,body.xl .ofldt td.n2,body.xl .ofldt td.ps,body.xl .oft td:first-child,body.xl .ofli span,body.xl .oft small{color:#666!important}
+body.xl .ofldt td.v{color:#222!important}
+body.xl .ofb a{color:#0563c1!important}
+body.xl .ofli{border:1px solid #d4d4d4!important;border-radius:0!important;padding:3px 6px!important;margin-bottom:3px!important;background:#fff!important}
+body.xl .ofli b{color:#0563c1!important;font-size:12px}
+body.xl .ofhc.hot>b,body.xl .ofhc.hot em{color:#c00!important}
+body.xl .ofhc.cold>b,body.xl .ofhc.cold em{color:#1f5fa8!important}
+body.xl .ofres b{border-radius:0!important;color:#fff!important}
+body.xl .ofres.W b{background:#107c10!important}body.xl .ofres.L b{background:#c00!important}
+body.xl .ofls tr.me td,body.xl .ofst tr.me td{color:#222!important;font-weight:700;background:#e2efda!important}
+body.xl .chip.lad{background:#fff!important;color:#222!important;border:1px solid #c6c6c6!important;border-radius:0!important;font:12px var(--fb)!important;padding:1px 6px!important}
+body.xl .chip.lad.cur{background:#217346!important;color:#fff!important;border-color:#217346!important}
+body.xl .chip.lad.done{background:#e2efda!important;color:#107c10!important}
+body.xl .chip.lad.todo{color:#888!important;border-style:dashed!important}
+body.xl .playb{background:#217346!important;color:#fff!important}
+body.xl .ofb .mis{background:#fff!important;border:1px solid #d4d4d4!important;border-radius:0!important;color:#222!important}
+body.xl .ofb .mis.done{background:#f3f3f3!important;color:#888!important}
+body.xl .ofb .mis b{color:inherit!important}
+body.xl .ofnav{background:#f3f3f3!important;border-top:1px solid #c6c6c6!important}
+body.xl .ofnav button.on{background:#217346!important;color:#fff!important}
+body.xl .ofhead h2{color:#222!important}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2575,6 +2601,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126i',d:'2026-11-26',t:'업무 모드 색 맞춤',b:['업무 모드에서 홈과 리그 대시보드 칸이 어둡게 남던 것을 엑셀 표 색으로 바꿨어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126h',d:'2026-11-26',t:'홈 · 리그 화면 3×2 대시보드',b:['홈에는 편집 중인 라인업, 구단, 오늘의 미션, 리그 현황, 공지·쿠폰, 보유 현황이 한 화면에 나와요.','주간 리그와 연도별 리그 화면 첫머리가 감독실 판(최근 경기, 다음 경기, 기록 순위, 순위, Hot & Cold, 리그 진행)으로 바뀌었어요.','칸마다 높이를 맞춰 노트북 한 화면에 들어가고, 긴 내용은 칸 안에서 스크롤돼요. 자세한 기록은 아래 접힌 칸에 있어요.'],rw:{tix:{pk_n:10,prem:1,pk_sp:1}}},
  {id:'n1126g',d:'2026-11-26',t:'폰 앱 하단 바 위치 수정',b:['홈 화면에 설치한 앱에서 내용이 짧은 화면일 때 하단 메뉴가 바닥에서 떠 보이던 문제를 고쳤어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126f',d:'2026-11-26',t:'상점 탭 · 폰 감독실 묶음 전환',b:['상점이 선수 카드팩 · 서포트 · 작전 · 스킬 블록 탭으로 나뉘었어요.','폰에서는 감독실이 경기 · 기록 · 순위 · 편지함 · 구단 묶음으로 나뉘고, 아래 버튼으로 넘겨 봐요.'],rw:{tix:{pk_n:10,pk_b:1}}},
@@ -3251,7 +3278,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='6d886694ff';
+const BUILD='fd6216e0d7';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
