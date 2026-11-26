@@ -119,7 +119,8 @@ function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||used().includes(c
   S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
 const TIXN=ECON.TIX,rwText=ECON.rwText,dexHas=id=>ECON.dexHas(S,id),dexCard=id=>byId[id];
-function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',nat:'국가대표',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
+// SJ 2026-11-26: 도감 = 전체 카드 보기(전체 선수·국가대표), 모으면 보상 주는 세트는 미션 > 수집 세트(vDex('set'))로
+function vDex(mode){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const SET=mode==='set',KN=SET?{team:'팀 세트',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'}:{all:'전체 선수',nat:'국가대표'},k=S.dexK in KN?S.dexK:SET?'team':'all',q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
   const prog=s=>ECON.setProgress(S,s),tmOf=s=>s.kind==='team'?s.id.split('|')[1]:'',all=ECON.SETS.filter(s=>s.kind===k);
   const YS=[...new Set(all.map(s=>s.year).filter(Boolean))].sort((a,b)=>b-a),TS=[...new Set(all.map(tmOf).filter(Boolean))].sort();
   let L=all.filter(s=>(!q||s.name.includes(q))&&(!F.y||s.year===+F.y)&&(!F.t||tmOf(s)===F.t)&&(!F.st||(F.st==='done')===!!S.dexDone[s.id]));
@@ -127,8 +128,8 @@ function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN
   const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),sel=(id,v,lab,opts)=>`<select id="${id}" aria-label="${lab}"><option value="">${lab}</option>${opts.map(([x,n])=>`<option value="${esc(x)}"${String(v)===String(x)?' selected':''}>${esc(n)}</option>`).join('')}</select>`,on=F.y||F.t||F.st||F.h||q;
   if(k==='all')return dexAll(KN,tix,sel,q);
   if(k==='nat')return dexNat(KN,tix,q);
-  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
-  <p class="note help">한 번 얻은 카드는 도감에 계속 기록. 세트를 다 모으면 보상이 바로 들어와요. 확정권은 카드팩 화면에서 써요.</p>
+  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">${SET?'수집 세트':'도감'}</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
+  <p class="note help">한 번 얻은 카드는 계속 기록돼요. 합성 재료로 쓰거나 유학·분해로 없어져도 세트 진행은 그대로예요. 세트를 다 모으면 보상이 바로 들어와요.</p>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
   ${k!=='meta'?`<div class="dexf">${dexHV(F)}<input id="dexq" value="${esc(q)}" placeholder="이름 검색" aria-label="세트 검색">${on?'<button class="ghost" data-a="dexclr">필터 초기화</button>':''}<span class="note" style="margin:0">${L.length}세트</span></div>${dexFD([F.y,F.t,F.st].filter(Boolean).length,`${YS.length?sel('dexy',F.y,'전체 연도',YS.map(y=>[y,y+'년'])):''}${TS.length?sel('dext',F.t,'전체 구단',TS.map(t=>[t,t])):''}${sel('dexst',F.st,'전체 세트',[['todo','미완성 세트'],['done','완성 세트']])}`)}`:''}
   <div class="dexl">${L.slice(0,lim).map(({s,p})=>{const done=!!S.dexDone[s.id],ids=(s.ids||[]).filter(id=>!F.h||(F.h==='have')===!!dexHas(id));if(s.ids&&!ids.length)return '';
@@ -1081,7 +1082,9 @@ function natHTML(){const N=ECON.NATS||[];if(!N.length)return '';const fin=N.filt
     return `<div class="msch${p.done?' fin':''}"><div class="msh"><b>${esc(n.name.replace(/ 멤버 모으기$/,''))}</b><span class="msn">${p.done?'완료':`${p.have}/${p.need}`}</span></div>
     <p class="note msr" style="margin:0 0 6px">멤버 전원 보유 → ${esc(rwText(n.rw))}${n.nt&&n.nt.length?` + 국가대표 카드 ${n.nt.length}장`:''}</p>
     <div class="msrn">${n.mem.map(m=>{const own=m.ids.find(id=>(S.owned[id]|0)>0),nm=m.e.split('@')[0];return `<span class="${own?'got':''}" ${own?`data-pick="${esc(own)}"`:`data-dexv="${esc(m.ids[0])}"`} role="button" tabindex="0">${esc(nm)}</span>`}).join('')}</div></div>`}).join('')}</div></details>`}
-function vMission(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section class="band"><h2>미션</h2><p class="note">미션 데이터 없음</p></section>`;
+const msTabs=()=>`<div class="subnav mstabs" role="tablist">${[['ch','미션 챕터'],['set','수집 세트']].map(([k,n])=>`<button role="tab" aria-selected="${(S.msTab||'ch')===k}" class="${(S.msTab||'ch')===k?'on':''}" data-a="mstab" data-k="${k}">${n}</button>`).join('')}</div>`;
+function vMission(){if(S.msTab==='set')return msTabs()+vDex('set');return msTabs()+vMission0()}
+function vMission0(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section class="band"><h2>미션</h2><p class="note">미션 데이터 없음</p></section>`;
   const fin=CH.filter(c=>(S.msFin||{})[c.id]).length,last=!!(S.opt&&S.opt.submitLast);
   return `<section class="band ms"><div class="mhead"><h2 style="margin:0;margin-right:auto">미션</h2><span class="pill">챕터 완료 ${fin}/${CH.length}</span><label class="chk"><input type="checkbox" data-msopt="1" ${last?'checked':''}> 제출 때 마지막 1장도 허용</label></div>
   <div class="msmeta">${ECON.MS_META.map(([k,name,rw])=>{const need=k==='all'?CH.length:k,done=(S.msMeta||{})[k];return `<div class="${done?'done':''}"><b>${esc(name)}</b><span>${Math.min(fin,need)}/${need}</span><small>${esc(rwText(rw))}</small></div>`}).join('')}</div>
@@ -1125,7 +1128,7 @@ addEventListener('hashchange',()=>{closePops();render();scrollTo(0,0)});
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#nav a,#tabbar a,#nav button,#tabbar button')&&S&&(S.modal||S.dexView||S.bmodal)){closePops();render()}},true);
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -1153,6 +1156,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='theme'){S.theme=b.dataset.v||'';S.setbOpen=1;save();render()}
   else if(a==='work'){S.work=!S.work;save();render()}
   else if(a==='mssub'){S.msSub={line:b.dataset.line,sel:{}};S.msMsg='';render()}
+  else if(a==='mstab'){S.msTab=b.dataset.k;S.dexLim=0;render()}
   else if(a==='msclose'){S.msSub=null;render()}
   else if(a==='msopt'){S.opt=S.opt||{};S.opt.submitLast=!S.opt.submitLast;save();render()}
   else if(a==='msgo'){const m=S.msSub;if(!m)return;const ids=Object.entries(m.sel).flatMap(([id,n])=>Array(n).fill(id));if(!ids.length){S.msMsg='카드 선택';render();return}const r=ECON.missionSubmit(S,m.line,ids);if(r.err){S.msMsg=r.err;render();return}S.toast=`${r.used}장 제출 · ${r.have}장 누적`+(r.out&&r.out.length?' · '+r.out.map(x=>x.what+(x.rw?' '+rwText(x.rw):'')).join(' · '):'');S.msSub=null;msTick();save();render()}

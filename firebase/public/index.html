@@ -846,6 +846,7 @@ body.xl .ofb .mis b{color:inherit!important}
 body.xl .ofnav{background:#f3f3f3!important;border-top:1px solid #c6c6c6!important}
 body.xl .ofnav button.on{background:#217346!important;color:#fff!important}
 body.xl .ofhead h2{color:#222!important}
+.mstabs{margin:0 0 10px}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1811,7 +1812,8 @@ function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||used().includes(c
   S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
 const TIXN=ECON.TIX,rwText=ECON.rwText,dexHas=id=>ECON.dexHas(S,id),dexCard=id=>byId[id];
-function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',nat:'국가대표',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
+// SJ 2026-11-26: 도감 = 전체 카드 보기(전체 선수·국가대표), 모으면 보상 주는 세트는 미션 > 수집 세트(vDex('set'))로
+function vDex(mode){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const SET=mode==='set',KN=SET?{team:'팀 세트',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'}:{all:'전체 선수',nat:'국가대표'},k=S.dexK in KN?S.dexK:SET?'team':'all',q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
   const prog=s=>ECON.setProgress(S,s),tmOf=s=>s.kind==='team'?s.id.split('|')[1]:'',all=ECON.SETS.filter(s=>s.kind===k);
   const YS=[...new Set(all.map(s=>s.year).filter(Boolean))].sort((a,b)=>b-a),TS=[...new Set(all.map(tmOf).filter(Boolean))].sort();
   let L=all.filter(s=>(!q||s.name.includes(q))&&(!F.y||s.year===+F.y)&&(!F.t||tmOf(s)===F.t)&&(!F.st||(F.st==='done')===!!S.dexDone[s.id]));
@@ -1819,8 +1821,8 @@ function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN
   const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),sel=(id,v,lab,opts)=>`<select id="${id}" aria-label="${lab}"><option value="">${lab}</option>${opts.map(([x,n])=>`<option value="${esc(x)}"${String(v)===String(x)?' selected':''}>${esc(n)}</option>`).join('')}</select>`,on=F.y||F.t||F.st||F.h||q;
   if(k==='all')return dexAll(KN,tix,sel,q);
   if(k==='nat')return dexNat(KN,tix,q);
-  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
-  <p class="note help">한 번 얻은 카드는 도감에 계속 기록. 세트를 다 모으면 보상이 바로 들어와요. 확정권은 카드팩 화면에서 써요.</p>
+  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">${SET?'수집 세트':'도감'}</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
+  <p class="note help">한 번 얻은 카드는 계속 기록돼요. 합성 재료로 쓰거나 유학·분해로 없어져도 세트 진행은 그대로예요. 세트를 다 모으면 보상이 바로 들어와요.</p>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
   ${k!=='meta'?`<div class="dexf">${dexHV(F)}<input id="dexq" value="${esc(q)}" placeholder="이름 검색" aria-label="세트 검색">${on?'<button class="ghost" data-a="dexclr">필터 초기화</button>':''}<span class="note" style="margin:0">${L.length}세트</span></div>${dexFD([F.y,F.t,F.st].filter(Boolean).length,`${YS.length?sel('dexy',F.y,'전체 연도',YS.map(y=>[y,y+'년'])):''}${TS.length?sel('dext',F.t,'전체 구단',TS.map(t=>[t,t])):''}${sel('dexst',F.st,'전체 세트',[['todo','미완성 세트'],['done','완성 세트']])}`)}`:''}
   <div class="dexl">${L.slice(0,lim).map(({s,p})=>{const done=!!S.dexDone[s.id],ids=(s.ids||[]).filter(id=>!F.h||(F.h==='have')===!!dexHas(id));if(s.ids&&!ids.length)return '';
@@ -2605,6 +2607,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126j',d:'2026-11-26',t:'도감은 카드 보기, 세트 보상은 미션으로',b:['도감은 전체 선수와 국가대표 카드를 둘러보는 곳이 됐어요.','팀 세트, 골든글러브, 커리어하이, EX, 누적 목표 세트는 미션 > 수집 세트로 옮겼어요. 진행과 보상은 그대로예요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126i',d:'2026-11-26',t:'업무 모드 색 맞춤',b:['업무 모드에서 홈과 리그 대시보드 칸이 어둡게 남던 것을 엑셀 표 색으로 바꿨어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126h',d:'2026-11-26',t:'홈 · 리그 화면 3×2 대시보드',b:['홈에는 편집 중인 라인업, 구단, 오늘의 미션, 리그 현황, 공지·쿠폰, 보유 현황이 한 화면에 나와요.','주간 리그와 연도별 리그 화면 첫머리가 감독실 판(최근 경기, 다음 경기, 기록 순위, 순위, Hot & Cold, 리그 진행)으로 바뀌었어요.','칸마다 높이를 맞춰 노트북 한 화면에 들어가고, 긴 내용은 칸 안에서 스크롤돼요. 자세한 기록은 아래 접힌 칸에 있어요.'],rw:{tix:{pk_n:10,prem:1,pk_sp:1}}},
  {id:'n1126g',d:'2026-11-26',t:'폰 앱 하단 바 위치 수정',b:['홈 화면에 설치한 앱에서 내용이 짧은 화면일 때 하단 메뉴가 바닥에서 떠 보이던 문제를 고쳤어요.'],rw:{tix:{pk_n:10}}},
@@ -3264,7 +3267,9 @@ function natHTML(){const N=ECON.NATS||[];if(!N.length)return '';const fin=N.filt
     return `<div class="msch${p.done?' fin':''}"><div class="msh"><b>${esc(n.name.replace(/ 멤버 모으기$/,''))}</b><span class="msn">${p.done?'완료':`${p.have}/${p.need}`}</span></div>
     <p class="note msr" style="margin:0 0 6px">멤버 전원 보유 → ${esc(rwText(n.rw))}${n.nt&&n.nt.length?` + 국가대표 카드 ${n.nt.length}장`:''}</p>
     <div class="msrn">${n.mem.map(m=>{const own=m.ids.find(id=>(S.owned[id]|0)>0),nm=m.e.split('@')[0];return `<span class="${own?'got':''}" ${own?`data-pick="${esc(own)}"`:`data-dexv="${esc(m.ids[0])}"`} role="button" tabindex="0">${esc(nm)}</span>`}).join('')}</div></div>`}).join('')}</div></details>`}
-function vMission(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section class="band"><h2>미션</h2><p class="note">미션 데이터 없음</p></section>`;
+const msTabs=()=>`<div class="subnav mstabs" role="tablist">${[['ch','미션 챕터'],['set','수집 세트']].map(([k,n])=>`<button role="tab" aria-selected="${(S.msTab||'ch')===k}" class="${(S.msTab||'ch')===k?'on':''}" data-a="mstab" data-k="${k}">${n}</button>`).join('')}</div>`;
+function vMission(){if(S.msTab==='set')return msTabs()+vDex('set');return msTabs()+vMission0()}
+function vMission0(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section class="band"><h2>미션</h2><p class="note">미션 데이터 없음</p></section>`;
   const fin=CH.filter(c=>(S.msFin||{})[c.id]).length,last=!!(S.opt&&S.opt.submitLast);
   return `<section class="band ms"><div class="mhead"><h2 style="margin:0;margin-right:auto">미션</h2><span class="pill">챕터 완료 ${fin}/${CH.length}</span><label class="chk"><input type="checkbox" data-msopt="1" ${last?'checked':''}> 제출 때 마지막 1장도 허용</label></div>
   <div class="msmeta">${ECON.MS_META.map(([k,name,rw])=>{const need=k==='all'?CH.length:k,done=(S.msMeta||{})[k];return `<div class="${done?'done':''}"><b>${esc(name)}</b><span>${Math.min(fin,need)}/${need}</span><small>${esc(rwText(rw))}</small></div>`}).join('')}</div>
@@ -3282,7 +3287,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='a2572d2b88';
+const BUILD='0d7b6e2c7e';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
@@ -3308,7 +3313,7 @@ addEventListener('hashchange',()=>{closePops();render();scrollTo(0,0)});
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#nav a,#tabbar a,#nav button,#tabbar button')&&S&&(S.modal||S.dexView||S.bmodal)){closePops();render()}},true);
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -3336,6 +3341,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='theme'){S.theme=b.dataset.v||'';S.setbOpen=1;save();render()}
   else if(a==='work'){S.work=!S.work;save();render()}
   else if(a==='mssub'){S.msSub={line:b.dataset.line,sel:{}};S.msMsg='';render()}
+  else if(a==='mstab'){S.msTab=b.dataset.k;S.dexLim=0;render()}
   else if(a==='msclose'){S.msSub=null;render()}
   else if(a==='msopt'){S.opt=S.opt||{};S.opt.submitLast=!S.opt.submitLast;save();render()}
   else if(a==='msgo'){const m=S.msSub;if(!m)return;const ids=Object.entries(m.sel).flatMap(([id,n])=>Array(n).fill(id));if(!ids.length){S.msMsg='카드 선택';render();return}const r=ECON.missionSubmit(S,m.line,ids);if(r.err){S.msMsg=r.err;render();return}S.toast=`${r.used}장 제출 · ${r.have}장 누적`+(r.out&&r.out.length?' · '+r.out.map(x=>x.what+(x.rw?' '+rwText(x.rw):'')).join(' · '):'');S.msSub=null;msTick();save();render()}
