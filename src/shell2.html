@@ -862,6 +862,13 @@ body.xl [data-hk]::after{background:#fff;color:#217346;border-color:#217346;bord
 #revfl{position:fixed;right:16px;bottom:16px;z-index:80;max-width:min(420px,90vw);padding:6px 10px;background:#fff;color:#222;border:1px solid #217346;border-left:4px solid #217346;font:12px "Malgun Gothic","맑은 고딕",sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.15);pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s}
 #revfl.on{opacity:1;transform:none}#revfl.off{opacity:0}
 #revfl div+div{margin-top:2px}
+.ofhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lgtabs2{display:flex;gap:6px;flex-wrap:wrap;margin-left:6px}
+.lgtabs2 button{padding:6px 14px;font-size:13.5px;font-weight:700;border-radius:9px;background:rgba(0,0,0,.35);color:var(--ink);border:1px solid var(--line)}
+.lgtabs2 button.on{background:var(--clay);border-color:var(--clay);color:#fff}
+body.xl .lgtabs2 button{background:#fff!important;color:#222!important;border:1px solid #c6c6c6!important;border-radius:0!important}
+body.xl .lgtabs2 button.on{background:#217346!important;color:#fff!important;border-color:#217346!important}
+@media (max-width:700px){.lgtabs2{margin-left:0;width:100%;overflow-x:auto;flex-wrap:nowrap}.lgtabs2 button{flex:none;padding:6px 10px}}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
