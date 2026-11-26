@@ -850,6 +850,15 @@ body.xl .ofhead h2{color:#222!important}
 .ludk{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
 .ludk input{width:170px;min-width:0}
 @media (max-width:700px){.ludk{width:100%}.ludk input{flex:1;width:auto}}
+/* 단축키 표시(PC만): 버튼 숫자 배지 · 하위 탭 F키 */
+.hkb{display:none}
+@media (min-width:701px){
+[data-hk]{position:relative}
+[data-hk]::after{content:attr(data-hk);position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:5px;background:#1b1d1c;color:#ffd27a;border:1px solid rgba(255,210,122,.6);font:700 10.5px/14px ui-monospace,monospace;text-align:center;pointer-events:none}
+[data-hk][disabled]::after{opacity:.45}
+.hkb{display:inline-block;margin-left:5px;padding:0 3px;border-radius:4px;border:1px solid currentColor;font:600 9.5px/13px ui-monospace,monospace;opacity:.6;vertical-align:1px}
+body.xl [data-hk]::after{background:#fff;color:#217346;border-color:#217346;border-radius:0}
+}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
