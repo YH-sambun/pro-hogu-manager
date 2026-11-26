@@ -443,7 +443,7 @@ function synPool(k){if(k==='p'){const u=new Set(used());return OWN.filter(c=>!u.
  if(k==='s')return SUPS.flatMap(x=>Array.from({length:S.sq[x[0]]||0},(_,i)=>({key:x[0]+'#'+i,x,html:scard(x,{})})));
  return TCARDS.flatMap(x=>Array.from({length:S.tq[x[0]]||0},(_,i)=>({key:x[0]+'#'+i,x,html:tcard(x,{})})))}
 const SF0={ty:'all',team:'all',year:'all',cost:'all',pos:'all',sort:'cost',dup:0};
-function synPoolF(k){const p=synPool(k);if(k!=='p')return p;const f=S.sf||SF0,EX=new Set(S.synExM||[]);return p.filter(({c})=>!abOf(c.id)&&!EX.has(c.line)&&(f.ty==='all'||c.type===f.ty)&&(f.team==='all'||lname(c.line)===f.team)&&(f.year==='all'||String(c.year)===f.year)&&(f.cost==='all'||(String(f.cost)[0]==='='?c.cost===+String(f.cost).slice(1):c.cost<=+f.cost))&&(!f.pos||f.pos==='all'||c.pos===f.pos)&&(!f.dup||c.dup)).sort(SYNSORT[f.sort||'cost']||SYNSORT.cost)}
+function synPoolF(k){const p=synPool(k);if(k!=='p')return p;const f=S.sf||SF0,EX=new Set(S.synExM||[]);return p.filter(({c})=>!abOf(c.id)&&!EX.has(c.line)&&(f.ty==='all'||c.type===f.ty)&&(f.team==='all'||lname(c.line)===f.team)&&(f.year==='all'||String(c.year)===f.year)&&(f.cost==='all'||(String(f.cost)[0]==='='?c.cost===+String(f.cost).slice(1):c.cost<=+f.cost))&&(!f.pos||f.pos==='all'||c.pos===f.pos)&&(!f.v||f.v==='all'||(f.v==='sp'?['GG','AS','CH','EX'].includes(c.v):f.v==='n'?!c.v:c.v===f.v))&&(!f.dup||c.dup)).sort(SYNSORT[f.sort||'cost']||SYNSORT.cost)}
 const dupN=c=>OWN.filter(x=>x.pk===c.pk&&x.type===c.type).length;
 const SYNSORT={cost:(a,b)=>a.c.cost-b.c.cost||a.c.ovr-b.c.ovr,costd:(a,b)=>b.c.cost-a.c.cost||b.c.ovr-a.c.ovr,ovr:(a,b)=>a.c.ovr-b.c.ovr,ovrd:(a,b)=>b.c.ovr-a.c.ovr,year:(a,b)=>b.c.year-a.c.year,yeara:(a,b)=>a.c.year-b.c.year,team:(a,b)=>lname(a.c.line).localeCompare(lname(b.c.line))||a.c.year-b.c.year,pos:(a,b)=>POSO.indexOf(a.c.pos)-POSO.indexOf(b.c.pos)||a.c.cost-b.c.cost,dup:(a,b)=>dupN(b.c)-dupN(a.c)||a.c.cost-b.c.cost};
 const POSO=['SP','RP','C','1B','2B','3B','SS','LF','CF','RF','DH'];
@@ -452,6 +452,7 @@ function synFilt(){const f=S.sf||SF0,base=synPool('p').map(x=>x.c),teams=[...new
  <select data-sf="team" aria-label="구단 필터">${o('all','전체 구단',f.team)}${teams.map(t=>o(t,t,f.team)).join('')}</select>
  <select data-sf="year" aria-label="연도 필터">${o('all','전체 연도',f.year)}${years.map(y=>o(y,y,f.year)).join('')}</select>
  <select data-sf="cost" aria-label="코스트 필터">${o('all','전체 코스트',f.cost)}${[3,5,7].map(n=>o(n,'★'+n+' 이하',f.cost)).join('')}${[1,2,3,4,5,6,7,8,9,10].map(n=>o('='+n,'코스트 '+n+'만',f.cost)).join('')}</select>
+ <select data-sf="v" aria-label="카드 종류 필터">${[['all','전체 종류'],['sp','특별 전체'],['GG','골든글러브'],['AS','올스타'],['CH','커리어하이'],['EX','EX'],['n','일반']].map(([v,n])=>o(v,n,f.v||'all')).join('')}</select>
  <select data-sf="pos" aria-label="포지션 필터">${o('all','전체 포지션',f.pos||'all')}${POSO.map(p=>o(p,PFULL[p],f.pos)).join('')}</select>
  <select data-sf="sort" aria-label="정렬">${[['cost','코스트 낮은 순'],['costd','코스트 높은 순'],['ovr','능력 낮은 순'],['ovrd','능력 높은 순'],['year','최신 연도 순'],['yeara','오래된 연도 순'],['team','구단 순'],['pos','포지션 순'],['dup','중복 많은 순']].map(([v,n])=>o(v,n,f.sort||'cost')).join('')}</select>
  <button class="${f.dup?'':'ghost'}" data-sfd="1" aria-pressed="${!!f.dup}">중복만</button></div>`}
