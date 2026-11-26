@@ -822,6 +822,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
  <div class="faces${S.mflip?' flipped':''}" data-mflip="1" title="탭하면 앞/뒷면"><div class="face f-front">${card(c,{full:1,dfx:{bat:T.bat,pit:T.pit},dids:ids,nocond:1})}</div><div class="face f-back">${backFace(c0,0)}</div></div>${simPanel(c0)}</div></div>`}
 // 공지사항(SJ 2026-11-26): 처음 보는 공지는 자동으로 띄우고, 보상(카드팩 등)은 '받기'로 한 번만 지급. 새 공지는 맨 위에 추가
 /*NOTICES*/
+var NOTICES=Array.isArray(NOTICES)?NOTICES:[]; // notices.js가 빠진 빌드에서도 화면이 깨지지 않게 (tools/build2.py로 빌드해야 공지가 들어감)
 const ntcOpen=()=>S.ntcView?NOTICES.find(n=>n.id===S.ntcView):NOTICES.find(n=>!(S.ntc||{})[n.id]);
 function noticeHTML(){if(S.modal||S.dexView||S.bmodal||S.ntcHide)return '';const n=ntcOpen();if(!n)return '';const got=(S.ntc||{})[n.id]==='got',rw=n.rw&&!got;
  return `<div class="modal ntcm" role="dialog" aria-modal="true" aria-label="공지사항"><div class="mbox"><small class="note" style="margin:0">공지 · ${n.d}</small><h2 style="margin:4px 0 10px">${esc(n.t)}</h2><ul class="ntcb">${n.b.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
