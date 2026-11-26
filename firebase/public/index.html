@@ -869,6 +869,13 @@ body.xl [data-hk]::after{background:#fff;color:#217346;border-color:#217346;bord
 body.xl .lgtabs2 button{background:#fff!important;color:#222!important;border:1px solid #c6c6c6!important;border-radius:0!important}
 body.xl .lgtabs2 button.on{background:#217346!important;color:#fff!important;border-color:#217346!important}
 @media (max-width:700px){.lgtabs2{margin-left:0;width:100%;overflow-x:auto;flex-wrap:nowrap}.lgtabs2 button{flex:none;padding:6px 10px}}
+.tsrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+.tsrow>b{width:3em;color:var(--gold)}
+.tsr{padding:3px 9px;border-radius:8px;border:1px solid var(--line);font-size:13px;background:rgba(0,0,0,.25)}
+.tsr b{color:var(--ink)}.tsr small{color:var(--mute)}
+.tsr.top{border-color:#4fbf7d}.tsr.top b{color:#7fe0a3}.tsr.low{border-color:#c8233a}.tsr.low b{color:#ff8a7a}
+.thb{background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}.thb.on{color:var(--gold)}
+body.xl .tsr{background:#fff!important;border-radius:0!important;border-color:#d4d4d4!important}body.xl .tsr b{color:#222!important}body.xl .tsr.top b{color:#107c10!important}body.xl .tsr.low b{color:#c00!important}body.xl .tsrow>b{color:#217346}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2660,6 +2667,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126s',d:'2026-11-26',t:'팀 기록 · 항목별 우리 팀 순위',b:['리그 > 기록실 맨 위에 팀 기록이 생겼어요. 공격(타율·출루율·홈런·득점·도루)과 수비(평균자책·실점·탈삼진·세이브·실책)에서 우리 팀이 몇 위인지 한눈에 보고, 모든 팀 기록을 항목별로 정렬해 볼 수 있어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126r',d:'2026-11-26',t:'리그 탭을 제목줄로',b:['리그 탭이 감독실 제목 옆으로 올라가고 감독실 · 라인업 · 일정 · 기록실 · 리그 정보로 정리됐어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126q',d:'2026-11-26',t:'리그 화면 탭 나누기',b:['주간·연도별 리그 화면 위에 탭이 생겼어요. 감독실, 매치업(연도별은 선발·예상), 내 팀 기록, 경기 결과, 선수 기록, 순위표를 한 화면에 하나씩 넘겨 봐요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126p',d:'2026-11-26',t:'업무 모드 대박 카드 알림',b:['업무 모드에서는 대박 카드가 나와도 전면 팝업 대신 화면 오른쪽 아래에 한 줄로 잠깐 떴다 사라져요. R이나 1로 연타해서 계속 뽑을 수 있어요.'],rw:{tix:{pk_n:10}}},
@@ -3074,6 +3082,19 @@ function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),
    <div class="side"><small>홈 · 평균 ${teamOvr(H)}</small><h2>${esc(tname(pr[1],L))}</h2>${sp(H)?cardHTML(sp(H),{cond:pr[1]===0?S.cond[sp(H).id]:0}):''}</div></div>`}
 function ladderHTML(s){return `<div class="btns" style="flex-wrap:wrap;margin-top:8px" aria-label="리그 단계">${TIERS.map((t,i)=>`<span class="chip lad ${i+1===s.tier?'cur':i+1<=(S.lgBest||1)?'done':'todo'}">${i+1<s.tier||(i+1!==s.tier&&i+1<=(S.lgBest||1))?'✓ ':''}${i+1}. ${t.n}</span>`).join('')}</div>`}
 // 리그 화면 탭(SJ 2026-11-26): 감독실 판 + 상세는 탭으로 나눠 한 화면에 하나씩
+// 팀 기록(SJ 2026-11-26, OOTP 참고): 리그 모든 팀 공격·수비 기록 + 항목별 우리 팀 순위
+function teamStatsHTML(L){const N=L.teams.length,T=Array.from({length:N},(_,i)=>({i,ab:0,h:0,hr:0,bb:0,sb:0,outs:0,er:0,so:0,sv:0,e:0}));
+ for(const r of Object.values(L.ps||{})){const t=T[r.t];if(!t)continue;t.ab+=r.ab;t.h+=r.h;t.hr+=r.hr;t.bb+=r.bb;t.sb+=r.sb;t.outs+=r.outs;t.er+=r.er;t.so+=r.so;t.sv+=r.sv;t.e+=r.e||0}
+ if(!T.some(t=>t.ab))return '';const f3=v=>v.toFixed(3).replace(/^0/,'');
+ for(const t of T){const st=L.st[t.i]||{};t.g=(st.w||0)+(st.l||0)+(st.d||0);t.rs=st.rs||0;t.ra=st.ra||0;t.avg=t.ab?t.h/t.ab:0;t.obp=t.ab+t.bb?(t.h+t.bb)/(t.ab+t.bb):0;t.era=t.outs?t.er*27/t.outs:0}
+ const OF=[['avg','타율',f3,1],['obp','출루율',f3,1],['hr','홈런',v=>v,1],['rs','득점',v=>v,1],['sb','도루',v=>v,1]],DF=[['era','평균자책',v=>v.toFixed(2),0],['ra','실점',v=>v,0],['so','탈삼진',v=>v,1],['sv','세이브',v=>v,1],['e','실책',v=>v,0]];
+ const rk=(k,hi)=>{const me=T[0][k];return 1+T.filter(t=>hi?t[k]>me:t[k]<me).length};
+ const chips=(C)=>C.map(([k,n,f,hi])=>{const r=rk(k,hi);return `<span class="tsr${r<=3?' top':r>N-3?' low':''}">${n} <b>${r}위</b> <small>${f(T[0][k])}</small></span>`}).join('');
+ const K=S.tsK||'o',C=K==='o'?OF:DF,sk=S.tsS&&C.find(c=>c[0]===S.tsS)||C[0],R=T.slice().sort((a,b)=>sk[3]?b[sk[0]]-a[sk[0]]:a[sk[0]]-b[sk[0]]);
+ return `<section class="band tstat"><div class="tools"><h3 style="margin:0;margin-right:auto">팀 기록 <small class="note">리그 ${N}팀 중 우리 팀 순위</small></h3></div>
+ <div class="tsrow"><b>공격</b>${chips(OF)}</div><div class="tsrow"><b>수비</b>${chips(DF)}</div>
+ <div class="tabs" style="margin:10px 0 6px">${[['o','공격'],['d','수비']].map(([k,n])=>`<button class="${K===k?'on':''}" data-a="tsk" data-k="${k}">${n}</button>`).join('')}</div>
+ <div class="scroll"><table class="tbl"><thead><tr><th></th><th class="l">구단</th><th>경기</th>${C.map(([k,n])=>`<th><button class="thb${sk[0]===k?' on':''}" data-a="tss" data-k="${k}">${n}${sk[0]===k?' ▾':''}</button></th>`).join('')}</tr></thead><tbody>${R.map((t,j)=>`<tr class="${t.i===0?'me':''}"><td>${j+1}</td><td class="l"><i class="dot" style="background:${t.i===0?'#e07a45':L.teams[t.i].color}"></i>${esc(tname(t.i,L))}</td><td>${t.g}</td>${C.map(([k,,f])=>`<td>${f(t[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`}
 function standFull(L,t){const o=S.showStand;S.showStand=1;const h=tableHTML(L,t);S.showStand=o;return h.replace(/<button class="ghost" data-a="m-stand"[^>]*>접기<\/button>/,'')}
 function lgPage(key,T,hd){const o=T.find(t=>t[0]===S['lgTab_'+key])||T[0],tb=`<div class="lgtabs2" role="tablist">${T.map(([k,n])=>`<button role="tab" aria-selected="${k===o[0]}" class="${k===o[0]?'on':''}" data-a="lgtab" data-g="${key}" data-k="${k}">${n}</button>`).join('')}</div>`;
  if(o[0]==='ofc')return o[2](tb);const L=hd.L,R=lgStand(L),me=R.findIndex(x=>x.i===0)+1,my=R.find(x=>x.i===0)||{};
@@ -3083,13 +3104,13 @@ function vSeason(){
   const head=`<p class="mini" title="${esc(TIER_DESC[s.tier-1])} · 주가 끝나면 남은 경기는 결과만 처리(보상 없음)">${wkLabel(s.wk)} · ${s.tier<10?`1위면 <b>${tierName(s.tier+1)}</b> 승급`:'최고 단계'}</p>${ladderHTML(s)}`;
   const pr=s.over?null:curPair(s),six=head+(s.over?`<p style="margin:8px 0 0"><b>${tierName(s.tier)} 종료 · ${s.rank}위</b></p><p>다음 리그 <b>${md(nxt)}(월) 0시</b> · ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)} 승급`:'재도전'}</p>`:`<p class="note" style="margin:8px 0 0">남은 경기 ${s.sched.length-s.round} · 주가 끝나면 남은 경기는 결과만 처리</p>`);
   // SJ 2026-11-26: 리그 화면 첫머리 = 감독실 3×2 판, 나머지 상세는 접어 둠
-  return lgPage('lg',[['ofc','감독실',tb=>ofcHTML(s,{right:tb,key:'lg',title:'주간 리그',pill:esc(tierName(s.tier)),sixT:'리그 진행',six,idle:s.over?`<p class="note">이번 주 리그 종료 · ${s.rank}위</p><p>다음 리그 <b>${md(nxt)}(월) 0시</b> · ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)} 승급`:'재도전'}</p>`:''})],['lu','라인업',()=>myTeamHTML(s,'lg')],['sc','일정',()=>(pr?`<section class="hero">${muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto')}</section>`:'')+lastRes(s)+gamesHTML(s)],['st','기록실',()=>(statsHTML(s)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(s)],['lg','리그 정보',()=>`<section class="band"><h3>리그 진행</h3>${six}</section>`+standFull(s)]],{L:s,title:'주간 리그',pill:esc(tierName(s.tier))})} // 구단 설정·백업·초기화는 홈 화면 아래(ui2 vHome)
+  return lgPage('lg',[['ofc','감독실',tb=>ofcHTML(s,{right:tb,key:'lg',title:'주간 리그',pill:esc(tierName(s.tier)),sixT:'리그 진행',six,idle:s.over?`<p class="note">이번 주 리그 종료 · ${s.rank}위</p><p>다음 리그 <b>${md(nxt)}(월) 0시</b> · ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)} 승급`:'재도전'}</p>`:''})],['lu','라인업',()=>myTeamHTML(s,'lg')],['sc','일정',()=>(pr?`<section class="hero">${muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto')}</section>`:'')+lastRes(s)+gamesHTML(s)],['st','기록실',()=>teamStatsHTML(s)+(statsHTML(s)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(s)],['lg','리그 정보',()=>`<section class="band"><h3>리그 진행</h3>${six}</section>`+standFull(s)]],{L:s,title:'주간 리그',pill:esc(tierName(s.tier))})} // 구단 설정·백업·초기화는 홈 화면 아래(ui2 vHome)
 function vYears(){useMode('yl');const L=S.yl,won=S.ylWon||{};ranked();
   if(L&&!L.done){const pr=curPair(L),c=L.post&&L.post.cur,nx=ylNextAt(Date.now()),hm=t=>{const d=new Date(t+H9);return `${md(t)} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
     const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`;
     const six=`<p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p><p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p><div class="btns" style="margin-top:10px">${pr&&!L.post?`<button data-a="m-torest" title="휴식 라운드나 포스트시즌 직전, 최대 ${YL_RUN_MAX}경기까지 결과만 보기로 이어서 진행">다음 휴식일까지 자동</button>`:''}<button data-a="m-quit" class="ghost">이 리그 포기</button></div>`;
     return lgPage('yl',[['ofc','감독실',tb=>ofcHTML(L,{right:tb,key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 넘어가요">휴식 넘기기</button></div>`})],['lu','라인업',()=>myTeamHTML(L,'yl')],['sc','일정',()=>`<section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
-          ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}</section>`+lastRes(L)+gamesHTML(L)],['st','기록실',()=>(statsHTML(L)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(L)+asHTML(L)],['lg','리그 정보',()=>`<section class="band"><h3>시즌 진행</h3>${six}</section>${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${standFull(L,L.post?'정규시즌 최종 순위':'순위표')}`]],{L,title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌'})}
+          ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}</section>`+lastRes(L)+gamesHTML(L)],['st','기록실',()=>teamStatsHTML(L)+(statsHTML(L)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(L)+asHTML(L)],['lg','리그 정보',()=>`<section class="band"><h3>시즌 진행</h3>${six}</section>${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${standFull(L,L.post?'정규시즌 최종 순위':'순위표')}`]],{L,title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌'})}
   const Y=YL_YEARS(),res=L&&L.done?`<section class="band"><h3>${L.year} 리그 결과</h3><p>정규시즌 ${L.rank}위 · 우승 <b>${esc(tname(L.champ,L))}</b>${L.champ===0?' (우승)':''}</p>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>${tableHTML(L,'정규시즌 최종 순위')}${titleHTML(L)}${asHTML(L)}`:'';
   return `<section class="hero"><h1>연도별 리그</h1><p class="mini" title="그해 실제 구단들과 팀당 144경기 + 포스트시즌. 08~23시 15분마다 자동 진행(약 2~3일). 숫자는 구단 수·평균 전력">144경기 · 15분마다 자동 · 우승 ${Object.keys(won).length}/${Y.length}</p>
    <div class="tabs ylf" role="tablist" aria-label="우승 여부">${[['all','전체 '+Y.length],['not','미우승 '+Y.filter(y=>!won[y]).length],['won','우승 '+Y.filter(y=>won[y]).length]].map(([k,n])=>`<button role="tab" aria-selected="${(S.ylF||'all')===k}" class="${(S.ylF||'all')===k?'on':''}" data-a="m-ylf" data-v="${k}">${n}</button>`).join('')}</div>
@@ -3434,7 +3455,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='1b9861c904';
+const BUILD='e45bd89174';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
@@ -3460,7 +3481,7 @@ addEventListener('hashchange',()=>{closePops();render();scrollTo(0,0)});
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#nav a,#tabbar a,#nav button,#tabbar button')&&S&&(S.modal||S.dexView||S.bmodal)){closePops();render()}},true);
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['lgtab','mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['tsk','tss','lgtab','mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -3488,6 +3509,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='theme'){S.theme=b.dataset.v||'';S.setbOpen=1;save();render()}
   else if(a==='work'){S.work=!S.work;save();render()}
   else if(a==='mssub'){S.msSub={line:b.dataset.line,sel:{}};S.msMsg='';render()}
+  else if(a==='tsk'){S.tsK=b.dataset.k;S.tsS='';render()}else if(a==='tss'){S.tsS=b.dataset.k;render()}
   else if(a==='lgtab'){S['lgTab_'+b.dataset.g]=b.dataset.k;render();scrollTo(0,0)}
   else if(a==='mstab'){S.msTab=b.dataset.k;S.dexLim=0;render()}
   else if(a==='msclose'){S.msSub=null;render()}
