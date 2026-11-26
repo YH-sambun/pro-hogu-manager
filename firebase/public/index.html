@@ -2653,6 +2653,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126q',d:'2026-11-26',t:'리그 화면 탭 나누기',b:['주간·연도별 리그 화면 위에 탭이 생겼어요. 감독실, 매치업(연도별은 선발·예상), 내 팀 기록, 경기 결과, 선수 기록, 순위표를 한 화면에 하나씩 넘겨 봐요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126p',d:'2026-11-26',t:'업무 모드 대박 카드 알림',b:['업무 모드에서는 대박 카드가 나와도 전면 팝업 대신 화면 오른쪽 아래에 한 줄로 잠깐 떴다 사라져요. R이나 1로 연타해서 계속 뽑을 수 있어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126o',d:'2026-11-26',t:'키보드 단축키',b:['숫자 1~9: 화면 버튼 오른쪽 위에 적힌 번호를 누르면 그 버튼이 눌려요. 합성은 1 자동 추천 · 2 합성하기 · 3 재료 비우기, 리그는 1 경기 시작 · 2 결과만 보기, 라인업은 1 추천 · 2 덱으로 저장 · 3 타선 분석 · 4 배터리 분석, 상점은 1 팩 열기.','F1~F4: 하위 탭 넘기기(예: 카드 메뉴에서 F1 합성 · F2 유학 · F3 도감 · F4 미션).','Shift+1~5: 위 메뉴 홈 · 경기 · 팀 · 카드 · 상점.'],rw:{tix:{pk_n:10}}},
  {id:'n1126n',d:'2026-11-26',t:'라인업을 덱으로 저장 · 덱 짜보기 → 덱',b:['라인업 화면 왼쪽 위에 덱 이름을 쓰고 "덱으로 저장"을 누르면 지금 라인업이 덱으로 저장돼요. 고른 덱이 있으면 "덮어쓰기"도 바로 할 수 있어요.','팀 메뉴의 "덱 짜보기"는 "덱"으로 이름을 바꿨어요.'],rw:{tix:{pk_n:10}}},
@@ -3064,19 +3065,21 @@ function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),
    ${e.length?`<p class="warn">${esc(e[0])} · <a href="#lineup">라인업 수정</a></p>`:''}</div>
    <div class="side"><small>홈 · 평균 ${teamOvr(H)}</small><h2>${esc(tname(pr[1],L))}</h2>${sp(H)?cardHTML(sp(H),{cond:pr[1]===0?S.cond[sp(H).id]:0}):''}</div></div>`}
 function ladderHTML(s){return `<div class="btns" style="flex-wrap:wrap;margin-top:8px" aria-label="리그 단계">${TIERS.map((t,i)=>`<span class="chip lad ${i+1===s.tier?'cur':i+1<=(S.lgBest||1)?'done':'todo'}">${i+1<s.tier||(i+1!==s.tier&&i+1<=(S.lgBest||1))?'✓ ':''}${i+1}. ${t.n}</span>`).join('')}</div>`}
+// 리그 화면 탭(SJ 2026-11-26): 감독실 판 + 상세는 탭으로 나눠 한 화면에 하나씩
+function standFull(L,t){const o=S.showStand;S.showStand=1;const h=tableHTML(L,t);S.showStand=o;return h.replace(/<button class="ghost" data-a="m-stand"[^>]*>접기<\/button>/,'')}
+function lgPage(key,T){const o=T.find(t=>t[0]===S['lgTab_'+key])||T[0];return `<div class="subnav lgtabs" role="tablist">${T.map(([k,n])=>`<button role="tab" aria-selected="${k===o[0]}" class="${k===o[0]?'on':''}" data-a="lgtab" data-g="${key}" data-k="${k}">${n}</button>`).join('')}</div>${(['st','tb'].includes(o[0])?o[2]().replace(/<details(?![^>]*\bopen\b)/,'<details open'):o[2]())}`}
 function vSeason(){
   weekTick();useMode('lg');const s=S.season,T=S.team,nxt=s.wk+7*864e5;
   const head=`<p class="mini" title="${esc(TIER_DESC[s.tier-1])} · 주가 끝나면 남은 경기는 결과만 처리(보상 없음)">${wkLabel(s.wk)} · ${s.tier<10?`1위면 <b>${tierName(s.tier+1)}</b> 승급`:'최고 단계'}</p>${ladderHTML(s)}`;
   const pr=s.over?null:curPair(s),six=head+(s.over?`<p style="margin:8px 0 0"><b>${tierName(s.tier)} 종료 · ${s.rank}위</b></p><p>다음 리그 <b>${md(nxt)}(월) 0시</b> · ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)} 승급`:'재도전'}</p>`:`<p class="note" style="margin:8px 0 0">남은 경기 ${s.sched.length-s.round} · 주가 끝나면 남은 경기는 결과만 처리</p>`);
   // SJ 2026-11-26: 리그 화면 첫머리 = 감독실 3×2 판, 나머지 상세는 접어 둠
-  return ofcHTML(s,{key:'lg',title:'주간 리그',pill:esc(tierName(s.tier)),sixT:'리그 진행',six,idle:s.over?`<p class="note">이번 주 리그 종료 · ${s.rank}위</p><p>다음 리그 <b>${md(nxt)}(월) 0시</b> · ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)} 승급`:'재도전'}</p>`:''})+`<details class="band ofmore"${S.ofMore?' open':''}><summary><b>매치업 · 내 팀 기록 · 전체 경기</b></summary>${pr?`<section class="hero">${muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto')}</section>`:''}${myTeamHTML(s,'lg')}${lastHTML(s)}${tableHTML(s)}${s.over?titleHTML(s):''}</details>`} // 구단 설정·백업·초기화는 홈 화면 아래(ui2 vHome)
+  return lgPage('lg',[['ofc','감독실',()=>ofcHTML(s,{key:'lg',title:'주간 리그',pill:esc(tierName(s.tier)),sixT:'리그 진행',six,idle:s.over?`<p class="note">이번 주 리그 종료 · ${s.rank}위</p><p>다음 리그 <b>${md(nxt)}(월) 0시</b> · ${s.rank===1&&s.tier<10?`${tierName(s.tier+1)} 승급`:'재도전'}</p>`:''})],['mu','매치업',()=>pr?`<section class="hero">${muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto')}</section>`:'<section class="band"><p class="note">다음 경기 없음</p></section>'],['my','내 팀 기록',()=>myTeamHTML(s,'lg')],['gm','경기 결과',()=>lastRes(s)+gamesHTML(s)],['st','선수 기록',()=>statsHTML(s)],['tb','순위표',()=>standFull(s)+(s.over?titleHTML(s):'')]])} // 구단 설정·백업·초기화는 홈 화면 아래(ui2 vHome)
 function vYears(){useMode('yl');const L=S.yl,won=S.ylWon||{};ranked();
   if(L&&!L.done){const pr=curPair(L),c=L.post&&L.post.cur,nx=ylNextAt(Date.now()),hm=t=>{const d=new Date(t+H9);return `${md(t)} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
     const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`;
     const six=`<p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p><p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p><div class="btns" style="margin-top:10px">${pr&&!L.post?`<button data-a="m-torest" title="휴식 라운드나 포스트시즌 직전, 최대 ${YL_RUN_MAX}경기까지 결과만 보기로 이어서 진행">다음 휴식일까지 자동</button>`:''}<button data-a="m-quit" class="ghost">이 리그 포기</button></div>`;
-    return ofcHTML(L,{key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 넘어가요">휴식 넘기기</button></div>`})
-     +`<details class="band ofmore"${S.ofMore?' open':''}><summary><b>투수 피로 · 예상 · 내 팀 기록 · 전체 경기</b></summary><section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
-          ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}</section>${myTeamHTML(L,'yl')}${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${lastHTML(L)}${tableHTML(L,L.post?'정규시즌 최종 순위':'순위표')}${titleHTML(L)}${asHTML(L)}</details>`}
+    return lgPage('yl',[['ofc','감독실',()=>ofcHTML(L,{key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 넘어가요">휴식 넘기기</button></div>`})],['ft','선발·예상',()=>`<section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
+          ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}</section>`],['my','내 팀 기록',()=>myTeamHTML(L,'yl')],['gm','경기 결과',()=>lastRes(L)+gamesHTML(L)],['st','선수 기록',()=>statsHTML(L)],['tb','순위·타이틀',()=>`${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${standFull(L,L.post?'정규시즌 최종 순위':'순위표')}${titleHTML(L)}${asHTML(L)}`]])}
   const Y=YL_YEARS(),res=L&&L.done?`<section class="band"><h3>${L.year} 리그 결과</h3><p>정규시즌 ${L.rank}위 · 우승 <b>${esc(tname(L.champ,L))}</b>${L.champ===0?' (우승)':''}</p>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>${tableHTML(L,'정규시즌 최종 순위')}${titleHTML(L)}${asHTML(L)}`:'';
   return `<section class="hero"><h1>연도별 리그</h1><p class="mini" title="그해 실제 구단들과 팀당 144경기 + 포스트시즌. 08~23시 15분마다 자동 진행(약 2~3일). 숫자는 구단 수·평균 전력">144경기 · 15분마다 자동 · 우승 ${Object.keys(won).length}/${Y.length}</p>
    <div class="tabs ylf" role="tablist" aria-label="우승 여부">${[['all','전체 '+Y.length],['not','미우승 '+Y.filter(y=>!won[y]).length],['won','우승 '+Y.filter(y=>won[y]).length]].map(([k,n])=>`<button role="tab" aria-selected="${(S.ylF||'all')===k}" class="${(S.ylF||'all')===k?'on':''}" data-a="m-ylf" data-v="${k}">${n}</button>`).join('')}</div>
@@ -3167,7 +3170,7 @@ function dsRun(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8fe0'
       for(const p of g.px[s]){const x=R.pit[d][p.c.id]=R.pit[d][p.c.id]||{c:p.c,g:0,outs:0,r:0,k:0,bb:0,h:0};x.g++;x.outs+=p.outs;x.r+=p.r;x.k+=p.k;x.bb+=p.bb;x.h+=p.h}}
     if(g.res<0)R.t++;else R.w[side[g.res]]++;G.push(dsRec(g,away));
     if(i===n-1)R.last={away,sc:g.sc,log:hlOf(g,[away,home]).log}}
-  const P=S.dsPred;if(P&&P.key===dsKey()&&P.pick!=null){const x=P.opts[P.pick],hit=dsTest(x,dsStat(G));let msg=hit?'예측 적중':'예측 실패';
+  const P=S.dsPred;if(P&&P.key===dsKey()&&P.pick!=null&&dsDay().tr<DS_TRY_DAY){S.dsIt.tr++;const x=P.opts[P.pick],hit=dsTest(x,dsStat(G));let msg=hit?'예측 적중':'예측 실패';
     if(hit){const t=dsGive(x);if(t)msg+=' · '+t}R.pred={label:x.label,hit,msg}}
   S.dsPred=null;S.dsRes=R;save()}
 // 덱 대결 예측(SJ 2026-11-26): 매번 무작위 3개(종류·기준값 랜덤). 보상은 적중 확률에 반비례(미리 30경기 몰래 돌려 부트스트랩으로 확률 추정) → 뻔한 예측은 적게, 어려운 예측은 많이. 연도 리그 예측과 같은 하루 상한
@@ -3184,10 +3187,11 @@ const DS_TY=[['w',n=>{const k=Math.max(1,Math.round(n*(.35+Math.random()*.4)));r
   ['big',n=>{const k=Math.max(1,Math.round(n*Math.random()*.25));return [k,k===1?'10득점 경기 1번 이상':`10득점 경기 ${k}번 이상`]}],
   ['mx',n=>{const k=5+Math.floor(Math.random()*6);return [k,`${k}점 차 이상 승리 1번 이상`]}]];
 // 예측 보상 종류(SJ 2026-11-26): 포인트만이 아니라 스킬 블록·서포트·작전 카드도. 어려울수록(확률 낮을수록) 등급이 높음. 아이템 보상은 하루 DS_ITEM_DAY개까지(넘으면 포인트로)
-const DS_ITEM_DAY=6;
+const DS_ITEM_DAY=6,DS_TRY_DAY=10; // 예측은 하루 10번까지(맞든 틀리든). 어려운 보상만 골라 무한히 찍는 것 방지
+const dsDay=()=>{const d=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);S.dsIt=S.dsIt&&S.dsIt.day===d?S.dsIt:{day:d,n:0,tr:0};S.dsIt.tr=S.dsIt.tr||0;return S.dsIt};
 function dsRw(p){const u=Math.random();if(p>.6||u<.4)return {k:'pt'};if(u<.65)return {k:'blk',g:p<.12?'A':p<.35?'B':'C'};if(u<.83)return {k:'sup'};return {k:'tc',g:p<.15?'특수':'일반'}}
 const dsRwTxt=x=>!x.rw||x.rw.k==='pt'?`${x.pt}P`:x.rw.k==='blk'?`${x.rw.g}급 스킬 블록`:x.rw.k==='sup'?'서포트 카드':`${x.rw.g} 작전 카드`;
-function dsGive(x){const d=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);S.dsIt=S.dsIt&&S.dsIt.day===d?S.dsIt:{day:d,n:0};
+function dsGive(x){dsDay();
   if(x.rw&&x.rw.k!=='pt'&&S.dsIt.n<DS_ITEM_DAY){S.dsIt.n++;
     if(x.rw.k==='blk'){const b=gainBlock(null,x.rw.g);return `${x.rw.g}급 ${b.t==='B'?'타자':'투수'}용 ${bname(b)}`}
     if(x.rw.k==='sup'){const c=pick(SUPS.filter(t=>!t[0].endsWith('+')));S.sq[c[0]]=(S.sq[c[0]]||0)+1;return '서포트 카드 '+c[1]}
@@ -3200,8 +3204,8 @@ function dsPredGen(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8
     const [th,label]=gen(n),x={ty,th,label},p=boot.filter(t=>dsTest(x,t)).length/boot.length;if(p<.04||p>.92)continue;
     used.add(ty);opts.push({...x,p,pt:Math.max(10,Math.min(300,Math.round((10+25*(1-p)/p)/5)*5)),rw:dsRw(p)})}
   return {key:dsKey(),opts,pick:null}}
-function dsPredHTML(){let P=S.dsPred;if(!P||P.key!==dsKey()){P=S.dsPred=dsPredGen();if(!P)return ''}if(!P.opts.length)return '';
-  return `<div class="btns pred" style="justify-content:center" aria-label="덱 대결 예측 고르기"><small>예측</small>${P.opts.map((x,i)=>`<button data-a="ds-pred" data-i="${i}" class="${P.pick===i?'big':'ghost'}" aria-pressed="${P.pick===i}" title="적중 확률 약 ${Math.round(x.p*100)}%">${esc(x.label)} · ${esc(dsRwTxt(x))}</button>`).join('')}<button class="ghost" data-a="ds-reroll" title="예측 선택지 다시 뽑기">새로 뽑기</button></div>
+function dsPredHTML(){if(dsDay().tr>=DS_TRY_DAY)return `<p class="note" style="text-align:center">오늘 예측 ${DS_TRY_DAY}번을 다 썼어요. 시뮬레이션은 계속 할 수 있어요.</p>`;let P=S.dsPred;if(!P||P.key!==dsKey()){P=S.dsPred=dsPredGen();if(!P)return ''}if(!P.opts.length)return '';
+  return `<div class="btns pred" style="justify-content:center" aria-label="덱 대결 예측 고르기"><small>예측 (오늘 ${DS_TRY_DAY-S.dsIt.tr}번 남음)</small>${P.opts.map((x,i)=>`<button data-a="ds-pred" data-i="${i}" class="${P.pick===i?'big':'ghost'}" aria-pressed="${P.pick===i}">${esc(x.label)} · ${esc(dsRwTxt(x))}</button>`).join('')}<button class="ghost" data-a="ds-reroll" title="예측 선택지 다시 뽑기">새로 뽑기</button></div>
    <p class="note" style="text-align:center;margin:4px 0 0">하나 골라 두고 시뮬레이션하면 결과로 판정해요. 어려운 예측일수록 보상이 커요. 포인트는 연도 리그 예측과 같은 하루 상한, 블록·서포트·작전 카드는 하루 ${DS_ITEM_DAY}개까지예요.</p>`}
 function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.decks[0].id:'m:yl',n:10},O=dsOpts(),R=S.dsRes,f3=v=>v.toFixed(3).replace(/^0/,'');
   const sel=(k)=>`<select data-ds="${k}" aria-label="${k==='a'?'내 덱':'상대 덱'}">${O.map(([v,nm])=>`<option value="${esc(v)}"${o[k]===v?' selected':''}>${esc(nm)}</option>`).join('')}</select>`;
@@ -3420,7 +3424,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='be134fa3c7';
+const BUILD='bfb40eb8fc';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
@@ -3446,7 +3450,7 @@ addEventListener('hashchange',()=>{closePops();render();scrollTo(0,0)});
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#nav a,#tabbar a,#nav button,#tabbar button')&&S&&(S.modal||S.dexView||S.bmodal)){closePops();render()}},true);
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['lgtab','mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -3474,6 +3478,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='theme'){S.theme=b.dataset.v||'';S.setbOpen=1;save();render()}
   else if(a==='work'){S.work=!S.work;save();render()}
   else if(a==='mssub'){S.msSub={line:b.dataset.line,sel:{}};S.msMsg='';render()}
+  else if(a==='lgtab'){S['lgTab_'+b.dataset.g]=b.dataset.k;render();scrollTo(0,0)}
   else if(a==='mstab'){S.msTab=b.dataset.k;S.dexLim=0;render()}
   else if(a==='msclose'){S.msSub=null;render()}
   else if(a==='msopt'){S.opt=S.opt||{};S.opt.submitLast=!S.opt.submitLast;save();render()}
