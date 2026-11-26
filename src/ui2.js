@@ -37,6 +37,8 @@ function useMode(k){const cur=S.teamK||'lg';if(cur===k)return;syncTeam();S.mt=S.
 const modeTeam=k=>{syncTeam();if(k===(S.teamK||'lg')||!(S.mt||{})[k]){if(k!==(S.teamK||'lg')&&!(S.mt||{})[k]){const d=modeDeck(k);if(d)return {...S.team,...JSON.parse(JSON.stringify(d.t))}}return S.team}
   const m=S.mt[k];return {...S.team,...Object.fromEntries(MT_KEYS.filter(x=>m[x]!==null).map(x=>[x,JSON.parse(JSON.stringify(m[x]))]))}};
 const userT=m=>({...clean(modeTeam(m!==undefined?MODEK(m):(S.teamK||'lg'))),color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{},eq:eqMap()});
+// SJ 2026-11-26: 라인업은 각 리그 화면의 라인업 탭에서. #lineup은 지금 리그(S.teamK)의 라인업을 바로 엶(친구 리그·홈 바로가기용)
+function luHead(){const k=S.teamK||'lg',H={lg:'season',yl:'years',on:'online'};return `<div class="tools mttabs" style="margin-bottom:8px"><b>${MODEN[k]} 라인업</b><a href="#${H[k]}" class="note">${MODEN[k]} 화면으로 →</a></div>`}
 function mtTabs(){const k=S.teamK||'lg';return `<div class="tools mttabs" style="margin-bottom:8px"><b>편집 중인 라인업</b><div class="tabs" role="tablist">${Object.entries(MODEN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-a="mt-k" data-k="${x}">${n}</button>`).join('')}</div><small>리그마다 라인업이 따로 저장돼요</small></div>`}
 const eqMap=()=>{const o={};if(typeof ECON!=='undefined'&&ECON.cardEq)for(const it of S.eq||[])if(it.on&&!o[it.on])o[it.on]=ECON.cardEq(S,it.on,byId);return o}; // 장착 장비 보너스(카드id→{능력:+n}), 경기 능력치에 더함
 const starters=T=>{T=clean(T);return [...T.lineup.map(x=>x.id),...T.rot,...T.pen].filter(Boolean).map(id=>byId[id])};
@@ -232,7 +234,7 @@ function ofcHTML(L,cfg){if(!L||!L.teams)return '';cfg=cfg||{};const f3=v=>v.toFi
  const ld=(t,arr,fmt)=>arr.length?`<tr><td>${t}</td><td><b>${nm(arr[0])}</b></td><td class="v">${fmt(arr[0])}</td><td class="n2">${arr[1]?nm(arr[1])+' '+fmt(arr[1]):''}</td></tr>`:'';
  const B=P.filter(r=>r.ab>0),Pi=P.filter(r=>r.outs>0),qa=B.filter(r=>r.ab+r.bb>=gp*2),qe=Pi.filter(r=>r.outs>=gp*2);
  const lead=P.length?`<table class="ofldt">${[ld('타율',qa.slice().sort((a,b)=>b.h/b.ab-a.h/a.ab),r=>f3(r.h/r.ab)),ld('홈런',B.filter(r=>r.hr).sort((a,b)=>b.hr-a.hr),r=>r.hr),ld('타점',B.filter(r=>r.rbi).sort((a,b)=>b.rbi-a.rbi),r=>r.rbi),ld('도루',B.filter(r=>r.sb).sort((a,b)=>b.sb-a.sb),r=>r.sb),ld('평균자책',qe.slice().sort((a,b)=>a.er/a.outs-b.er/b.outs),r=>(r.er*27/r.outs).toFixed(2)),ld('승',Pi.filter(r=>r.w).sort((a,b)=>b.w-a.w),r=>r.w),ld('탈삼진',Pi.filter(r=>r.so).sort((a,b)=>b.so-a.so),r=>r.so),ld('세이브',Pi.filter(r=>r.sv).sort((a,b)=>b.sv-a.sv),r=>r.sv)].join('')}</table>`:'<p class="note">이번 시즌 기록 없음</p>';
- const stand=`<table class="tbl ofst"><thead><tr><th></th><th class="l">구단</th><th>승</th><th>패</th><th>승률</th><th>차</th></tr></thead><tbody>${R.map((x,k)=>`<tr class="${x.i===0?'me':''}"><td>${k+1}</td><td class="l"><i class="dot" style="background:${x.i===0?'var(--clay)':L.teams[x.i].color}"></i>${esc(tname(x.i,L))}</td><td>${x.w}</td><td>${x.l}</td><td>${x.w+x.l?f3(x.pct):'-'}</td><td>${k?gb(x).toFixed(1):'-'}</td></tr>`).join('')}</tbody></table>`;
+ const stand=`<table class="tbl ofst"><thead><tr><th></th><th class="l">구단</th><th>승</th><th>패</th><th>승률</th><th>차</th></tr></thead><tbody>${R.map((x,k)=>`<tr class="${x.i===0?'me':''}"><td>${k+1}</td><td class="l"><i class="dot" style="background:${x.i===0?'var(--clay)':L.teams[x.i].color}"></i>${tvLink(x.i,L)}</td><td>${x.w}</td><td>${x.l}</td><td>${x.w+x.l?f3(x.pct):'-'}</td><td>${k?gb(x).toFixed(1):'-'}</td></tr>`).join('')}</tbody></table>`;
  const rec5={};for(const x of G.slice(-5)){const si=x.a===0?0:x.h===0?1:-1;if(si<0||!x.bx)continue;for(const b of x.bx[si]){const o=rec5[b[0]]=rec5[b[0]]||{n:b[0],ab:0,h:0,hr:0};o.ab+=b[2];o.h+=b[3];o.hr+=b[4]}}
  const R5=Object.values(rec5).filter(o=>o.ab>=3),hot=R5.slice().sort((a,b)=>b.h/b.ab-a.h/a.ab||b.hr-a.hr).slice(0,3),cold=R5.slice().sort((a,b)=>a.h/a.ab-b.h/b.ab).filter(o=>!hot.includes(o)).slice(0,3);
  const regs=[...new Set([...S.lu.map(x=>x[1]),...S.bench,...S.rot,...S.pen].filter(Boolean))].map(id=>byId[id]).filter(Boolean),cHot=regs.filter(c=>condOf(c)>=5).slice(0,3),cCold=regs.filter(c=>condOf(c)<=1).slice(0,3);
@@ -1139,10 +1141,10 @@ function vMission0(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section c
     <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${mid==='m3'?' · EX 조각 1':''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
     <p class="note msr">3개 → EX 확정권 · 5개 → 전설 장비 + ${ch.mx.length?rnName(ch.line)+' 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
 // ===== 화면 전환 =====
-const ROUTES={lineup:()=>mtTabs()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,shop_sp:vShop,shop_tc:vShop,shop_b:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder,dsim:vDsim};
+const ROUTES={lineup:()=>luHead()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,shop_sp:vShop,shop_tc:vShop,shop_b:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder,dsim:vDsim};
 const LEG=new Set(['season','years','online','game','cards']);
-const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['dsim','덱 대결'],['game','경기장']],team:[['lineup','라인업'],['builder','덱'],['skill','스킬'],['cards','보유 카드']],cards:[['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']],store:[['shop','선수 카드팩'],['shop_sp','서포트'],['shop_tc','작전'],['shop_b','스킬 블록']]};
-const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
+const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['dsim','덱 대결'],['game','경기장']],team:[['builder','덱'],['skill','스킬'],['cards','보유 카드']],cards:[['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']],store:[['shop','선수 카드팩'],['shop_sp','서포트'],['shop_tc','작전'],['shop_b','스킬 블록']]};
+const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
 const BUILD='__BUILD__';
@@ -1171,7 +1173,7 @@ addEventListener('hashchange',()=>{closePops();render();scrollTo(0,0)});
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#nav a,#tabbar a,#nav button,#tabbar button')&&S&&(S.modal||S.dexView||S.bmodal)){closePops();render()}},true);
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['tsk','tss','lgtab','mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['tview','tvx','tsk','tss','lgtab','mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -1200,7 +1202,8 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='work'){S.work=!S.work;save();render()}
   else if(a==='mssub'){S.msSub={line:b.dataset.line,sel:{}};S.msMsg='';render()}
   else if(a==='tsk'){S.tsK=b.dataset.k;S.tsS='';render()}else if(a==='tss'){S.tsS=b.dataset.k;render()}
-  else if(a==='lgtab'){S['lgTab_'+b.dataset.g]=b.dataset.k;render();scrollTo(0,0)}
+  else if(a==='tview'){S['tv_'+b.dataset.g]=+b.dataset.i;render();scrollTo(0,0)}else if(a==='tvx'){S['tv_'+b.dataset.g]=null;render()}
+  else if(a==='lgtab'){S['tv_'+b.dataset.g]=null;S['lgTab_'+b.dataset.g]=b.dataset.k;render();scrollTo(0,0)}
   else if(a==='mstab'){S.msTab=b.dataset.k;S.dexLim=0;render()}
   else if(a==='msclose'){S.msSub=null;render()}
   else if(a==='msopt'){S.opt=S.opt||{};S.opt.submitLast=!S.opt.submitLast;save();render()}
