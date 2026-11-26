@@ -916,7 +916,10 @@ setInterval(()=>{if(!document.hidden&&!VERNEW)verCheck(true)},15*60*1000);
 const verBanner=()=>VERNEW?`<div class="verb" role="status">새 버전이 나왔어요 <button data-a="vercheck">새로고침</button></div>`:'';
 // 대박 연출(SJ 2026-11-26): 9·10코스트, 골든글러브·올스타(EX·커리어하이·영구결번 포함)가 나오면 전면 팝업. 탭할 때마다 다음 카드
 const HIREV=c=>!!c&&(c.cost>=9||['GG','AS','EX','CH','RN'].includes(c.v));let revSeen=null;
-function revQueue(ids){const L=ids.map(id=>by[id]||byId[id]).filter(HIREV).map(c=>c.id);if(L.length)S.reveal=[...(S.reveal||[]),...L]}
+function revQueue(ids){const L=ids.map(id=>by[id]||byId[id]).filter(HIREV).map(c=>c.id);if(!L.length)return;if(S.work){revFlash(L);return}S.reveal=[...(S.reveal||[]),...L]}
+// 업무 모드(SJ 2026-11-26): 전면 팝업 대신 화면 아래쪽에 한 줄로 떴다 사라짐 · 연타 뽑기를 막지 않음
+let revFT=0;function revFlash(L){let el=document.getElementById('revfl');if(!el){el=document.createElement('div');el.id='revfl';el.setAttribute('aria-live','polite');document.body.appendChild(el)}
+ el.innerHTML=L.map(id=>{const c=byId[id];return c?`<div>★ ${c.year} ${esc(c.team)} ${esc(c.name)}${c.v?' · '+esc(VN[c.v]||c.v):''} · 코스트 ${c.cost} · 능력 ${c.ovr}</div>`:''}).join('');el.classList.remove('off');void el.offsetWidth;el.classList.add('on');clearTimeout(revFT);revFT=setTimeout(()=>{el.classList.remove('on');el.classList.add('off')},2600)}
 function revTag(c){const t=[];if(c.v==='EX')t.push('EX');else if(c.v==='GG')t.push('골든글러브');else if(c.v==='AS')t.push('올스타');else if(c.v==='CH')t.push('커리어하이');else if(c.v==='RN')t.push('영구결번');if(c.cost>=10)t.push('10코스트');else if(c.cost>=9)t.push('9코스트 레전드');return t.join(' · ')+'!'}
 function revealHTML(){const c=by[S.reveal[0]]||byId[S.reveal[0]];if(!c){S.reveal.shift();return S.reveal.length?revealHTML():''}const n=S.reveal.length;
  return `<div class="modal reveal${c.cost>=10||c.v==='EX'?' r10':''}" data-revx="1" role="dialog" aria-modal="true" aria-label="${esc(revTag(c))} ${esc(c.name)}"><div class="revbox"><div class="revtag">${esc(revTag(c))}</div><div class="revcard">${card(c,{full:1})}</div><p class="revn">${esc(c.year+' '+c.team+' '+c.name)}<br><small>${n>1?`탭하면 다음 (${n-1}장 더)`:'탭해서 닫기'}</small></p></div></div>`}
