@@ -28,7 +28,16 @@ const deckIds=t=>[...(t.lineup||[]).map(x=>x.id),...(t.bench||[]),...(t.rot||[])
 const deckOk=d=>d&&deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))&&!exErr(deckIds(d.t)).length; // EX 타자1·투수1 넘는 저장 덱은 모드에 쓰지 않음
 const modeDeck=m=>{const id=(S.modeDeck||{})[MODEK(m)],d=(S.decks||[]).find(x=>x.id===id);return deckOk(d)?d:null};
 const snapT=()=>{syncTeam();const T=S.team;return JSON.parse(JSON.stringify({lineup:T.lineup,bench:T.bench,rot:T.rot,pen:T.pen,mgr:T.mgr,tsel:T.tsel,fxsel:T.fxsel||[]}))};
-const userT=m=>{syncTeam();const d=m!==undefined?modeDeck(m):null;return {...clean({...S.team,...(d?JSON.parse(JSON.stringify(d.t)):{})}),color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{},eq:eqMap()}};
+// 리그별 라인업(SJ 2026-11-26, OOTP식): 주간(lg)·연도별(yl)·친구(on) 리그가 각자 라인업·투수진·감독·작전을 따로 가짐.
+// S.team은 지금 편집 중인 리그(S.teamK)의 것이고, 나머지 리그 것은 S.mt[k]에 보관. 이름·서포트 카드 등은 공유
+const MT_KEYS=['lineup','bench','rot','pen','mgr','tsel','fxsel','rotIdx'],mtPick=o=>JSON.parse(JSON.stringify(Object.fromEntries(MT_KEYS.map(x=>[x,o[x]===undefined?null:o[x]]))));
+function useMode(k){const cur=S.teamK||'lg';if(cur===k)return;syncTeam();S.mt=S.mt||{};S.mt[cur]=mtPick(S.team);
+  let n=S.mt[k];if(!n){const d=modeDeck(k);n=d?mtPick({...S.team,...d.t}):mtPick(S.team)} // 처음 여는 리그: 예전 '모드별 덱'이 있으면 그걸로, 없으면 지금 라인업 복사
+  for(const x of MT_KEYS)if(n[x]!==null)S.team[x]=JSON.parse(JSON.stringify(n[x]));S.teamK=k;if(S.__ui)pullTeam()}
+const modeTeam=k=>{syncTeam();if(k===(S.teamK||'lg')||!(S.mt||{})[k]){if(k!==(S.teamK||'lg')&&!(S.mt||{})[k]){const d=modeDeck(k);if(d)return {...S.team,...JSON.parse(JSON.stringify(d.t))}}return S.team}
+  const m=S.mt[k];return {...S.team,...Object.fromEntries(MT_KEYS.filter(x=>m[x]!==null).map(x=>[x,JSON.parse(JSON.stringify(m[x]))]))}};
+const userT=m=>({...clean(modeTeam(m!==undefined?MODEK(m):(S.teamK||'lg'))),color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{},eq:eqMap()});
+function mtTabs(){const k=S.teamK||'lg';return `<div class="tools mttabs" style="margin-bottom:8px"><b>편집 중인 라인업</b><div class="tabs" role="tablist">${Object.entries(MODEN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-a="mt-k" data-k="${x}">${n}</button>`).join('')}</div><small>리그마다 라인업이 따로 저장돼요</small></div>`}
 const eqMap=()=>{const o={};if(typeof ECON!=='undefined'&&ECON.cardEq)for(const it of S.eq||[])if(it.on&&!o[it.on])o[it.on]=ECON.cardEq(S,it.on,byId);return o}; // 장착 장비 보너스(카드id→{능력:+n}), 경기 능력치에 더함
 const starters=T=>{T=clean(T);return [...T.lineup.map(x=>x.id),...T.rot,...T.pen].filter(Boolean).map(id=>byId[id])};
 const regCards=T=>{T=clean(T);return [...starters(T),...T.bench.map(id=>byId[id])].filter(Boolean)};
@@ -573,7 +582,7 @@ function presetBar(){const D=S.decks||[],M=S.modeDeck||{},cur=S.deckSel&&D.find(
  return `<div class="box presets"><div class="tools"><b style="margin-right:4px">덱 저장</b><select id="decksel" aria-label="저장한 덱">${opt('','저장한 덱 고르기',S.deckSel)}${D.map(d=>opt(d.id,d.name+' · '+deckMgr(d)+deckTag(d),S.deckSel)).join('')}</select>${cur?`<label class="mdk">감독 <select id="deckmgr" aria-label="이 덱의 감독">${MG.map(m=>opt(m.id,m.n,cur.t.mgr||S.team.mgr)).join('')}</select></label>`:''}
  <button data-a="deckload" ${cur?'':'disabled'}>불러오기</button><button class="ghost" data-a="decksave" ${cur?'':'disabled'}>덮어쓰기</button><button class="ghost" data-a="deckren" ${cur?'':'disabled'} title="오른쪽 이름 칸에 쓴 이름으로 바꿔요">이름 바꾸기</button><button class="ghost" data-a="deckdel" ${cur?'':'disabled'}>${S.deckDel?'한 번 더 누르면 삭제':'삭제'}</button>
  <span style="flex:1"></span><input id="deckname" placeholder="덱 이름 (새 덱/이름 바꾸기)" maxlength="14" style="max-width:190px" value="${esc(S.deckName||'')}"><button data-a="decknew">지금 라인업을 새 덱으로</button></div>
- <div class="tools" style="margin-top:8px"><b style="margin-right:4px">모드별 덱</b>${Object.entries(MODEN).map(([k,n])=>`<label class="mdk">${n} <select data-mdeck="${k}" aria-label="${n}에서 쓸 덱">${opt('','지금 라인업',M[k])}${D.filter(d=>deckIds(d.t).every(id=>S.owned[id])).map(d=>opt(d.id,d.name+' · '+deckMgr(d),M[k])).join('')}</select>${M[k]&&!modeDeck(k)?'<small class="bad">카드 누락 · 현재 라인업 사용</small>':''}</label>`).join('')}</div></div>`}
+ </div>`}
 function deckAct(a){const D=S.decks=S.decks||[],d=D.find(x=>x.id===S.deckSel);
  if(a==='decknew'){const n=(S.deckName||'').trim()||`덱 ${D.length+1}`;const id='d'+Date.now().toString(36);D.push({id,name:n,t:snapT()});S.deckSel=id;S.deckName='';S.msg=`'${n}' 저장 완료`}
  else if(a==='deckren'&&d){const n=(S.deckName||'').trim();if(!n){S.msg='오른쪽 이름 칸에 새 이름을 쓰고 눌러 주세요';document.getElementById('deckname')?.focus()}else{const o=d.name;d.name=n;S.deckName='';S.msg=`'${o}' → '${n}' 이름 변경`}}
@@ -892,6 +901,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-ntc],[d
   if(a==='recclose')S.recm=null;
   if(a==='recundo'&&S.undo){Object.assign(S,JSON.parse(S.undo));S.undo=null}
   if(a==='synhelp')S.synHelp=!S.synHelp;if(a==='tcall')S.tcAll=!S.tcAll;
+  if(a==='mt-k'){useMode(D.k);S.sel=null}
   if(a==='synth')doSynth();if(a==='synclr'){S.mat=[];S.synRes=null}if(a==='synauto'){const m=synAuto(S.sk||'p');S.synRes=null;if(m)S.mat=m;else{S.mat=[];S.msg='재료 부족.'}}
   if(a==='tdraw'){if(ECON.pay(S,100).err)S.msg='포인트 부족';else{const u=Math.random(),g=u<.05?'황금':u<.25?'특수':'일반',x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;S.tdraw=x[0]}}}
  render()});
@@ -1006,7 +1016,7 @@ function vMission(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section cl
     <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${mid==='m3'?' · EX 조각 1':''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
     <p class="note msr">3개 → EX 확정권 · 5개 → 전설 장비 + ${ch.mx.length?'영구결번 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
 // ===== 화면 전환 =====
-const ROUTES={mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,lineup:vLineup,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
+const ROUTES={lineup:()=>mtTabs()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
 const LEG=new Set(['season','years','online','game','cards']);
 const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['builder','덱 짜보기'],['skill','스킬'],['cards','보유 카드']],cards:[['shop','카드팩'],['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']]};
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';

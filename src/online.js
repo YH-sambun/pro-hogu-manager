@@ -100,11 +100,11 @@ async function oAct(a,b){const F=fb(),u=ON.user;ON.msg='';
     if(!d.exists()){ON.msg='없는 리그 코드';return}
     if(!d.data().members.includes(u.uid))await F.updateDoc(ref,{members:F.arrayUnion(u.uid),['memberNames.'+u.uid]:S.team.name+' ('+myName()+')'});
     ON.cur=code;await loadLeagues();ON.msg=`${d.data().name} 리그에 들어왔어요. 라인업을 등록하면 친구들이 도전할 수 있어요.`}
-  else if(a==='o-reg'){const e=validate();if(e.length){ON.msg='라인업 오류: '+e[0];return}
+  else if(a==='o-reg'){useMode('on');const e=validate();if(e.length){ON.msg='라인업 오류: '+e[0];return}
     const T=clean(S.team),ids=new Set(regCards(T).map(c=>c.id)),blocks=S.blocks.filter(x=>x.on&&ids.has(x.on));
     await F.setDoc(F.doc(F.db,'leagues',ON.cur,'teams',u.uid),{name:S.team.name,owner:myName(),json:JSON.stringify({name:S.team.name,lineup:T.lineup,bench:T.bench,rot:T.rot,pen:T.pen,blocks,abSt:S.abSt||{},mgr:S.team.mgr||'',fxsel:S.team.fxsel||[],eq:eqMap(),tsel:(S.tq||{})[S.team.tsel]>0?S.team.tsel:null,sup:(S.team.sup||[]).filter(x=>x.left>0)}),ovr:teamOvr(T),cost:regCards(T).reduce((s,c)=>s+c.cost,0),fx:teamColor(regCards(T)).fx.map(f=>f.n).join(', '),updated:F.serverTimestamp()});
     await loadLeague();ON.msg='현재 라인업을 리그에 등록했어요.'}
-  else if(a==='o-play'||a==='o-quick'){const h=b.dataset.u,t=ON.teams[h];if(!t)return;const e=validate();if(e.length){ON.msg='라인업 오류: '+e[0];return}
+  else if(a==='o-play'||a==='o-quick'){useMode('on');const h=b.dataset.u,t=ON.teams[h];if(!t)return;const e=validate();if(e.length){ON.msg='라인업 오류: '+e[0];return}
     const T=JSON.parse(t.json);T.color='#3d7fd1';T.rotIdx=Math.floor(Math.random()*5);
     const prev=ON.games.filter(x=>(x.a===ON.user.uid&&x.h===h)||(x.h===ON.user.uid&&x.a===h)).length;let st=0;for(const x of ON.games.filter(x=>x.a===ON.user.uid||x.h===ON.user.uid)){const me=x.a===ON.user.uid?0:1;if(x.res===1-me){if(st<=0)st--;else break}else break}
     const U=userT('on');U.ctx={rematch:prev>0,streak:st};G=mkGame(simTeam(U,S.cond),simTeam(T));G.me=0;G.ctrl=null;G.pair=[0,1];G.friendly={lid:ON.cur,h,hn:t.name+' ('+t.owner+')'};
@@ -123,7 +123,7 @@ async function oFinish(){const F=fb(),g=G,f=g.friendly;
 function oTable(){const st={};const L=ON.leagues.find(l=>l.id===ON.cur);for(const u of L.members)st[u]={u,w:0,l:0,d:0,rs:0,ra:0};
   for(const g of ON.games){for(const [s,u] of [[0,g.a],[1,g.h]]){const x=st[u];if(!x)continue;x.rs+=g.sc[s];x.ra+=g.sc[1-s];if(g.res<0)x.d++;else if(g.res===s)x.w++;else x.l++}}
   return Object.values(st).map(x=>({...x,pct:x.w+x.l?x.w/(x.w+x.l):0})).sort((a,b)=>b.pct-a.pct||b.w-a.w)}
-function vOnline(){
+function vOnline(){useMode('on');
   const F=fb();
   if(!F)return `<section class="hero"><h1>친구 리그</h1><p>친구 리그는 Firebase에 올린 배포본에서만 열려요. 이 미리보기에서는 혼자 시즌만 할 수 있어요.</p>${preHTML()}</section>`;
   if(!ON.user)return `<section class="hero"><h1>친구 리그</h1><p>Google 계정으로 로그인하면 구단이 클라우드에 저장되고, 친구와 리그를 만들어 서로의 라인업에 도전할 수 있어요.</p><button class="big" data-a="o-login">Google로 로그인</button>${ON.msg?`<p class="warn">${esc(ON.msg)}</p>`:''}${preHTML()}</section>`;
@@ -133,6 +133,7 @@ function vOnline(){
    <div class="cols"><div><h3>리그 만들기</h3><div class="btns"><input id="oln" maxlength="20" placeholder="리그 이름" aria-label="리그 이름"><button data-a="o-create">만들기</button></div></div>
    <div><h3>코드로 참가</h3><div class="btns"><input id="olc" maxlength="6" placeholder="6자리 코드" aria-label="리그 코드"><button data-a="o-join">참가</button></div></div></div>
    ${ON.leagues.length?`<div class="btns" style="margin-top:12px">${ON.leagues.map(l=>`<button data-a="o-sel" data-l="${esc(l.id)}" class="${l.id===ON.cur?'big':''}">${esc(l.name)}</button>`).join('')}</div>`:'<p class="mini">아직 참가한 리그가 없어요.</p>'}</section>
+  ${myTeamHTML(null,'on')}
   ${L?`<section class="band"><div class="lhead"><h2>${esc(L.name)} <small>참가 코드 <b>${esc(L.code)}</b> · ${L.members.length}명</small></h2><div class="btns"><button data-a="o-ref">새로고침</button><button class="big" data-a="o-reg">내 라인업 등록/갱신</button></div></div>
    <p class="mini">상대 팀은 친구가 마지막으로 등록한 라인업으로 움직여요. 도전한 쪽이 원정, 컨디션은 내 팀만 반영돼요. 승리 300 · 무 150 · 패 100 코인.</p>
    <div class="scroll"><table class="tbl"><thead><tr><th>순위</th><th class="l">구단</th><th>승</th><th>패</th><th>무</th><th>승률</th><th>득점</th><th>실점</th><th class="l">등록 라인업</th><th></th></tr></thead><tbody>
