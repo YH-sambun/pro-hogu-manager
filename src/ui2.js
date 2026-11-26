@@ -731,7 +731,7 @@ function seasonLine(c){const H=c.type==='B'?['타율','홈런','타점','도루'
  return `<div class="scroll"><table class="sl"><thead><tr><th>연도</th>${H.map(h=>`<th>${h}</th>`).join('')}${X.map(h=>`<th class="sxh">${h}</th>`).join('')}</tr></thead><tbody><tr><td>${c.year}</td>${c.s.map((v,i)=>`<td>${i===0?(c.type==='B'?Number(v).toFixed(3).replace(/^0/,''):Number(v).toFixed(2)):v}</td>`).join('')}${X.map((h,i)=>`<td>${sxF(c.type,i,c.sx[i])}</td>`).join('')}</tr></tbody></table></div>`}
 function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells(b).forEach(([r,q])=>occ[(r+b.at[0])*4+q+b.at[1]]=b)});const op=open(c),os=openSet(c),pt=patOf(c);
  const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g:''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g:''}"></span>`}).join('');
- const no=c.no!=null&&c.no!==''?String(c.no):'',info=[ageOf(c)!=null?`${ageOf(c)}세`:'',c.hs||'',c.un||'',HAND[c.h]||'',no?`No. ${no}`:'',PFULL[c.pos]||c.pos,c.rg||''].filter(Boolean);
+ const no=c.no!=null&&c.no!==''?String(c.no):'',info=[ageOf(c)!=null?`${ageOf(c)}세`:'',c.hs||'',c.un||'',HAND[c.h]||'',no?`No. ${no}`:'',PFULL[c.pos]||c.pos,c.rg0?(c.rg0===c.rg?c.rg0:`${c.rg0}(${c.rg})`):(c.rg||'')].filter(Boolean);
  // 뒷면(SJ 2026-11-26): 위 2단(사진+프로필 | 수비 위치·구종) → 시즌 기록 → 아래 2단(스킬 칸 | 장착 스킬·서포트)
  return `<div class="cback cb2${live?' live':''}" style="--tc:${c.col}"><div class="cbh"><b>${no?esc(no)+'. ':''}${esc(c.name)}</b><span>${c.year} ${esc(c.team)}</span></div>
   <div class="cbtop"><div class="cbl"><div class="cbph">${photo(c,0,0)}</div><ul class="cbinfo">${info.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
@@ -791,7 +791,7 @@ function cmpView(a,b){const head=`<div class="mhead"><b>선수 비교</b><button
 function dexViewModal(){const c=byId[S.dexView];if(!c)return '';const h=dexHas(c.id);
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b><span class="pill">${h?'모은 적 있음 · 지금은 없음':'아직 없는 카드'}</span><button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
- <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',PFULL[c.pos]||'',c.v?VN[c.v]:''].filter(Boolean).join(' · ')}</p>
+ <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg0&&c.rg0!==c.rg?c.rg0+' · '+c.rg:c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',PFULL[c.pos]||'',c.v?VN[c.v]:''].filter(Boolean).join(' · ')}</p>
  <div class="faces${S.mflip?' flipped':''}" data-mflip="1" title="탭하면 앞/뒷면"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>
  <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · 카드팩·합성으로 획득${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
 // 개인 기록: 주간 리그·연도별 리그의 내 구단 시즌 누적(L.ps, 키 '0|카드id')
@@ -818,7 +818,7 @@ function simPanel(c){const x=simOf(c.id)||{ab:{},sk:{},eq:{}},keys=c.type==='B'?
 function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0),T=teamColor(bldStart(),bldInit().fxsel,(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean)),ids=bldIds();
  return `<div class="modal" data-close="1"><div class="mbox" role="dialog" aria-modal="true" aria-label="${esc(c.name)} 카드">
  <div class="mhead"><b>${c.year} ${esc(c.team)} ${esc(c.name)}</b><span class="pill">${S.owned[c.id]?'보유':'미보유'} · 덱 짜보기 덱 효과 야수 +${T.bat} · 투수 +${T.pit}</span>${S.bmslot?'<button data-bswap="1">자리 교체하기</button>':''}<button class="ghost" data-close="1" aria-label="닫기">닫기</button></div>
- <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',`${esc(lname(c.line))} 계보`].filter(Boolean).join(' · ')}</p>
+ <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg0&&c.rg0!==c.rg?c.rg0+' · '+c.rg:c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',`${esc(lname(c.line))} 계보`].filter(Boolean).join(' · ')}</p>
  <div class="faces${S.mflip?' flipped':''}" data-mflip="1" title="탭하면 앞/뒷면"><div class="face f-front">${card(c,{full:1,dfx:{bat:T.bat,pit:T.pit},dids:ids,nocond:1})}</div><div class="face f-back">${backFace(c0,0)}</div></div>${simPanel(c0)}</div></div>`}
 // 공지사항(SJ 2026-11-26): 처음 보는 공지는 자동으로 띄우고, 보상(카드팩 등)은 '받기'로 한 번만 지급. 새 공지는 맨 위에 추가
 /*NOTICES*/
@@ -1102,7 +1102,7 @@ vw.addEventListener('change',e=>{const t=e.target;
 // ===== 시작 =====
 vw.innerHTML='<section class="band"><h1>선수 카드 불러오는 중…</h1><p class="note">KBO 1982~2026 기록으로 만든 카드</p></section>';
 fetch('cards.json').then(r=>r.json()).then(j=>{loadCards(j);j.cards.forEach((r,i)=>{if(r.no!=null&&CARDS[i])CARDS[i].no=r.no});
-  for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.rg==null&&c.reg)c.rg=c.reg}
+  for(const c of CARDS){c.col=TC[c.team]||LINE_COLOR[c.line]||'#555';if(c.reg)c.rg=c.reg}
   LINES=[...new Set(CARDS.filter(c=>c.v!=='NT').map(c=>c.line))];YEARS=[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);ECON.buildSets(CARDS);if(ECON.buildMissions)ECON.buildMissions(CARDS);if(ECON.buildNat&&typeof NAT_SETS!=='undefined')ECON.buildNat(CARDS,NAT_SETS,natHit);
   try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);if(!S.season||!S.team)S=null}}catch(e){S=null}
   if(!S)fresh();else{migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];S.blocks=S.blocks||[];S.gp=S.gp||{};S.tq=S.tq||{};S.sq=S.sq||{};S.team.bench=S.team.bench||[]}
