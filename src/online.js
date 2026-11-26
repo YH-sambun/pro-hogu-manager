@@ -46,14 +46,19 @@ async function photoPull(){const F=fb();S.photos=S.photos||{};S.photoTs=S.photoT
 function adoptCloud(o,uid){const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.photos=ph;S.photoTs=pt;S.phPull=pp;S.uid=uid;
   if(typeof migSpecial==='function')migSpecial(S);for(const id in S.owned)if(!byId[id])delete S.owned[id];
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};ON.sync='클라우드 저장 불러옴';G=null;packOut=null}
+// 덱 합치기(SJ 2026-11-26: 집에서 짠 덱이 다른 컴퓨터에서 안 보임). 저장은 '더 최근 기기 전체'가 이기는 방식이라
+// 다른 기기에서 먼저 저장하면 이쪽 덱이 사라질 수 있었음 → 덱은 id 기준으로 양쪽을 합침. 지운 덱은 deckGone(id 목록)으로 되살아나지 않게
+function mergeDecks(a,b){const gone=new Set([...(a.deckGone||[]),...(b.deckGone||[])]),m=new Map();
+  for(const d of [...(b.decks||[]),...(a.decks||[])])if(d&&d.id&&!gone.has(d.id))m.set(d.id,d);a.decks=[...m.values()];a.deckGone=[...gone].slice(-200)}
 async function cloudPull(){const F=fb(),u=ON.user,ref=(...p)=>F.doc(F.db,'users',u.uid,...p);try{
   const d=await F.getDoc(ref());
   if(d.exists()){const c=d.data(),newer=S.uid!==u.uid||(c.ts||0)>(S.ts||0);
     if(c.v===2&&newer){const [o,t,r]=await Promise.all([F.getDoc(ref('save','owned')),F.getDoc(ref('save','team')),F.getDoc(ref('save','rest'))]);
-      const x=r.exists()?JSON.parse(r.data().j):{};x.team=t.exists()?JSON.parse(t.data().j):S.team;x.owned=o.exists()?(o.data().c||{}):{};Object.assign(x,topOf(c));x.ts=c.ts||0;
+      const x=r.exists()?JSON.parse(r.data().j):{};if(S.decks&&S.decks.length&&(!S.uid||S.uid===u.uid))mergeDecks(x,S);x.team=t.exists()?JSON.parse(t.data().j):S.team;x.owned=o.exists()?(o.data().c||{}):{};Object.assign(x,topOf(c));x.ts=c.ts||0;
       adoptCloud(x,u.uid);S.cl=canon(topOf(c));ON.last={os:canon(x.owned),team:r.exists()&&t.exists()?t.data().j:null,rest:r.exists()?r.data().j:null}}
     else if(c.v!==2&&c.json&&newer){adoptCloud(JSON.parse(c.json),u.uid);ON.last=null;cloudPush(true)} // 예전 형식 → 새 형식으로 다시 저장
     else{ // 이 기기 저장이 최신: 콘솔에서 요약 필드(pt 등)를 고쳤으면 반영 후 저장
+      if(c.v===2){try{const r=await F.getDoc(ref('save','rest'));if(r.exists()){const n0=(S.decks||[]).length;mergeDecks(S,JSON.parse(r.data().j));if(S.decks.length!==n0)ON.sync='다른 기기에서 짠 덱을 합쳤어요'}}catch(e){}}
       if(c.v===2){const ct=canon(topOf(c));if(S.cl&&ct!==S.cl){Object.assign(S,topOf(c));S.cl=ct;ON.sync='콘솔에서 바꾼 값을 반영했어요'}}
       cloudPush(true)}}
   else{S.uid=u.uid;cloudPush(true)}}catch(e){ON.sync='클라우드 불러오기 실패: '+e.code}

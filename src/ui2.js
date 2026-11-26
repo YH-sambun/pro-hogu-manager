@@ -579,7 +579,7 @@ function deckAct(a){const D=S.decks=S.decks||[],d=D.find(x=>x.id===S.deckSel);
  else if(a==='deckren'&&d){const n=(S.deckName||'').trim();if(!n){S.msg='오른쪽 이름 칸에 새 이름을 쓰고 눌러 주세요';document.getElementById('deckname')?.focus()}else{const o=d.name;d.name=n;S.deckName='';S.msg=`'${o}' → '${n}' 이름 변경`}}
  else if(a==='decksave'&&d){d.t=snapT();S.msg=`'${d.name}' 덮어쓰기 완료`}
  else if(a==='deckload'&&d){const xe=exErr(deckIds(d.t));if(!deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))){const B=bldInit(),t=d.t,L=t.lineup||[],pad=(x,n)=>[...(x||[]),...Array(n).fill(null)].slice(0,n);B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=pad(t.bench,5);B.rot=pad(t.rot,5);B.pen=pad(t.pen,6);B.fxsel=[...(t.fxsel||[])];B.mgr=t.mgr||'';S.bldSel=null;S.msg=`'${d.name}'에 없는 카드가 있어 덱 짜보기에서 열었어요`;save();location.hash='builder';render();return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}' 불러오기 완료`+(xe.length?` · ${xe.join(' · ')}. EX 교체 후 덮어쓰기`:'')}
- else if(a==='deckdel'&&d){if(!S.deckDel){S.deckDel=1;render();return}S.decks=D.filter(x=>x!==d);for(const k in S.modeDeck||{})if(S.modeDeck[k]===d.id)S.modeDeck[k]='';S.deckSel='';S.deckDel=0}
+ else if(a==='deckdel'&&d){if(!S.deckDel){S.deckDel=1;render();return}S.decks=D.filter(x=>x!==d);S.deckGone=[...(S.deckGone||[]),d.id].slice(-200);for(const k in S.modeDeck||{})if(S.modeDeck[k]===d.id)S.modeDeck[k]='';S.deckSel='';S.deckDel=0}
  save();render()}
 // ===== 덱 짜보기: 보유 여부와 관계없이 전체 카드로 25명을 짜 보고 코스트·덱 효과를 확인 =====
 const BLD_POS=['C','1B','2B','3B','SS','LF','CF','RF','DH'];
