@@ -769,6 +769,17 @@ body{padding-top:env(safe-area-inset-top)}
 @media(max-width:700px){.ofg,.ofc2{grid-template-columns:minmax(0,1fr)}}
 .ofg>.ofteam{grid-column:1/-1}
 #tabbar a span{white-space:nowrap}
+/* 감독실 폰: 묶음별 화면 + 하단 전환 버튼 */
+.ofnav{display:none}
+@media (max-width:700px){
+.ofnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:59;padding:6px 8px;background:rgba(6,22,14,.94);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+.ofnav button{padding:8px 0;font-size:13px;font-weight:700;border-radius:9px;background:transparent;color:var(--mute);border:1px solid var(--line);min-width:0}
+.ofnav button.on{background:var(--clay);color:#fff;border-color:var(--clay)}
+.ofg .ofp{display:none}
+.ofg[data-on=g] .ofp[data-og=g],.ofg[data-on=r] .ofp[data-og=r],.ofg[data-on=s] .ofp[data-og=s],.ofg[data-on=i] .ofp[data-og=i],.ofg[data-on=c] .ofp[data-og=c]{display:block}
+body:has(.ofnav){padding-bottom:130px}
+body:has(.ofg:not([data-on=c])) .setb{display:none}
+}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1781,11 +1792,12 @@ const TEAMS_OF=y=>[...new Set(CARDS.filter(c=>c.year===+y).map(c=>c.team))].sort
 function pityHTML(k,sm){const PT=(ECON.PITY||{})[k];if(!PT)return '';const N=typeof PT==='number'?PT:PT.n,lab=typeof PT==='number'?(k==='p'?'레전드(9+)':'확정'):(PT.label||'확정'),n=Math.min(N,(((S.pity||{})[k])|0)),left=N-n;return `<div class="pity${sm?' sm':''}" title="${esc(lab)} 천장 ${n}/${N}"><span class="pbar" style="--n:${N}">${Array.from({length:N},(_,i)=>`<i class="${i<n?'on':''}${i===N-1?' last':''}"></i>`).join('')}</span><small>천장 ${n}/${N} · ${left<=1?'다음 팩 확정':`${left}팩 뒤 확정`}</small></div>`}
 function pkOutHTML(){const o=S.pkOut;if(!o)return '';
   return `<div class="box" style="margin-top:14px"><h3 style="margin-top:0">개봉 결과</h3>${o.cards?(S.work?`<div class="scroll"><table class="tbl lul"><thead><tr><th>#</th><th class="l">선수</th><th>연도·구단</th><th>포지션</th><th>능력</th><th>코스트</th><th>종류</th><th>보유</th></tr></thead><tbody>${o.cards.map((c,i)=>`<tr role="button" tabindex="0" data-pick="${esc(c.id)}"><td>${i+1}</td><td class="l">${esc(c.name)}</td><td>${c.year} ${esc(c.team)}</td><td>${PFULL[c.pos]||c.pos}</td><td>${c.ovr}</td><td>${c.cost}</td><td>${c.v?esc(VN[c.v]||c.v):'일반'}</td><td>${(S.owned[baseId(c.id)]|0)>1?'중복':'신규'}</td></tr>`).join('')}</tbody></table></div>`:`<div class="pool">${o.cards.map(c=>card(c,{pick:1})).join('')}</div>`):''}${o.text?`<p>${esc(o.text)}</p>`:''}${o.dex&&o.dex.length?`<p class="note" style="color:var(--gold)">도감 완성: ${o.dex.map(s=>esc(s.name)+' ('+esc(rwText(s.rw))+')').join(', ')}</p>`:''}</div>`}
-function vShop(){const pk=S.pk||'n',P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.pkSel||(S.pkSel={t:LINES.slice(0,3),y:YEARS.slice(0,3),tl:LINES[0],ty:{line:LINES[0],years:[]}}),_fix=((!pick.ty||!pick.ty.years)&&(pick.ty={line:LINES[0],years:[]}),pick.tl||(pick.tl=LINES[0])),multi=pk==='t'||pk==='y',sel=multi?pick[pk]:[],ok=(!multi||sel.length===3)&&(pk!=='ty'||pick.ty.years.length===3),afford=S.pt>=P[2];
+const SHOPX=['b','tc','t1','sp'],SHOPC={shop:{n:'선수 카드팩'},shop_sp:{n:'서포트 카드',ks:['sp']},shop_tc:{n:'작전 카드',ks:['tc','t1']},shop_b:{n:'스킬 블록',ks:['b']}};
+function vShop(){const SC=SHOPC[view()]||SHOPC.shop,PK=PACKS.filter(x=>SC.ks?SC.ks.includes(x[0]):!SHOPX.includes(x[0]));if(!PK.some(x=>x[0]===S.pk)){S.pk=PK[0][0];S.pkOut=null;S.pkMsg=''}const pk=S.pk,P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.pkSel||(S.pkSel={t:LINES.slice(0,3),y:YEARS.slice(0,3),tl:LINES[0],ty:{line:LINES[0],years:[]}}),_fix=((!pick.ty||!pick.ty.years)&&(pick.ty={line:LINES[0],years:[]}),pick.tl||(pick.tl=LINES[0])),multi=pk==='t'||pk==='y',sel=multi?pick[pk]:[],ok=(!multi||sel.length===3)&&(pk!=='ty'||pick.ty.years.length===3),afford=S.pt>=P[2];
   const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),legends=tix.some(([k])=>k==='pick')?CARDS.filter(c=>c.cost>=9).sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.year-b.year):[];
-  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">카드팩</h2><span class="pill">${S.pt.toLocaleString()} P</span></div>
-  <div class="pkm"><select id="pksel" aria-label="카드팩 고르기">${PACKS.map(([k,n,p])=>`<option value="${k}"${k===pk?' selected':''}>${esc(n)} · ${p.toLocaleString()}P</option>`).join('')}</select></div>
-  <div class="shop"><div class="pkl">${PACKS.map(([k,n,p,d])=>`<button class="pkb${k===pk?' on':''}" data-pk="${k}"><b>${n}</b><em>${p.toLocaleString()}P</em><small>${d}</small>${pityHTML(k,1)}</button>`).join('')}</div>
+  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">${SC.n}</h2><span class="pill">${S.pt.toLocaleString()} P</span></div>
+  <div class="pkm"><select id="pksel" aria-label="카드팩 고르기">${PK.map(([k,n,p])=>`<option value="${k}"${k===pk?' selected':''}>${esc(n)} · ${p.toLocaleString()}P</option>`).join('')}</select></div>
+  <div class="shop"><div class="pkl">${PK.map(([k,n,p,d])=>`<button class="pkb${k===pk?' on':''}" data-pk="${k}"><b>${n}</b><em>${p.toLocaleString()}P</em><small>${d}</small>${pityHTML(k,1)}</button>`).join('')}</div>
   <div class="box"><h3 style="margin-top:0">${P[1]} <small style="color:var(--gold)">${P[2].toLocaleString()}P</small></h3><p class="note" style="margin-top:0">${P[3]}</p>${pityHTML(pk)}
   ${multi?`<div class="lbl">${pk==='t'?'구단 계보':'연도'} 3개 고르기 <small>(${sel.length}/3)</small></div><div class="chips">${(pk==='t'?LINES:YEARS).map(v=>{const on=sel.includes(v),full=!on&&sel.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${pk==='t'?esc(lname(v)):v}</button>`}).join('')}</div>`:''}
   ${pk==='tl'||pk==='ty'?`<div class="tools"><select id="${pk==='tl'?'tll':'tyl'}" aria-label="구단 계보">${LINES.map(l=>`<option value="${esc(l)}" ${(pk==='tl'?pick.tl:pick.ty.line)===l?'selected':''}>${esc(lname(l))}</option>`).join('')}</select></div>`:''}
@@ -1826,6 +1838,7 @@ function doSynth(){const k=S.sk||'p',pool=synPool(k),m=pool.filter(x=>S.mat.incl
   S.synRes=out;S.mat=[]}
 // 홈: 출석·미션·쿠폰·내 팀 요약
 // 홈 = 감독실(SJ 2026-11-26, OOTP Manager's Office 구성 참고): 최근 경기 · 다음 경기 · 기록 순위 · 순위 · Hot & Cold
+const OFT=[['g','경기'],['r','기록'],['s','순위'],['i','편지함'],['c','구단']];function ofNav(){const o=S.ofTab||'g';return `<nav class="ofnav" aria-label="감독실 묶음">${OFT.map(([k,n])=>`<button class="${k===o?'on':''}" data-a="oft" data-k="${k}"${k===o?' aria-current="true"':''}>${n}</button>`).join('')}</nav>`}
 function ofcHTML(){const L=S.season;if(!L||!L.teams)return '';const f3=v=>v.toFixed(3).replace(/^0/,''),ip=o=>`${Math.floor(o/3)}.${o%3}`;
  const G=(L.gl||[]),g=G[G.length-1],R=lgStand(L),me=R.findIndex(x=>x.i===0)+1,top=R[0],gb=x=>(((top.w-x.w)+(x.l-top.l))/2);
  // 최근 경기
@@ -1851,15 +1864,15 @@ function ofcHTML(){const L=S.season;if(!L||!L.teams)return '';const f3=v=>v.toFi
  const hc=(t,cls,arr,ca)=>`<div class="ofhc ${cls}"><b>${t}</b>${arr.map(o=>`<span>${esc(o.n)} <em>${f3(o.h/o.ab)}</em>${o.hr?` <small>${o.hr}홈런</small>`:''}</span>`).join('')||'<span class="note">-</span>'}${ca.length?`<small class="note">컨디션 ${cls==='hot'?'최상':'최악'}: ${ca.map(c=>esc(c.name)).join(', ')}</small>`:''}</div>`;
  const hotcold=R5.length||cHot.length||cCold.length?hc('🔥 Hot','hot',hot,cHot)+hc('🧊 Cold','cold',cold,cCold):'<p class="note">최근 경기 기록이 쌓이면 보여요</p>';
  return `<section class="ofc"><div class="ofhead"><h2>감독실</h2><span class="pill">${L.tier?esc(tierName(L.tier)):'시즌'} · ${me}위 · ${(R.find(x=>x.i===0)||{}).w||0}승 ${(R.find(x=>x.i===0)||{}).l||0}패</span><a href="#season" class="note" style="margin-left:auto">주간 리그 화면 →</a></div>
- <div class="ofg"><div class="ofp"><h3>최근 경기</h3>${last}</div><div class="ofp"><h3>다음 경기</h3>${next}</div><div class="ofp"><h3>기록 순위 <small>우리 팀</small></h3>${lead}</div>
- <div class="ofp"><h3>순위</h3>${stand}</div><div class="ofp"><h3>Hot &amp; Cold <small>최근 5경기</small></h3>${hotcold}</div>`}
+ <div class="ofg" data-on="${S.ofTab||'g'}">${ofNav()}<div class="ofp" data-og="g"><h3>최근 경기</h3>${last}</div><div class="ofp" data-og="g"><h3>다음 경기</h3>${next}</div><div class="ofp" data-og="r"><h3>기록 순위 <small>우리 팀</small></h3>${lead}</div>
+ <div class="ofp" data-og="s"><h3>순위</h3>${stand}</div><div class="ofp" data-og="r"><h3>Hot &amp; Cold <small>최근 5경기</small></h3>${hotcold}</div>`}
 function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.daily||{},e=validate();
   const mis=(ECON.DAILY.missions||[]).map(([id,n,need,pt])=>{const have=Math.min(need,(D.m||{})[id]|0),got=(D.got||{})[id];return `<div class="mis${got?' done':''}"><b>${esc(n)}</b><span class="pill">${have}/${need}</span><small>${pt}P${got?' · 받음':''}</small></div>`}).join('');
-  return `${ofcHTML()}<div class="ofp ofin"><h3>받은 편지함 <small>공지 · 미션 · 출석</small></h3>${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 8px">게스트 플레이 중. 이 기기에만 저장. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
+  return `${ofcHTML()}<div class="ofp ofin" data-og="i"><h3>받은 편지함 <small>공지 · 미션 · 출석</small></h3>${FBMODE()&&!ON.user?`<p class="note" style="margin:0 0 8px">게스트 플레이 중. 이 기기에만 저장. <button class="ghost" data-a="o-login">Google로 로그인</button></p>`:''}<p style="margin:0">출석 ${D.streak||1}일째 · 7일마다 프리미엄 팩 확정권</p><div class="lbl">일일 미션</div><div class="miss">${mis}</div>
   <div class="lbl">쿠폰</div><div class="tools" style="flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}
   <div class="lbl">공지사항</div><div class="ntcl">${NOTICES.map(n=>`<button class="ghost ntci" data-ntc="${n.id}"><small>${n.d.slice(5).replace('-','.')}</small> ${esc(n.t)}${!(S.ntc||{})[n.id]&&n.rw?' <b class="ntcn">보상</b>':''}</button>`).join('')}</div>
   <div class="tools" style="margin-top:10px"><button class="ghost" data-a="vercheck">새 버전 확인</button><span class="note" style="margin:0">${esc(S.verMsg||'')}</span></div></div>
-  <div class="ofp ofteam"><h3>구단 <small>${m?esc(m.n)+' 감독':''}</small></h3>${e.length?`<p class="note" style="color:var(--bad);margin:0 0 6px">라인업 미완성: ${esc(e[0])} · <a href="#lineup">고치기</a></p>`:''}<p style="margin:0">${m?`${MSTY[m.st]} · [${esc(m.sn)}]`:'감독 없음'}</p><div class="lbl">팀컬러</div><p style="margin:0">${d.fx.map(x=>`${esc(x.n)} ${x.g}`).join(' · ')||'없음'} · 야수 +${d.bat} · 투수 +${d.pit}</p><div class="lbl">코스트</div><p style="margin:0">${d.cost} / ${COST_CAP}</p>
+  <div class="ofp ofteam" data-og="c"><h3>구단 <small>${m?esc(m.n)+' 감독':''}</small></h3>${e.length?`<p class="note" style="color:var(--bad);margin:0 0 6px">라인업 미완성: ${esc(e[0])} · <a href="#lineup">고치기</a></p>`:''}<p style="margin:0">${m?`${MSTY[m.st]} · [${esc(m.sn)}]`:'감독 없음'}</p><div class="lbl">팀컬러</div><p style="margin:0">${d.fx.map(x=>`${esc(x.n)} ${x.g}`).join(' · ')||'없음'} · 야수 +${d.bat} · 투수 +${d.pit}</p><div class="lbl">코스트</div><p style="margin:0">${d.cost} / ${COST_CAP}</p>
   <div class="quick" style="margin-top:10px"><a href="#lineup"><button class="ghost" style="width:100%">라인업</button></a><a href="#years"><button class="ghost" style="width:100%">연도별 리그</button></a><a href="#shop"><button class="ghost" style="width:100%">카드팩</button></a><a href="#mission"><button class="ghost" style="width:100%">미션</button></a></div></div></div></section>
   <section class="band setb"><details${S.setbOpen?' open':''}><summary><b>구단 설정 · 테마 · 저장 데이터</b></summary>
   <div class="tools" style="margin-top:10px"><label>구단 이름 <input id="tn" value="${esc(S.team.name)}" maxlength="12"></label></div>
@@ -2514,6 +2527,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126f',d:'2026-11-26',t:'상점 탭 · 폰 감독실 묶음 전환',b:['상점이 선수 카드팩 · 서포트 · 작전 · 스킬 블록 탭으로 나뉘었어요.','폰에서는 감독실이 경기 · 기록 · 순위 · 편지함 · 구단 묶음으로 나뉘고, 아래 버튼으로 넘겨 봐요.'],rw:{tix:{pk_n:10,pk_b:1}}},
  {id:'n1126e',d:'2026-11-26',t:'홈이 감독실로 · 상점 메뉴 분리',b:['홈이 감독실 대시보드로 바뀌었어요. 최근 경기, 다음 경기(바로 시작), 우리 팀 기록 순위, 리그 순위, Hot & Cold를 한 화면에서 봐요.','출석·미션·쿠폰·공지는 받은 편지함 칸에 모였어요.','카드팩은 맨 위(폰은 아래 탭바) 상점 메뉴로 따로 뺐어요.'],rw:{tix:{pk_n:10,prem:1}}},
  {id:'n1126d',d:'2026-11-26',t:'사진 묶음 내보내기 · 불러오기',b:['홈 > 구단 설정 · 저장 데이터에서 내가 올린 사진을 파일 하나로 내보내고, 받은 파일을 불러올 수 있어요.','다른 사람에게 넘길 때는 직접 찍은 사진이나 CC 라이선스 사진만 넣어 주세요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126c',d:'2026-11-26',t:'도감 · 국가대표 탭',b:['도감에 국가대표 탭이 생겼어요. 대회별 명단과 모은 선수를 한눈에 볼 수 있어요.','대회 이름이나 선수 이름으로 검색하고, 보유/미보유로 거를 수 있어요.'],rw:{tix:{pk_n:10}}},
@@ -3177,13 +3191,13 @@ function vMission(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section cl
     <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${mid==='m3'?' · EX 조각 1':''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
     <p class="note msr">3개 → EX 확정권 · 5개 → 전설 장비 + ${ch.mx.length?'영구결번 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
 // ===== 화면 전환 =====
-const ROUTES={lineup:()=>mtTabs()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
+const ROUTES={lineup:()=>mtTabs()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,shop_sp:vShop,shop_tc:vShop,shop_b:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
 const LEG=new Set(['season','years','online','game','cards']);
-const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['builder','덱 짜보기'],['skill','스킬'],['cards','보유 카드']],cards:[['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']],store:[['shop','카드팩']]};
+const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['builder','덱 짜보기'],['skill','스킬'],['cards','보유 카드']],cards:[['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']],store:[['shop','선수 카드팩'],['shop_sp','서포트'],['shop_tc','작전'],['shop_b','스킬 블록']]};
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='4af779ac3b';
+const BUILD='e1613907be';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
@@ -3209,7 +3223,7 @@ addEventListener('hashchange',()=>{closePops();render();scrollTo(0,0)});
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#nav a,#tabbar a,#nav button,#tabbar button')&&S&&(S.modal||S.dexView||S.bmodal)){closePops();render()}},true);
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -3244,7 +3258,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='eqmore'){S.eqMore=1;render()}
   else if(a==='eqon'){const r=ECON.equip(S,b.dataset.u,b.dataset.id,byId);S.toast=r.err||'';if(!r.err)S.eqSlot=null;save();render()}
   else if(a==='eqoff'){ECON.unequip(S,b.dataset.u);save();render()}
-  else if(a==='luana'){if(b.dataset.k){S.tb=b.dataset.k;S.luAna=true}else S.luAna=!S.luAna;render()}
+  else if(a==='oft'){S.ofTab=b.dataset.k;render();scrollTo(0,0);return}else if(a==='luana'){if(b.dataset.k){S.tb=b.dataset.k;S.luAna=true}else S.luAna=!S.luAna;render()}
   else if(a==='copy'){const t=$('#sv').value;navigator.clipboard?.writeText(t).then(()=>{b.textContent='복사됨'},()=>{$('#sv').select()})}
   else if(a==='load'){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#sv').value.trim()))));if(o&&o.team&&o.season){S=o;ensureUI();save();render()}}catch(e){b.textContent='코드 오류'}}
   else if(a==='reset'){if(b.dataset.c){fresh();packOut=null;G=null;render()}else{b.dataset.c=1;b.textContent='한 번 더 누르면 초기화'}}}

@@ -769,6 +769,17 @@ body{padding-top:env(safe-area-inset-top)}
 @media(max-width:700px){.ofg,.ofc2{grid-template-columns:minmax(0,1fr)}}
 .ofg>.ofteam{grid-column:1/-1}
 #tabbar a span{white-space:nowrap}
+/* 감독실 폰: 묶음별 화면 + 하단 전환 버튼 */
+.ofnav{display:none}
+@media (max-width:700px){
+.ofnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:59;padding:6px 8px;background:rgba(6,22,14,.94);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+.ofnav button{padding:8px 0;font-size:13px;font-weight:700;border-radius:9px;background:transparent;color:var(--mute);border:1px solid var(--line);min-width:0}
+.ofnav button.on{background:var(--clay);color:#fff;border-color:var(--clay)}
+.ofg .ofp{display:none}
+.ofg[data-on=g] .ofp[data-og=g],.ofg[data-on=r] .ofp[data-og=r],.ofg[data-on=s] .ofp[data-og=s],.ofg[data-on=i] .ofp[data-og=i],.ofg[data-on=c] .ofp[data-og=c]{display:block}
+body:has(.ofnav){padding-bottom:130px}
+body:has(.ofg:not([data-on=c])) .setb{display:none}
+}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
