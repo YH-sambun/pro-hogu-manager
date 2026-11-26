@@ -83,7 +83,7 @@ function loadCards(json){
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
     const cost=Math.min(10,c.c+(mvp?1:0));
     return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
-      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),bo:c.k==='B'?boOf(r,rates(c.x)):null}});
+      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),xb:c.k==='B'?xbhOf(c.x):null,bo:c.k==='B'?boOf(r,rates(c.x)):null}});
   // 선수 단위 키: 이름+출신고. 1군 중복 검사는 pkt(c)=pk+유형으로 함(투타 겸업 선수는 타자 1장+투수 1장 가능). 출신고가 없으면 같은 이름·같은 유형 카드에 출신고가 하나뿐일 때 그 값을, 아니면 유형을 씀
   const HS={};for(const c of CARDS)if(c.hs){const k=c.name+'|'+c.type;(HS[k]=HS[k]||new Set()).add(c.hs)}
   for(const c of CARDS){const h=HS[c.name+'|'+c.type];c.pk=c.name+'|'+(c.hs||(h&&h.size===1?[...h][0]:c.type))}
@@ -115,6 +115,8 @@ function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,s
 // 실제 기록 기준: 100타석 이상에서 출루율 .330 이상 → 테이블세터, OPS .700 이상 → 클린업(둘 다 가능). 기록이 없으면 능력치로 추정
 const pkt=c=>c.pk+'|'+c.type;
 const BO_PEN=.9,BO_TH=65,BO_PA=100,BO_OBP=.330,BO_OPS=.700,boScore=R=>({T:R.con*.4+R.eye*.25+R.spd*.35,C:R.pow*.55+R.con*.25+R.eye*.2});
+// XBH(SJ 2026-11-26): 실제 기록의 2루타·3루타 비율(홈런 뺀 안타 중)을 리그 평균(2루타 .19, 3루타 .02) 대비 배수로. 표본이 적으면 평균 쪽으로 당김
+const xbhOf=x=>{if(!x)return [1,1];const [,,h,d,t,hr]=x,n=Math.max(0,h-hr),c=(v,a,b)=>Math.max(a,Math.min(b,v));return [c((d+11.4)/(.19*n+11.4),.6,1.6),c((t+3)/(.02*n+3),.3,3)]};
 function rates(x){if(!x)return null;const [pa,ab,h,d,t,hr,bb,hbp]=x,obp=(h+bb+hbp)/Math.max(1,ab+bb+hbp),slg=(h+d+2*t+3*hr)/Math.max(1,ab),r=v=>Math.round(v*1000)/1000;return {pa,obp:r(obp),slg:r(slg),ops:r(obp+slg)}}
 function boOf(R,st){if(st){if(st.pa<BO_PA)return ['L'];const o=[];if(st.obp>=BO_OBP)o.push('T');if(st.ops>=BO_OPS)o.push('C');return o.length?o:['L']}
   const s=boScore(R),m=Math.max(s.T,s.C);if(m<BO_TH)return ['L'];return ['T','C'].filter(k=>s[k]>=BO_TH&&m-s[k]<=3)}
@@ -500,7 +502,7 @@ function pa(g,manual){
     for(const r of B)if(r)score(g,r);score(g,run);g.bases=[null,null,null];n=on+1;txt=`${pick(DIR)}월 ${['솔로','투런','스리런','만루'][on]} 홈런!`;big='hr'}
   else{bs.ab++;const gb=rnd()<pG; // 땅볼 타구는 안타가 덜 되고(주력이 빠르면 내야안타) 장타가 거의 없음. 뜬공·라인드라이브는 장타
     const pHit=cl(pBA+(gb?-.035+(br.spd-70)*.0015:.03),.15,.5);
-    if(rnd()<pHit){bs.h++;P.h++;g.hits[bat]++;const t=rnd(),p3=gb?.004:cl(.025+(br.spd-70)*.0012,.005,.08),p2=gb?cl(.07+(br.pow-70)*.002,.03,.12):cl(.3+(br.pow-70)*.006-(hv-70)*.002,.15,.5);
+    if(rnd()<pHit){bs.h++;P.h++;g.hits[bat]++;const t=rnd(),xb=b.xb||[1,1],p3=gb?.004*xb[1]:cl((.025+(br.spd-70)*.0012)*xb[1],.003,.1),p2=gb?cl((.06+(br.pow-70)*.002+(br.spd-70)*.001)*xb[0],.02,.15):cl((.262+(br.pow-70)*.006-(hv-70)*.002+(br.spd-70)*.002)*(.5+.5*xb[0]),.12,.55); // XBH: 순장타(파워)·주력 + 실제 2·3루타 비율
       if(t<p3){for(const r of B)if(r)score(g,r);n=B.filter(Boolean).length;g.bases=[null,null,run];txt=`${pick(DIR)}중간 3루타`}
       else if(t<p3+p2){const nb=[null,run,null],dd=pick(['좌익선상','좌중간','우중간','우익선상']),F=fld(dd[0]==='좌'?'LF':dd==='우익선상'?'RF':'CF');let ex='';if(B[2]){score(g,B[2]);n++}if(B[1]){score(g,B[1]);n++}
         if(B[0]){if(rnd()<.45+.2*X(B[0].c.r.spd)){if(armOut(F,B[0],.03)){out(g,1);cr(F);ex=` (${F.c.name} 홈 보살, ${B[0].c.name} 아웃)`}else{score(g,B[0]);n++}}else nb[2]=B[0]}g.bases=nb;txt=`${dd} 2루타${ex}`}

@@ -966,7 +966,7 @@ function loadCards(json){
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
     const cost=Math.min(10,c.c+(mvp?1:0));
     return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
-      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),bo:c.k==='B'?boOf(r,rates(c.x)):null}});
+      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),xb:c.k==='B'?xbhOf(c.x):null,bo:c.k==='B'?boOf(r,rates(c.x)):null}});
   // 선수 단위 키: 이름+출신고. 1군 중복 검사는 pkt(c)=pk+유형으로 함(투타 겸업 선수는 타자 1장+투수 1장 가능). 출신고가 없으면 같은 이름·같은 유형 카드에 출신고가 하나뿐일 때 그 값을, 아니면 유형을 씀
   const HS={};for(const c of CARDS)if(c.hs){const k=c.name+'|'+c.type;(HS[k]=HS[k]||new Set()).add(c.hs)}
   for(const c of CARDS){const h=HS[c.name+'|'+c.type];c.pk=c.name+'|'+(c.hs||(h&&h.size===1?[...h][0]:c.type))}
@@ -998,6 +998,8 @@ function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,s
 // 실제 기록 기준: 100타석 이상에서 출루율 .330 이상 → 테이블세터, OPS .700 이상 → 클린업(둘 다 가능). 기록이 없으면 능력치로 추정
 const pkt=c=>c.pk+'|'+c.type;
 const BO_PEN=.9,BO_TH=65,BO_PA=100,BO_OBP=.330,BO_OPS=.700,boScore=R=>({T:R.con*.4+R.eye*.25+R.spd*.35,C:R.pow*.55+R.con*.25+R.eye*.2});
+// XBH(SJ 2026-11-26): 실제 기록의 2루타·3루타 비율(홈런 뺀 안타 중)을 리그 평균(2루타 .19, 3루타 .02) 대비 배수로. 표본이 적으면 평균 쪽으로 당김
+const xbhOf=x=>{if(!x)return [1,1];const [,,h,d,t,hr]=x,n=Math.max(0,h-hr),c=(v,a,b)=>Math.max(a,Math.min(b,v));return [c((d+11.4)/(.19*n+11.4),.6,1.6),c((t+3)/(.02*n+3),.3,3)]};
 function rates(x){if(!x)return null;const [pa,ab,h,d,t,hr,bb,hbp]=x,obp=(h+bb+hbp)/Math.max(1,ab+bb+hbp),slg=(h+d+2*t+3*hr)/Math.max(1,ab),r=v=>Math.round(v*1000)/1000;return {pa,obp:r(obp),slg:r(slg),ops:r(obp+slg)}}
 function boOf(R,st){if(st){if(st.pa<BO_PA)return ['L'];const o=[];if(st.obp>=BO_OBP)o.push('T');if(st.ops>=BO_OPS)o.push('C');return o.length?o:['L']}
   const s=boScore(R),m=Math.max(s.T,s.C);if(m<BO_TH)return ['L'];return ['T','C'].filter(k=>s[k]>=BO_TH&&m-s[k]<=3)}
@@ -1383,7 +1385,7 @@ function pa(g,manual){
     for(const r of B)if(r)score(g,r);score(g,run);g.bases=[null,null,null];n=on+1;txt=`${pick(DIR)}월 ${['솔로','투런','스리런','만루'][on]} 홈런!`;big='hr'}
   else{bs.ab++;const gb=rnd()<pG; // 땅볼 타구는 안타가 덜 되고(주력이 빠르면 내야안타) 장타가 거의 없음. 뜬공·라인드라이브는 장타
     const pHit=cl(pBA+(gb?-.035+(br.spd-70)*.0015:.03),.15,.5);
-    if(rnd()<pHit){bs.h++;P.h++;g.hits[bat]++;const t=rnd(),p3=gb?.004:cl(.025+(br.spd-70)*.0012,.005,.08),p2=gb?cl(.07+(br.pow-70)*.002,.03,.12):cl(.3+(br.pow-70)*.006-(hv-70)*.002,.15,.5);
+    if(rnd()<pHit){bs.h++;P.h++;g.hits[bat]++;const t=rnd(),xb=b.xb||[1,1],p3=gb?.004*xb[1]:cl((.025+(br.spd-70)*.0012)*xb[1],.003,.1),p2=gb?cl((.06+(br.pow-70)*.002+(br.spd-70)*.001)*xb[0],.02,.15):cl((.262+(br.pow-70)*.006-(hv-70)*.002+(br.spd-70)*.002)*(.5+.5*xb[0]),.12,.55); // XBH: 순장타(파워)·주력 + 실제 2·3루타 비율
       if(t<p3){for(const r of B)if(r)score(g,r);n=B.filter(Boolean).length;g.bases=[null,null,run];txt=`${pick(DIR)}중간 3루타`}
       else if(t<p3+p2){const nb=[null,run,null],dd=pick(['좌익선상','좌중간','우중간','우익선상']),F=fld(dd[0]==='좌'?'LF':dd==='우익선상'?'RF':'CF');let ex='';if(B[2]){score(g,B[2]);n++}if(B[1]){score(g,B[1]);n++}
         if(B[0]){if(rnd()<.45+.2*X(B[0].c.r.spd)){if(armOut(F,B[0],.03)){out(g,1);cr(F);ex=` (${F.c.name} 홈 보살, ${B[0].c.name} 아웃)`}else{score(g,B[0]);n++}}else nb[2]=B[0]}g.bases=nb;txt=`${dd} 2루타${ex}`}
@@ -3455,7 +3457,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='e45bd89174';
+const BUILD='0432d612e5';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
