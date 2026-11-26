@@ -896,6 +896,25 @@ body.xl .tvl{background:none!important;border:0!important;padding:0!important;co
 .tvsep{flex:none;width:1px;align-self:stretch;border-left:1px dashed var(--line);margin:0 4px}
 body.xl .tvr{background:#fff!important;border-radius:0!important;border-color:#d4d4d4!important}body.xl .tvh{writing-mode:horizontal-tb;color:#217346;font-size:12px}
 body.xl .tvc{width:150px}body.xl .tvc .card{width:150px}
+/* 업무 모드 스킬 칸·블록(SJ 2026-11-26): 색 대신 회색 음영(C 연함 → S 진함), 장착 블록이 판에 보이게 */
+body.xl .cell,body.xl button.cell{background:#fff!important;border:1px solid #d4d4d4!important;border-radius:0!important;padding:0!important;min-height:0!important}
+body.xl .cell.lock,body.xl button.cell.lock{background:repeating-linear-gradient(45deg,#f3f3f3 0 4px,#e3e3e3 4px 8px)!important}
+body.xl .cell.g-C,body.xl button.cell.g-C{background:#d9d9d9!important;border-color:#bfbfbf!important}
+body.xl .cell.g-B,body.xl button.cell.g-B{background:#a6a6a6!important;border-color:#8c8c8c!important}
+body.xl .cell.g-A,body.xl button.cell.g-A{background:#6e6e6e!important;border-color:#595959!important}
+body.xl .cell.g-S,body.xl button.cell.g-S{background:#333!important;border-color:#1f1f1f!important}
+body.xl .gl{border-radius:0!important;padding:0 4px!important;font:700 11px var(--fb)!important}
+body.xl .gl.g-C{background:#d9d9d9!important;color:#222!important}body.xl .gl.g-B{background:#a6a6a6!important;color:#111!important}
+body.xl .gl.g-A{background:#6e6e6e!important;color:#fff!important}body.xl .gl.g-S{background:#333!important;color:#fff!important}
+body.xl .blk.sel{outline:2px solid #217346!important;outline-offset:-2px}
+body.xl .cback{background:#fff!important;border:1px solid #c6c6c6!important;border-radius:0!important;box-shadow:none!important;color:#222!important}
+body.xl .cback .cbh{background:#f3f3f3!important;color:#222!important;border-bottom:1px solid #d4d4d4}
+body.xl .cback .cbh *{color:#222!important}
+body.xl .cback .cbph{display:none!important}
+body.xl .cback .vel,body.xl .cback .sup2,body.xl .cback .eq>div,body.xl .cback .none{background:#fff!important;color:#222!important;border:1px solid #d4d4d4!important;border-radius:0!important}
+body.xl .cback .vel *,body.xl .cback .sup2 *{color:#222!important}
+body.xl .cback .pmap{filter:grayscale(1)}
+body.xl .cback .grid4{background:#fff!important;border:1px solid #d4d4d4;border-radius:0!important}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
