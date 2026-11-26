@@ -322,3 +322,40 @@ function myTeamHTML(L,m){const k=MODEK(m),T=userT(m),P=(L&&L.ps)||{},st=id=>P['0
    <table class="tbl"><thead><tr><th>보직</th><th class="l">투수</th><th>평균자책</th><th>이닝</th><th>승</th><th>세이브</th><th>탈삼진</th>${L?'<th>피로</th>':''}</tr></thead><tbody>
    ${(T.rot||[]).filter(Boolean).map((id,i)=>`<tr${id===spN?' class="me"':''}><td>선발${i+1}${id===spN?' · 다음':''}</td><td class="l">${nm(id)}</td>${pit(st(id),id,1)}</tr>`).join('')}
    ${(T.pen||[]).filter(Boolean).map((id,i)=>`<tr><td>${['마무리','셋업'][i]||'중계'}</td><td class="l">${nm(id)}</td>${pit(st(id),id)}</tr>`).join('')}</tbody></table></div></details></section>`}
+
+// ── 덱 대결 시뮬(SJ 2026-11-26): 보유 덱·가상으로 짜본 덱·리그별 라인업끼리 N경기 시뮬. 보상·기록·피로 없음(순수 확인용) ──
+// 양쪽 다 내 스킬 블록·유학·장비가 그대로 붙음. 홈/원정은 번갈아, 선발은 로테이션 순서대로
+const DS_N=[1,10,50,144];
+function dsOpts(){const o=[['m:lg',MODEN.lg+' 라인업'],['m:yl',MODEN.yl+' 라인업'],['m:on',MODEN.on+' 라인업']];
+  for(const d of S.decks||[])o.push(['d:'+d.id,(d.name||'덱')+(deckOk(d)?'':' · 가상')]);return o}
+function dsTeam(k,color){let t,name;if(!k)return null;
+  if(k.startsWith('m:')){const m=k.slice(2);t=modeTeam(m);name=MODEN[m]}else{const d=(S.decks||[]).find(x=>x.id===k.slice(2));if(!d)return null;t=d.t;name=d.name||'덱'}
+  t=JSON.parse(JSON.stringify(t||{}));if(!t.lineup||t.lineup.filter(x=>x&&x.id&&byId[x.id]).length<9||!(t.rot||[]).filter(Boolean).length||!(t.pen||[]).filter(Boolean).length)return {err:`${name}: 타순 9명·선발·불펜이 다 채워져 있어야 해요`};
+  return {...clean(t),name,color,blocks:S.blocks,abSt:S.abSt||{},eq:eqMap(),rotIdx:0}}
+function dsRun(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8fe0'),n=+o.n||10;
+  if(!A||!B){S.dsRes={err:'양쪽 덱을 골라 주세요'};return}if(A.err||B.err){S.dsRes={err:A.err||B.err};return}
+  if(o.a===o.b)B.name+=' (복제)';
+  const R={n,w:[0,0],t:0,rs:[0,0],bat:[{},{}],pit:[{},{}],names:[A.name,B.name],last:null},T=[A,B];
+  for(let i=0;i<n;i++){const aw=i%2,away=aw?1:0,home=1-away;T[0].rotIdx=i;T[1].rotIdx=i;
+    const g=simAll(mkGame(simTeam(T[away]),simTeam(T[home])));const side=[away,home]; // g 쪽 s(0 원정,1 홈) → 덱 번호
+    for(let s=0;s<2;s++){const d=side[s];R.rs[d]+=g.sc[s];
+      for(const b of Object.values(g.bx[s])){const x=R.bat[d][b.c.id]=R.bat[d][b.c.id]||{c:b.c,g:0,ab:0,h:0,hr:0,rbi:0,bb:0};x.g++;x.ab+=b.ab;x.h+=b.h;x.hr+=b.hr;x.rbi+=b.rbi;x.bb+=b.bb}
+      for(const p of g.px[s]){const x=R.pit[d][p.c.id]=R.pit[d][p.c.id]||{c:p.c,g:0,outs:0,r:0,k:0,bb:0,h:0};x.g++;x.outs+=p.outs;x.r+=p.r;x.k+=p.k;x.bb+=p.bb;x.h+=p.h}}
+    if(g.res<0)R.t++;else R.w[side[g.res]]++;
+    if(i===n-1)R.last={away,sc:g.sc,log:hlOf(g,[away,home]).log}}
+  S.dsRes=R;save()}
+function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.decks[0].id:'m:yl',n:10},O=dsOpts(),R=S.dsRes,f3=v=>v.toFixed(3).replace(/^0/,'');
+  const sel=(k)=>`<select data-ds="${k}" aria-label="${k==='a'?'내 덱':'상대 덱'}">${O.map(([v,nm])=>`<option value="${esc(v)}"${o[k]===v?' selected':''}>${esc(nm)}</option>`).join('')}</select>`;
+  const side=d=>{const B=Object.values(R.bat[d]).sort((x,y)=>(y.h+y.bb)/Math.max(1,y.ab+y.bb)-(x.h+x.bb)/Math.max(1,x.ab+x.bb)),P=Object.values(R.pit[d]).sort((x,y)=>y.outs-x.outs);
+    return `<div><h3 style="margin:8px 0 4px">${esc(R.names[d])} <small>${R.w[d]}승 · 평균 ${(R.rs[d]/R.n).toFixed(1)}점</small></h3><div class="scroll"><table class="tbl"><thead><tr><th class="l">타자</th><th>경기</th><th>타율</th><th>출루율</th><th>홈런</th><th>타점</th></tr></thead><tbody>
+    ${B.map(x=>`<tr><td class="l">${esc(x.c.name)} <small>${String(x.c.year).slice(2)}' ${esc(x.c.team)}</small></td><td>${x.g}</td><td>${x.ab?f3(x.h/x.ab):'-'}</td><td>${f3((x.h+x.bb)/Math.max(1,x.ab+x.bb))}</td><td>${x.hr}</td><td>${x.rbi}</td></tr>`).join('')}</tbody></table>
+    <table class="tbl"><thead><tr><th class="l">투수</th><th>경기</th><th>이닝</th><th>실점/9</th><th>탈삼진</th><th>WHIP</th></tr></thead><tbody>
+    ${P.map(x=>`<tr><td class="l">${esc(x.c.name)} <small>${String(x.c.year).slice(2)}' ${esc(x.c.team)}</small></td><td>${x.g}</td><td>${Math.floor(x.outs/3)}.${x.outs%3}</td><td>${x.outs?(x.r*27/x.outs).toFixed(2):'-'}</td><td>${x.k}</td><td>${x.outs?((x.h+x.bb)*3/x.outs).toFixed(2):'-'}</td></tr>`).join('')}</tbody></table></div></div>`};
+  return `<section class="hero"><h1>덱 대결</h1><p class="mini">보유 덱, 덱 짜보기로 만든 가상 덱, 리그별 라인업끼리 붙여 봐요. 보상·기록·피로는 없어요.</p>
+   <div class="tools" style="flex-wrap:wrap;gap:6px;justify-content:center">${sel('a')}<b style="align-self:center">VS</b>${sel('b')}
+   <select data-ds="n" aria-label="경기 수">${DS_N.map(v=>`<option value="${v}"${+o.n===v?' selected':''}>${v}경기</option>`).join('')}</select><button class="big" data-a="ds-go">시뮬레이션</button></div>
+   <p class="note" style="text-align:center">홈·원정은 번갈아, 선발은 로테이션 순서대로 나와요. 스킬 블록·유학·장비는 양쪽 다 지금 내 것이 그대로 붙어요.</p></section>
+   ${R?R.err?`<section class="band"><p class="note" style="color:#ff8a7a">${esc(R.err)}</p></section>`:`<section class="band"><h2>${esc(R.names[0])} ${R.w[0]} : ${R.w[1]} ${esc(R.names[1])}${R.t?` <small>(무 ${R.t})</small>`:''}</h2>
+   <p class="mini">${R.n}경기 · 승률 ${f3(R.w[0]/Math.max(1,R.w[0]+R.w[1]))} · 경기당 ${(R.rs[0]/R.n).toFixed(1)} : ${(R.rs[1]/R.n).toFixed(1)}</p>
+   ${R.last?`<details><summary>마지막 경기 하이라이트 · ${esc(R.names[R.last.away])} ${R.last.sc[0]} : ${R.last.sc[1]} ${esc(R.names[1-R.last.away])}</summary><ol class="log">${R.last.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
+   <div class="dsg" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px">${side(0)}${side(1)}</div></section>`:''}`}

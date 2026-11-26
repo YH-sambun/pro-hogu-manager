@@ -4,7 +4,7 @@ const $=s=>document.querySelector(s),vw=document.getElementById('view'),hdr=docu
 const KEY='diamond-chronicle-v2';
 let S=null,G=null,packOut=null,flt={type:'',tier:'',line:'',year:'',q:'',sort:'ovr',all:false,lim:120};
 // 저장: 화면 전용 임시 값은 빼고 저장. 라인업은 S.team이 원본(S.lu 등은 화면용 사본)
-const TRANS=new Set(['ofMore','reveal','luAna','phMsg','ntcView','verMsg','ntcHide','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','eqMore','eqSlot','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
+const TRANS=new Set(['ofMore','dsRes','reveal','luAna','phMsg','ntcView','verMsg','ntcHide','dexFOpen','bldCode','bldImpMsg','msSub','msMsg','setbOpen','sel','modal','bmodal','bmslot','dexView','bldSel','bldClr','deckDel','deckName','mslot','mflip','msg','blkSel','synRes','recm','undo','cmpA','pkMsg','eqMore','eqSlot','cpMsg','toast','tdraw','ojoin','pkOut','lu','bench','rot','pen','abPick','ssel']);
 const save=()=>{if(!S)return;syncTeam();S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 let saveT=null;const saveSoon=()=>{clearTimeout(saveT);saveT=setTimeout(save,400)};
 const own=t=>Object.keys(S.owned).map(id=>byId[id]).filter(c=>c&&(!t||c.type===t));
@@ -996,7 +996,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-revx],[
   if(a==='recundo'&&S.undo){Object.assign(S,JSON.parse(S.undo));S.undo=null}
   if(a==='synhelp')S.synHelp=!S.synHelp;if(a==='tcall')S.tcAll=!S.tcAll;
   if(a==='mt-k'){useMode(D.k);S.sel=null}
-  if(a==='bau-go')bauRun();if(a==='synth')doSynth();if(a==='synclr'){S.mat=[];S.synRes=null}if(a==='synauto'){const m=synAuto(S.sk||'p');S.synRes=null;if(m)S.mat=m;else{S.mat=[];S.msg='재료 부족.'}}
+  if(a==='bau-go')bauRun();if(a==='ds-go')dsRun();if(a==='synth')doSynth();if(a==='synclr'){S.mat=[];S.synRes=null}if(a==='synauto'){const m=synAuto(S.sk||'p');S.synRes=null;if(m)S.mat=m;else{S.mat=[];S.msg='재료 부족.'}}
   if(a==='tdraw'){if(ECON.pay(S,100).err)S.msg='포인트 부족';else{const u=Math.random(),g=u<.05?'황금':u<.25?'특수':'일반',x=pick(TCARDS.filter(t=>t[3]===g));S.tq[x[0]]=(S.tq[x[0]]||0)+1;S.tdraw=x[0]}}}
  render()});
 vw.addEventListener('toggle',e=>{const t=e.target;if(t.classList&&t.classList.contains('pdet')&&S)S.pdetOpen=t.open;if(t.classList&&t.classList.contains('dexfd')&&S)S.dexFOpen=t.open},true);
@@ -1034,7 +1034,7 @@ vw.addEventListener('dragover',e=>{const c=e.target.closest&&e.target.closest('[
 vw.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('[data-cell]');if(!c)return;e.preventDefault();vw.dataset.foot='';tapBlk(+c.dataset.cell,location.hash==='#skill'?S.skc:S.cardId);render()});
 vw.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&(e.target.dataset.pick||e.target.dataset.dexv||e.target.dataset.bslot||e.target.dataset.bput)){e.preventDefault();e.target.click()}});
 vw.addEventListener('change',e=>{const t=e.target;if(t.id==='bldimp')return;if(t.id==='deckname'||t.id==='ludn'){S.deckName=t.value;return}if(t.id==='cpn')return;if(t.id.startsWith('tixarg-')){S.tixArg={...(S.tixArg||{}),[t.id.slice(7)]:t.value};return}if(t.id==='tixpick'){S.tixPick=t.value;return} // 쿠폰 입력칸: 다시 그리면 입력값과 받기 버튼 클릭이 사라짐
-  S.msg='';if(t.id==='sort')S.sort=t.value;if(t.id==='fteam')S.fteam=t.value;if(t.id==='fyear')S.fyear=t.value;if(t.dataset.bau){S.bau={...BAU0,...(S.bau||{}),[t.dataset.bau]:t.value};if(t.dataset.bau==='t')S.bau.key=(t.value==='B'?BK:PKEY)[0];S.bauRes=null}if(t.dataset.sf){S.sf={...(S.sf||SF0),[t.dataset.sf]:t.value};S.mat=[]}if(t.id==='cpick'){S.cardId=t.value;S.back=false}if(t.dataset.pos)setPos(+t.dataset.pos,t.value);if(t.id==='t-live')S.tacLive=t.checked;render()});
+  S.msg='';if(t.id==='sort')S.sort=t.value;if(t.id==='fteam')S.fteam=t.value;if(t.id==='fyear')S.fyear=t.value;if(t.dataset.ds){S.ds={...(S.ds||{}),[t.dataset.ds]:t.value};S.dsRes=null}if(t.dataset.bau){S.bau={...BAU0,...(S.bau||{}),[t.dataset.bau]:t.value};if(t.dataset.bau==='t')S.bau.key=(t.value==='B'?BK:PKEY)[0];S.bauRes=null}if(t.dataset.sf){S.sf={...(S.sf||SF0),[t.dataset.sf]:t.value};S.mat=[]}if(t.id==='cpick'){S.cardId=t.value;S.back=false}if(t.dataset.pos)setPos(+t.dataset.pos,t.value);if(t.id==='t-live')S.tacLive=t.checked;render()});
 
 const abd=id=>ABD.find(d=>d[0]===id),abOpen=d=>!d[2]||(ABU[d[2]]?ABU[d[2]][0]():false);
 ABD.forEach(d=>{if(d[2]&&ABU[d[2]])d[6]=ABU[d[2]][1]});
@@ -1119,9 +1119,9 @@ function vMission0(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section c
     <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${mid==='m3'?' · EX 조각 1':''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
     <p class="note msr">3개 → EX 확정권 · 5개 → 전설 장비 + ${ch.mx.length?'영구결번 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
 // ===== 화면 전환 =====
-const ROUTES={lineup:()=>mtTabs()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,shop_sp:vShop,shop_tc:vShop,shop_b:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder};
+const ROUTES={lineup:()=>mtTabs()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,shop_sp:vShop,shop_tc:vShop,shop_b:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder,dsim:vDsim};
 const LEG=new Set(['season','years','online','game','cards']);
-const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['game','경기장']],team:[['lineup','라인업'],['builder','덱'],['skill','스킬'],['cards','보유 카드']],cards:[['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']],store:[['shop','선수 카드팩'],['shop_sp','서포트'],['shop_tc','작전'],['shop_b','스킬 블록']]};
+const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연도별 리그'],['online','친구 리그'],['dsim','덱 대결'],['game','경기장']],team:[['lineup','라인업'],['builder','덱'],['skill','스킬'],['cards','보유 카드']],cards:[['synth','합성'],['abroad','유학'],['dex','도감'],['mission','미션']],store:[['shop','선수 카드팩'],['shop_sp','서포트'],['shop_tc','작전'],['shop_b','스킬 블록']]};
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
