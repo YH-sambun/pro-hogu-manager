@@ -784,14 +784,42 @@ body{padding-top:env(safe-area-inset-top)}
 .ofnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:59;padding:6px 8px;background:rgba(6,22,14,.94);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
 .ofnav button{padding:8px 0;font-size:13px;font-weight:700;border-radius:9px;background:transparent;color:var(--mute);border:1px solid var(--line);min-width:0}
 .ofnav button.on{background:var(--clay);color:#fff;border-color:var(--clay)}
-.ofg .ofp{display:none}
-.ofg[data-on=g] .ofp[data-og=g],.ofg[data-on=r] .ofp[data-og=r],.ofg[data-on=s] .ofp[data-og=s],.ofg[data-on=i] .ofp[data-og=i],.ofg[data-on=c] .ofp[data-og=c]{display:block}
 body:has(.ofnav){padding-bottom:130px}
-body:has(.ofg:not([data-on=c])) .setb{display:none}
 }
 /* iOS 홈 화면 앱(black-translucent): 내용이 짧으면 하단 고정 바가 바닥에서 뜨는 버그 보정 */
 html{min-height:calc(100% + env(safe-area-inset-top))}
 body{min-height:100vh;min-height:100dvh}
+/* 감독실 3×2 판 v2(SJ 2026-11-26): 노트북 한 화면에 6칸, 칸 안에서만 스크롤 */
+.ofhead{margin-bottom:8px}
+.ofg .ofp{display:flex;flex-direction:column;min-width:0}
+.ofg .ofp>h3{flex:none}
+.ofb{min-height:0}
+@media (min-width:901px){.ofg .ofp{height:clamp(230px,calc((100vh - 270px)/2),340px)}.ofg .ofb{flex:1;overflow:auto;scrollbar-width:thin}}
+.ofldt{width:100%;border-collapse:collapse;font-size:13px}
+.ofldt td{padding:3px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ofldt td:first-child{color:var(--mute);width:1%}
+.ofldt td.v{text-align:right;color:var(--gold);font-weight:700;width:1%}
+.ofldt td.n2{color:var(--mute);font-size:11.5px;text-align:right;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.ofldt td.ps{color:var(--mute);font-size:11.5px;width:1%}
+.ofldt td.l{overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.ofdk{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ofhc2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ofst td,.ofst th{padding:2px 4px!important;font-size:12.5px}
+.ofli{display:block;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;color:inherit;text-decoration:none}
+.ofli b{display:block}.ofli span{font-size:12.5px;color:var(--mute)}
+.ofli:hover{border-color:var(--gold)}
+.ofmore{margin-top:10px}.ofmore>summary{cursor:pointer;padding:4px 0}
+.ofb .lad{font-size:11px;padding:2px 6px}
+@media (max-width:700px){.ofg .ofp.off{display:none}body:has(.ofnav [data-g=home].on:not([data-k=d])) .setb{display:none}.ofdk,.ofhc2{grid-template-columns:1fr}}
+.ofb,.ofb .scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.28) transparent}
+.ofls th,.ofls td{padding:2px 4px!important;font-size:12.5px!important;height:auto!important;background:none!important;line-height:1.4!important}
+.ofls tr.me td{color:var(--gold)}
+.ofldt td{padding:2px 4px}
+.ofls td.l,.ofls th.l{max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ofls th,.ofls td{padding:2px 3px!important}
+@media (max-width:700px){.ofnav{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}
+.ofls th,.ofls td{padding:2px 2px!important;font-size:12px!important;min-width:0!important;width:auto!important}
+.ofls td.l,.ofls th.l{max-width:58px}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
