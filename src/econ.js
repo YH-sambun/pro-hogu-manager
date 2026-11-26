@@ -228,24 +228,24 @@ function cardEq(S,cardId,byId){const o={},c=byId[cardId];for(const it of S.eq||[
 // 챕터 3개 완료 → 레전드 선택권, 전부 → 명예의 전당 보상(첫 완료 기준 S.msFin). 진행 기록 S.ms[챕터id]={cyc,m1:시각,...,mid,fin}
 // 제출 미션은 기본적으로 중복만 소모(1장은 남김). S.opt.submitLast=true면 마지막 1장도 제출 가능(도감 기록은 유지)
 const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['m2',2,'그 구단 주전 세트 1개 완성',{pt:2000,tix:{star:1,abr:1},eq:'일반'}],
-  ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,exShard:1,eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 주간 리그 4단계 이상 우승',{pt:4000,tix:{gg:1},eq:'희귀'}],
+  ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,exShard:1,eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 리그 우승 (주간 리그 1위·연도별 리그 한국시리즈 우승)',{pt:4000,tix:{gg:1},eq:'희귀'}],
   ['m5',5,'그 구단 레전드(9+) 카드 3장 보유',{pt:5000,tix:{legend:1},eq:'희귀'}]];
 const MS_META=[[3,'챕터 3개 완료',{pt:10000,tix:{pick:1}}],['all','모든 챕터 완료 · 명예의 전당',{pt:50000,tix:{pick:2}}]];
 let CHAPTERS=[],CARDS_=[];
 function buildMissions(CARDS){CARDS_=CARDS;const L=[...new Set(CARDS.filter(c=>c.v!=='NT').map(c=>c.line))]; // 국가대표(NT)는 구단 챕터가 아님(국가대표 미션 보상)
   CHAPTERS=L.map(l=>({id:'ch:'+l,line:l,mx:CARDS.filter(c=>c.mx&&c.line===l).map(c=>c.id)}));return CHAPTERS}
 // 회차: 구단에 영구결번이 여러 장이면(삼성·한화 4장 등) 챕터를 다시 돌 수 있음. 회차 c마다 조건이 올라감
-const msReq=(c)=>({m1:10+5*c,m2:1+c,m3:5+3*c,m4:Math.min(10,4+2*c),m5:3+c});
+const msReq=(c)=>({m1:10+5*c,m2:1+c,m3:5+3*c,m4:1+c,m5:3+c});
 const msCyc=(S,ch)=>((S.ms&&S.ms[ch.id]&&S.ms[ch.id].cyc)|0);
 function msText(S,ch,mid){const q=msReq(msCyc(S,ch));return {m1:`그 구단 카드 ${q.m1}장 보유`,m2:`그 구단 주전 세트 ${q.m2}개 완성`,m3:`그 구단 7코스트 이상 카드 ${q.m3}장 제출`,
-  m4:`그 구단 선수 15명 이상 1군으로 주간 리그 ${q.m4}단계 이상 우승`,m5:`그 구단 레전드(9+) 카드 ${q.m5}장 보유`}[mid]}
+  m4:`그 구단 선수 15명 이상 1군으로 리그 우승 ${q.m4}회 (주간 리그 1위·연도별 리그 한국시리즈 우승)`,m5:`그 구단 레전드(9+) 카드 ${q.m5}장 보유`}[mid]}
 const ownedOf=(S,f)=>CARDS_.filter(c=>(S.owned[c.id]|0)>0&&f(c));
 function msProg(S,ch,mid){const l=ch.line,st=(S.ms&&S.ms[ch.id])||{};if(st[mid])return {done:true,have:1,need:1};
   const q=msReq(st.cyc|0);
   if(mid==='m1'){const n=ownedOf(S,c=>c.line===l).length;return {have:Math.min(n,q.m1),need:q.m1}}
   if(mid==='m2'){const n=SETS.filter(s=>s.kind==='team'&&s.line===l&&S.dexDone&&S.dexDone[s.id]).length;return {have:Math.min(n,q.m2),need:q.m2}}
   if(mid==='m3'){return {have:(st.sub|0),need:q.m3}}
-  if(mid==='m4')return {have:0,need:1,tier:q.m4};
+  if(mid==='m4')return {have:Math.min(st.lw|0,q.m4),need:q.m4};
   if(mid==='m5'){const n=ownedOf(S,c=>c.line===l&&c.cost>=9&&!c.mx).length;return {have:Math.min(n,q.m5),need:q.m5}}}
 function msDone(S,ch,mid,out){S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{};if(st[mid])return;st[mid]=Date.now();
   const rw={...MS_DEF.find(m=>m[0]===mid)[3]};if(rw.exShard){S.exShard=(S.exShard|0)+rw.exShard;while(S.exShard>=3){S.exShard-=3;rw.tix={...(rw.tix||{}),ex:((rw.tix||{}).ex|0)+1}}delete rw.exShard}
@@ -269,9 +269,10 @@ function missionSubmit(S,line,ids){const ch=CHAPTERS.find(c=>c.line===line);if(!
   for(const id in use){const keep=last?0:1;if((S.owned[id]|0)-use[id]<keep)return {err:last?'가진 장수보다 많아요':'중복 카드만 낼 수 있어요 (옵션에서 마지막 1장 제출 허용 가능)'}}
   const room=msReq(st.cyc|0).m3-(st.sub|0);let n=0;for(const id in use){const k=Math.min(use[id],room-n);if(k<=0)break;S.owned[id]-=k;if(S.owned[id]<=0)delete S.owned[id];n+=k}
   st.sub=(st.sub|0)+n;const out=[];if(st.sub>=msReq(st.cyc|0).m3)msDone(S,ch,'m3',out);return {used:n,have:st.sub,out}}
-// ★4: 주간 리그 우승 때 모드 쪽에서 호출. lineupCards = 1군 카드 객체 배열
+// ★4: 리그 우승 때 모드 쪽에서 호출(주간 리그 1위·연도별 리그 한국시리즈 우승). lineupCards = 1군 카드 객체 배열
+// SJ 2026-11-26: 주간 리그는 실제 1주가 걸려 단계 조건이면 몇 주씩 필요 → 단계 무관 우승 횟수(회차 c마다 1+c회)로 바꾸고 연도별 리그 우승도 인정
 function missionLeague(S,tier,lineupCards){const out=[];const cnt={};for(const c of lineupCards||[])if(c)cnt[c.line]=(cnt[c.line]|0)+1;
-  for(const ch of CHAPTERS)if((cnt[ch.line]|0)>=15&&tier>=msReq(msCyc(S,ch)).m4)msDone(S,ch,'m4',out);return out}
+  S.ms=S.ms||{};for(const ch of CHAPTERS)if((cnt[ch.line]|0)>=15){const st=S.ms[ch.id]=S.ms[ch.id]||{};if(st.m4)continue;st.lw=(st.lw|0)+1;if(st.lw>=msReq(st.cyc|0).m4)msDone(S,ch,'m4',out)}return out}
 // ── 국가대표 우승 미션 ─────────────────────────────────────────
 // 대회마다 명단 선수 중 그해 기본 카드(c.v 없음)가 있는 선수 전원의 그해 카드를 1장씩 보유하면 완료(도감 아님, 보유 기준)
 // 보상: 그 대회 국가대표 카드(v:'NT', mx, 미션 전용) 전부 + 5,000P. 보상 카드가 없는 대회(2018·2026)는 10,000P + 레전드 확정권

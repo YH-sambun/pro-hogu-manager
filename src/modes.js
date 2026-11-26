@@ -128,7 +128,7 @@ function newSeason(tier){const prev=S.season;tier=tier||(prev&&prev.tier)||1;
   S.season={n:prev?prev.n+1:1,tier,wk:wkStart(),teams,sched:sched3(10),round:0,st:newSt(10),over:false,last:[]};S.last=[];S.lgBest=Math.max(S.lgBest||1,tier);save()}
 function lgClose(s){s.over=true;const rk=lgStand(s).findIndex(x=>x.i===0)+1,first=rk===1&&!(S.lgFirst||{})[s.tier];s.rank=rk;
   const E=EC(),bonus=give(E?E.leagueEnd(s.tier,rk,first):null,[0,6000,4000,3000,2000,1500][rk]||800);if(rk===1)S.lgFirst={...(S.lgFirst||{}),[s.tier]:1};
-  // 미션 챕터 ★4: 1군(라인업·벤치·선발·불펜)에 같은 구단 15명 이상으로 4단계 이상 우승
+  // 미션 챕터 ★4: 1군(라인업·벤치·선발·불펜)에 같은 구단 15명 이상으로 우승(단계 무관, 횟수 누적)
   let msx='';if(rk===1&&E&&E.missionLeague){const T=userT(s),cs=[...(T.lineup||[]).map(x=>x.id),...(T.bench||[]),...(T.rot||[]),...(T.pen||[])].filter(Boolean).map(id=>byId[baseId(id)]).filter(Boolean);
     const out=E.missionLeague(S,s.tier,cs)||[];if(out.length)msx=' · 미션 달성: '+out.map(o=>`${o.ch} ${o.what}${o.rw&&E.rwText?' ('+E.rwText(o.rw)+')':''}`).join(', ')}
   return ` · ${tierName(s.tier)} ${rk}위${bonus?' · 보너스 '+bonus:''}`+titleClose(s,'lg',s.tier)+(rk===1&&s.tier<10?` · 다음 주 ${tierName(s.tier+1)}로 승급`:'')+msx}
@@ -205,7 +205,7 @@ function ylAdvance(L){let msg='';
       if(lo===0){msg+=` · ${s.nm} 탈락`;L.place=s.nm==='한국시리즈'?2:Math.max(3,L.rank)}
       if(L.post.q.length){const nx=L.post.q.shift();L.post.cur={...nx,lo:wi,w:[0,0]};if(wi===0)msg+=` · ${nx.nm} 진출`}
       else{L.done=true;L.champ=wi;
-        const E=EC();if(wi===0){const first=!(S.ylWon||{})[L.year];S.ylWon={...(S.ylWon||{}),[L.year]:((S.ylWon||{})[L.year]||0)+1};L.place=1;msg+=` · ${L.year} 한국시리즈 우승! ${give(E?E.yearLeague(1,first):null,10000,!first)}`}
+        const E=EC();if(wi===0){const first=!(S.ylWon||{})[L.year];S.ylWon={...(S.ylWon||{}),[L.year]:((S.ylWon||{})[L.year]||0)+1};L.place=1;msg+=` · ${L.year} 한국시리즈 우승! ${give(E?E.yearLeague(1,first):null,10000,!first)}`;if(E&&E.missionLeague){const T=userT(L),cs=[...(T.lineup||[]).map(x=>x.id),...(T.bench||[]),...(T.rot||[]),...(T.pen||[])].filter(Boolean).map(id=>byId[baseId(id)]).filter(Boolean);const out=E.missionLeague(S,1,cs)||[];if(out.length)msg+=' · 미션 달성: '+out.map(o=>`${o.ch} ${o.what}`).join(', ')}}
         else{const pl=L.place||Math.max(3,L.rank);L.place=pl;const g=E?give(E.yearLeague(pl,false),0,true):'';msg+=` · ${L.year} 우승은 ${tname(wi,L)}${g?' · '+g:''}`}
         S.ylHist=[...(S.ylHist||[]),{year:L.year,rank:L.rank,champ:wi===0?S.team.name:tname(wi,L),won:wi===0,t:Date.now()}].slice(-40)}
       continue}
