@@ -151,8 +151,8 @@ function dexNat(KN,tix,q){const N=ECON.NATS||[],F=S.dexF||{},fin=N.filter(n=>ECO
    <div class="dexg">${mem.map(m=>{const own=m.ids.find(id=>(S.owned[id]|0)>0),c=byId[own||m.ids.find(id=>dexHas(id))||m.ids[0]];return c?dexCell(c):''}).join('')||'<p class="note">해당 선수 없음</p>'}</div></div>`}).join('')||'<p class="note">해당 대회 없음</p>'}</div></section>`}
 let DEXYS=null;
 function dexAll(KN,tix,sel,q){const F=S.dexF,lim=S.dexLim||60;DEXYS=DEXYS||[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);
-  const TS=[...new Set(CARDS.filter(c=>!F.y||c.year===+F.y).map(c=>c.team))].sort(),VK=[['n','일반 카드'],...Object.entries(VN)];
-  const L=CARDS.filter(c=>(!F.y||c.year===+F.y)&&(!F.t||c.team===F.t)&&(!F.p||(F.p==='P'?['SP','RP'].includes(c.pos):F.p==='B'?!['SP','RP'].includes(c.pos):c.pos===F.p))&&(!F.v||(F.v==='n'?!c.v:c.v===F.v))&&(!F.h||(F.h==='have')===!!dexHas(c.id))&&(!q||c.name.includes(q)));
+  const TS=[...new Set(CARDS.filter(c=>!F.y||c.year===+F.y).map(c=>c.team))].sort(),VK=[['n','일반 카드'],...Object.entries(VN),['nat','국가대표']],NATID=F.v==='nat'?new Set((ECON.NATS||[]).flatMap(n=>n.mem.flatMap(m=>m.ids))):null;
+  const L=CARDS.filter(c=>(!F.y||c.year===+F.y)&&(!F.t||c.team===F.t)&&(!F.p||(F.p==='P'?['SP','RP'].includes(c.pos):F.p==='B'?!['SP','RP'].includes(c.pos):c.pos===F.p))&&(!F.v||(F.v==='nat'?NATID.has(c.id):F.v==='n'?!c.v:c.v===F.v))&&(!F.h||(F.h==='have')===!!dexHas(c.id))&&(!q||c.name.includes(q)));
   const have=L.filter(c=>dexHas(c.id)).length,on=F.y||F.t||F.p||F.v||F.h||q;
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${x==='all'}" class="${x==='all'?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
