@@ -202,10 +202,13 @@ function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
   return 0}
 // 합성 (엔진 synth)
 function doSynth(){const k=S.sk||'p',pool=synPool(k),m=pool.filter(x=>S.mat.includes(x.key));if(synCheck(k,m))return;let out='';
-  const mats=k==='p'?m.map(x=>x.c.id):k==='b'?m.map(x=>x.b):m.map(x=>x.x[0]);const r=synth(k,mats,S.locks.filter(x=>!/~\d+$/.test(x)),{ex:k==='p'?(S.synEx||[]):[]});if(r.err){S.msg=r.err;return}
+  const mats=k==='p'?m.map(x=>x.c.id):k==='b'?m.map(x=>x.b):m.map(x=>x.x[0]);const r=synth(k,mats,k==='p'?S.locks:S.locks.filter(x=>!/~\d+$/.test(x)),{ex:k==='p'?(S.synEx||[]):[]});if(r.err){S.msg=r.err;return}
   if(k==='p'){const ids=new Set(m.map(x=>x.c.id)),back=S.blocks.filter(b=>ids.has(b.on)).length;S.blocks=S.blocks.filter(b=>!ids.has(b.on));
     for(const x of m){const id=baseId(x.c.id);S.owned[id]=(S.owned[id]|0)-1;if(S.owned[id]<=0){delete S.owned[id];S.blocks=S.blocks.filter(b=>b.on!==id)}}
-    S.locks=S.locks.filter(x=>!ids.has(x));const got=r.out;ECON.gain(S,[got]);revQueue([got]);const c=byId[got];out=card(c,{})+`<small>코스트 ${r.cost} 선수 획득${r.rules&&r.rules.length?' · '+esc(r.rules.join(' · ')):''}${back?` · 끼워 둔 스킬 블록 ${back}개도 사라짐`:''}</small>`}
+    S.locks=S.locks.filter(x=>!ids.has(x));
+    // 중복 카드는 서로 같은 카드라, 남은 장수에 맞춰 잠금 수를 앞 번호부터 다시 매김(잠근 장은 남고 안 잠근 장이 재료로 쓰임)
+    for(const id of new Set(m.map(x=>baseId(x.c.id)))){const re=new RegExp('^'+id.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(~\\d+)?$'),n=S.locks.filter(x=>re.test(x)).length,have=S.owned[id]|0;S.locks=S.locks.filter(x=>!re.test(x));for(let i=1;i<=Math.min(n,have);i++)S.locks.push(i===1?id:id+'~'+i)}
+    const got=r.out;ECON.gain(S,[got]);revQueue([got]);const c=byId[got];out=card(c,{})+`<small>코스트 ${r.cost} 선수 획득${r.rules&&r.rules.length?' · '+esc(r.rules.join(' · ')):''}${back?` · 끼워 둔 스킬 블록 ${back}개도 사라짐`:''}</small>`}
   else if(k==='b'){const us=new Set(m.map(x=>x.b.u));S.blocks=S.blocks.filter(b=>!us.has(b.u));S.blocks.push(r.out);out=`<b>${r.out.g}등급 · ${esc(bname(r.out))}</b><small>${Object.entries(r.out.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')}</small>`}
   else if(k==='s'){const id=m[0].x[0];S.sq[id]-=3;S.sq[r.out]=(S.sq[r.out]||0)+1;const x=SUP_BY[r.out];out=`<b>${esc(x[1])}</b><small>${esc(x[3])} · ${x[4]}경기</small>`}
   else{for(const x of m)S.tq[x.x[0]]--;S.tq[r.out]=(S.tq[r.out]||0)+1;if(S.tsel&&!(S.tq[S.tsel]>0))S.tsel=null;const x=TC_BY[r.out];out=tcard(x,{})+`<small>${r.grade} 작전 카드</small>`}

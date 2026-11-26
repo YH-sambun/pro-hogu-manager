@@ -306,7 +306,7 @@ const L3same=cs=>cs.every(c=>c.line===cs[0].line);
 // opt.ex: 결과에서 뺄 구단 계보(line) 목록, 최대 SYN_EX_MAX개. 걸러서 후보가 없으면 제외를 무시
 const SYN_EX_MAX=3,SYN_EX10=.05;
 function synth(kind,mats,locks,opt){
-  if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):baseId(m);if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 재료 불가'}}
+  if(locks&&locks.length){const L=new Set(locks),k=m=>kind==='b'?(m&&'b'+m.u):m;/* 선수는 장 단위(중복 2장째 'id~2')로 잠금 확인 */if(mats.some(m=>L.has(k(m))))return {err:'잠긴 카드·블록은 재료 불가'}}
   if(kind!=='b'&&mats.length!==3)return {err:'재료 3개 필요'};
   if(kind==='p'){const cs=mats.map(id=>byId[baseId(id)]);if(cs.some(c=>!c))return {err:'없는 카드'};
     const EXL=new Set(((opt&&opt.ex)||[]).slice(0,SYN_EX_MAX)),okL=c=>!EXL.has(c.line),exf=P=>{const Q=P.filter(okL);return Q.length?Q:P},exN=EXL.size?`제외: ${[...EXL].join(', ')}`:'';
