@@ -481,6 +481,16 @@ body[data-bg=fungo] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28)
 body[data-bg=catch] .bgl{background-image:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.45)),url(img/bg-catch.jpg),url(img/bg-field.jpg)}
 .toast{flex-basis:100%}#hdr:empty{display:none}
 .gmvp{margin:0 0 10px;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--gold) 18%,transparent);border-left:4px solid var(--gold)}.gmvp b{color:var(--gold);margin-right:6px}body.xl .gmvp{background:#fff4ce!important;border-left-color:#e0c060!important}body.xl .gmvp b{color:#222!important}
+@media(max-width:700px){/* 카드 상세 팝업: 폰 한 화면(SJ 2026-11-26) */
+.modal{padding:8px 8px calc(78px + env(safe-area-inset-bottom,0px))}.modal .mbox{padding:10px}
+.mbox>.mhead{gap:6px;margin-bottom:6px}.mbox>.mhead>b{display:none}.mbox>.mhead .pill{order:9;flex-basis:100%;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 8px}
+.mbox>.mhead button{padding:4px 10px;min-height:30px;font-size:13px}.mbox .mmeta{margin:0 0 6px;font-size:12px}.mbox .mmeta:empty{display:none}
+.mbox .mrec{margin:2px 0 6px;padding:4px 8px;font-size:12px}
+.faces .card.big .art{aspect-ratio:auto!important;height:150px!important}.faces .card.big .numart b{font-size:72px}
+.faces .card.big .st{padding-top:4px;padding-bottom:4px}.faces .card.big .sr{min-height:0;line-height:1.25}
+.mbox .eqp{margin:6px 0;padding:8px}.mbox .eqh{margin-bottom:4px}.mbox .eqslot{min-height:42px;padding:3px 6px}
+.mbox .mfoot{margin:4px 0 0;font-size:12px}.faces{cursor:pointer}
+.faces .cback{gap:6px;padding:8px}.faces .cback .fmap{height:120px;width:100%}.faces .cback .sk2{zoom:.5}.faces .cback .cbh{padding-top:4px;padding-bottom:4px}}
 #hdr .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;margin:0;max-width:min(92vw,680px);box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none;animation:tst 6s forwards}@keyframes tst{0%,85%{opacity:1}100%{opacity:0}}
 /* 그림이 보이게: 막은 옅게, 글자 있는 묶음에만 반투명 바탕 */
 #hdr{background:rgba(6,14,10,.62);border-radius:0 0 16px 16px;padding:14px 18px 12px;border-bottom:0;backdrop-filter:blur(3px)}
