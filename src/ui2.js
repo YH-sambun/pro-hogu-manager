@@ -559,7 +559,19 @@ const pick2=a=>a[Math.floor(Math.random()*a.length)];
 // 추천 라인업: 보유 카드로 자동 편성 (능력 우선 / 덱 효과 우선 / 코스트 절약). 코스트 상한 150 안에서
 const bv=c=>c.r.con*.35+c.r.pow*.35+c.r.eye*.2+c.r.spd*.1;
 // 코스트 페널티 cp를 이분 탐색: 상한 안에 들어가는 가장 작은 cp(=예산을 최대한 씀)
-function recommend(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)return r;let lo=0,hi=recFx()&&recFx().must?40:12,best=recommend1(mode,hi);for(let i=0;i<14;i++){const m=(lo+hi)/2,x=recommend1(mode,m);if(recCost(x)<=COST_CAP){hi=m;best=x}else lo=m}return best}
+// Again 우승년도 목표(t.ycap): 해마다 최대 ycap명만 세므로, 넘친 해의 약한 선수를 모자란 해의 선수로 바꿈(코스트 상한 안에서)
+function recCap(r,t){if(!t||!t.ycap)return r;const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i]),...r.bench.map((x,i)=>['bench',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
+ const pool=REC_ALL?CARDS:OWN.filter(c=>!c.dup&&!abOf(c.id));
+ for(let it=0;it<40;it++){const yc={};for(const s of sl){const c=byId[get(s)];if(c&&t.m(c))yc[c.year]=(yc[c.year]||0)+1}const over=Object.keys(yc).find(y=>yc[y]>t.ycap);if(!over)break;
+  const names=new Set(sl.map(s=>get(s)).filter(Boolean).map(id=>byId[id].on||byId[id].name)),room=COST_CAP-recCost(r);let ok=false;
+  const outs=sl.filter(s=>{const c=byId[get(s)];return c&&t.m(c)&&c.year===+over}).sort((a,b)=>(a[0]==='bench'?-1:0)-(b[0]==='bench'?-1:0)||byId[get(a)].ovr-byId[get(b)].ovr);
+  const cur=sl.map(s=>byId[get(s)]).filter(Boolean),wc=cur.filter(c=>t.wild&&t.wild(c)).length,exT=new Set(cur.filter(c=>c.v==='EX').map(c=>c.type));
+  for(const s of outs){const o=byId[get(s)];const c=pool.filter(c=>(t.m(c)&&c.year!==+over&&(yc[c.year]||0)<t.ycap||t.wild&&wc<2&&t.wild(c)&&!(c.v==='EX'&&exT.has(c.type)))&&c.type===o.type&&!names.has(c.on||c.name)&&c.cost<=o.cost+room&&(s[0]==='lu'?canPos(c,r.lu[s[1]][0]):s[0]==='rot'?c.pos==='SP':true)).sort((a,b)=>b.ovr-a.ovr)[0];
+   if(c){set(s,c.id);ok=true;break}}
+  if(!ok)break}
+ return r}
+function recommend(mode){return recCap(recommend0(mode),recFx())}
+function recommend0(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)return r;let lo=0,hi=recFx()&&recFx().must?40:12,best=recommend1(mode,hi);for(let i=0;i<14;i++){const m=(lo+hi)/2,x=recommend1(mode,m);if(recCost(x)<=COST_CAP){hi=m;best=x}else lo=m}return best}
 const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||c.v==='EX'&&(!t.ls||t.ls.includes(c.line)))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
 // 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
 let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{let r=recommend('power');if(recCost(r)>COST_CAP){REC_ALL=2;r=recommend('power')}return recFix(recStar(r,recFx()),recFx())}finally{S.recF=keep;REC_ALL=0}}

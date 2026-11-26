@@ -20,7 +20,8 @@ const RIVALS=[['롯데','NC','낙동강 더비'],['SK','KT','통신사 더비'],
 const FA_LINKS=[['강민호','롯데','삼성'],['최형우','삼성','KIA'],['김현수','두산','LG'],['양의지','두산','NC'],['손아섭','롯데','NC'],['정근우','SK','한화'],['이용규','KIA','한화'],['박석민','삼성','NC'],['차우찬','삼성','LG'],['황재균','롯데','KT'],['민병헌','두산','롯데'],['채은성','LG','한화'],['박건우','두산','NC'],['나성범','NC','KIA'],['유강남','LG','롯데'],['홍성흔','두산','롯데'],['심정수','키움','삼성'],['박진만','키움','삼성'],['안치홍','KIA','롯데'],['오재일','두산','삼성'],['최주환','두산','SK'],['박해민','삼성','LG'],['정우람','SK','한화'],['손승락','키움','롯데'],['정수근','두산','롯데'],['김주찬','롯데','KIA'],['장원준','롯데','두산']];
 // 묶음 계보 덱 효과: 엘롯기 = LG·롯데·KIA(각 4명 이상). 구도 인천 = 삼미·청보·태평양·현대·우리·히어로즈·넥센·키움(키움 계보) + 쌍방울·SK·SSG(SK 계보). 흥참동(흥행 참패 동맹) = SK·KT·키움·NC 계보(각 3명 이상)
 // [이름, 계보들, 계보별 최소 인원]. 합계 25명 이상(벤치 포함)
-const LINE_UNIONS=[['구도 인천',['키움','SK'],1,'인천 연고 구단'],['엘롯기',['LG','롯데','KIA'],4,'LG·롯데·KIA'],['흥참동',['SK','KT','키움','NC'],3,'SSG·KT·키움·NC'],['아섭동맹',['롯데','NC','한화'],3,'손아섭이 뛴 롯데·NC·한화']];
+const LINE_UNIONS=[ // 2026-11-26(SJ): 옛 '구도 인천'(키움+SK 계보) 폐기. 현대·넥센·키움은 인천이 아님 → 삼미·청보·태평양 시대 세트가 '구도 인천'
+ ['엘롯기',['LG','롯데','KIA'],4,'LG·롯데·KIA'],['흥참동',['SK','KT','키움','NC'],3,'SSG·KT·키움·NC'],['아섭동맹',['롯데','NC','한화'],3,'손아섭이 뛴 롯데·NC·한화']];
 // 이름 세트(SJ 2026-11-25): [이름, 계보(null이면 무관), 선수('이름' 또는 '이름:연도'), A 인원, S 인원]. 같은 선수는 1명으로 셈
 // 히어로즈 메이저리거: 메이저리그로 가기 전 대표 시즌(강정호 2014 40홈런, 박병호 2015 53홈런, 김하성 2020 30홈런, 이정후 2022 MVP, 송성문 2025)
 const NAME_SETS=[['히어로즈 메이저리거','키움',['강정호:2014','박병호:2015','김하성:2020','이정후:2022','송성문:2025'],4,5],
@@ -36,12 +37,21 @@ const nsHit=(c,e)=>{const [n,y]=e.split(':');return (c.on||c.name)===n&&(!y||c.y
 // 시대 덱 효과: [이름, 계보, 시작 연도, 끝 연도, 필요 인원(벤치 포함 25명 중)]. 비밀번호 8888577 = 롯데 2001~2007 순위(8·8·8·8·5·7·7)
 const ERA_SETS=[['비밀번호 8888577','롯데',2001,2007,25],
  // 2026-11-26(SJ): 사라진 구단 전 연도 묶음. 6번째 값은 추천 목록 표시용 구단명(계보 이름 대신)
- ['인천 삼청태','키움',1982,1995,25,'삼미·청보·태평양'],['방울이돌격대','SK',1991,1999,25,'쌍방울']]; // 2026-11-25(SJ): 벤치 포함 25명 전원. EX·영구결번·커리어하이(같은 계보)는 와일드카드로 셈
+ ['구도 인천','키움',1982,1995,25,'삼미·청보·태평양',5],['방울이돌격대','SK',1991,1999,25,'쌍방울',5]]; // 7번째 값: 정신력 추가 보너스(SJ 2026-11-26)
+// Again 우승년도 덱(SJ 2026-11-26): 구단별 세 해에서 해마다 최대 7명(21명) + 같은 계열 EX·커하·영구결번 와일드 2장 = 23명이면 발동(S칸).
+// [구단 표시명, 팀명들, 세 해, 와일드 계보(l), 와일드 팀명(계보 대신)]. 균형: 와일드 포함 추정 76.1~77.5 (notes/우승덱_조합.md)
+const AGAIN_Y=7,AGAIN_NEED=23,HERO=['우리','히어로즈','넥센','키움'];
+const AGAIN_SETS=[['해태',['해태'],[1987,1989,1991],'KIA'],['KIA',['KIA'],[2002,2017,2024],'KIA'],['삼성',['삼성'],[2003,2014,2026],'삼성'],['OB',['OB'],[1982,1990,1995],'두산'],['두산',['두산'],[2001,2013,2015],'두산'],
+ ['SK',['SK'],[2007,2008,2010],'SK'],['SSG',['SSG'],[2022,2025,2026],'SK'],['LG',['LG'],[1994,2007,2023],'LG'],['현대',['현대'],[1998,2000,2007],null,['삼미','청보','태평양','현대']],['롯데',['롯데'],[1984,1992,2008],'롯데'],
+ ['빙그레',['빙그레'],[1989,1991,1992],'한화'],['한화',['한화'],[1999,2006,2007],'한화'],['KT',['KT'],[2021,2023,2026],'KT'],['NC',['NC'],[2014,2020,2021],'NC'],['넥센',['우리','히어로즈','넥센'],[2011,2013,2014],null,HERO],['키움',['키움'],[2019,2021,2022],null,HERO]];
+const againName=(t,ys)=>`Again ${t} ${ys.map(y=>String(y%100).padStart(2,'0')).join('·')}`,againHit=(a,c)=>a[1].includes(c.team)&&a[2].includes(c.year),againWild=(a,c)=>(c.v==='EX'||c.v==='CH'||c.v==='RN')&&!againHit(a,c)&&(a[4]?a[4].includes(c.team):c.line===a[3]);
+function againCount(a,cards){const yc={};let k=0,w=0;for(const c of cards){if(!c)continue;if(againHit(a,c)){yc[c.year]=(yc[c.year]||0)+1;if(yc[c.year]<=AGAIN_Y)k++}else if(againWild(a,c)&&w<2){w++;k++}}return k} // 2026-11-25(SJ): 벤치 포함 25명 전원. EX·영구결번·커리어하이(같은 계보)는 와일드카드로 셈
 // 덱 추천 목표(SJ 2026-11-25): 원하는 덱 효과를 고르면 그 조건에 맞는 카드를 우선. m=조건 카드, s=꼭 넣을 선수(FA 이적)
 const FX_LINES=['KIA','KT','LG','NC','SK','두산','롯데','삼성','키움','한화'],FX_LN={SK:'SSG(SK)',키움:'키움(현대·넥센)'};
 const FX_TARGETS=[...FX_LINES.map(l=>({k:'L:'+l,g:'단일구단',n:FX_LN[l]||l,m:c=>c.line===l,ls:[l]})),
  ...LINE_UNIONS.map(([n,ls,mn,lb])=>({k:'U:'+n,g:'묶음',n:`${n} (${lb||ls.join('·')})`,m:c=>ls.includes(c.line),ls,q:Object.fromEntries(ls.map(l=>[l,mn||1]))})),
  ...RIVALS.map(([a,b,n])=>({k:'R:'+n,g:'라이벌',n:`${n} (${FX_LN[a]||a}·${FX_LN[b]||b})`,m:c=>c.line===a||c.line===b,ls:[a,b],q:{[a]:10,[b]:10}})),
+ ...AGAIN_SETS.map(a=>({k:'A:'+a[0],g:'우승년도',n:againName(a[0],a[2]),m:c=>againHit(a,c),wild:c=>againWild(a,c)&&c.v!=='RN',ls:a[4]?[]:[a[3]],ycap:AGAIN_Y})),
  ...ERA_SETS.map(([n,l,y0,y1,need,lb])=>({k:'E:'+n,g:'시대',n:`${n} (${lb||l} ${y0}~${y1})`,m:c=>c.line===l&&c.year>=y0&&c.year<=y1,ls:[l]})),
  {k:'S:AS',g:'특별',n:'올스타덱',m:c=>c.v==='AS'},{k:'S:GG',g:'특별',n:'골든글러브덱',m:c=>c.v==='GG'},
  // 이름 세트: 풀은 전체 카드(loose), 명단 선수는 must로 꼭 넣음. 좌완 왕국·좌타 라인업: 투수/타자만 왼손으로 제한(EX 와일드카드 없음)
@@ -188,7 +198,9 @@ function teamColor(cards,sel,bench){
   // 묶음 계보(A): 여러 계보를 합쳐 20명 이상(각 계보 1명 이상)
   for(const [n,ls,mn,lb] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=25&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,lb||ls.map(lname).join('+'),5,4))}
   // 시대 세트는 S 칸(SJ 2026-11-25): 같은 구단이라 A 칸의 단일구단과 함께 켤 수 있게
-  for(const [n,l,y0,y1,need,lb] of ERA_SETS){const k=cards.filter(c=>c&&(any(c)||c.line===l&&(chW.has(c)||c.year>=y0&&c.year<=y1))).length;if(k>=need)add(mk('Y','S',n,`${y0}~${y1} ${lb||lname(l)} ${k}명`,5,4))}
+  for(const [n,l,y0,y1,need,lb,men] of ERA_SETS){const k=cards.filter(c=>c&&(any(c)||c.line===l&&(chW.has(c)||c.year>=y0&&c.year<=y1))).length;if(k>=need){const x=mk('Y','S',n,`${y0}~${y1} ${lb||lname(l)} ${k}명${men?` · 정신력 +${men}`:''}`,5,4);if(men)x.men=men;add(x)}}
+  // Again 우승년도 덱: 해마다 최대 7명 + 같은 계열 와일드 2장 = 23명
+  for(const a of AGAIN_SETS){const k=againCount(a,cards);if(k>=AGAIN_NEED)add(mk('Y','S',againName(a[0],a[2]),`우승년도 ${k}명`,5,4))}
   // 올스타덱·골든글러브덱: 연도·구단이 섞여도 특별 카드 장수로
   // 2026-11-25(SJ): 주전 20명을 다 채우면 최고 등급(S). EX·영구결번도 와일드카드로 셈
   {const w=nv('EX')+nv('RN');
@@ -207,7 +219,7 @@ function teamColor(cards,sel,bench){
   if(hs[0]&&hs[0][1]>=6)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=4)add(mk('E','B','고교 동문',hs[0][0],2,1));
   if(un[0]&&un[0][1]>=5)add(mk('E','B','대학 동문',un[0][0],2,1));
   const S2=new Set(sel||[]);for(const g of ['S','A','B']){const c=all.filter(x=>x.g===g);if(!c.length)continue;fx.push(c.find(x=>S2.has(x.key))||c.sort((a,b)=>(b.b+b.p)-(a.b+a.p))[0])}
-  return {fx,all,bat:fx.reduce((s,x)=>s+x.b,0),pit:fx.reduce((s,x)=>s+x.p,0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
+  return {fx,all,bat:fx.reduce((s,x)=>s+x.b,0),pit:fx.reduce((s,x)=>s+x.p,0),men:fx.reduce((s,x)=>s+(x.men||0),0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
 // ===== 스킬 블록 =====
 const SHAPES={I2:[[0,0],[0,1]],I3:[[0,0],[0,1],[0,2]],V3:[[0,0],[1,0],[1,1]],O:[[0,0],[0,1],[1,0],[1,1]],I4:[[0,0],[0,1],[0,2],[0,3]],T:[[0,0],[0,1],[0,2],[1,1]],L:[[0,0],[1,0],[2,0],[2,1]],J:[[0,1],[1,1],[2,1],[2,0]],S:[[0,1],[0,2],[1,0],[1,1]],Z:[[0,0],[0,1],[1,1],[1,2]]};
 const GRADES={C:{m:.75,w:50},B:{m:1,w:30},A:{m:1.25,w:15},S:{m:1.5,w:5}};
@@ -365,7 +377,7 @@ function simTeam(T,cond,fat){
   const all=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);
   const M=mgrOf(T),tac=M?{...M.t}:{...TAC_DEF},fx=M?M.fx:{};
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
-  const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel,(T.bench||[]).map(id=>byId[id]).filter(Boolean)),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
+  const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel,(T.bench||[]).map(id=>byId[id]).filter(Boolean)),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(k==='men'&&tc.men)raw[k]+=tc.men;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(115,raw[k]+(sk[k]||0))}
     const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
     const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+bon+(sk.def||0)])):null;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;const fv=fat&&fat[c.id]||0;if(c.type==='P'&&fv>FAT.pen0){const fm=fatMul(fv);r.stu*=fm;r.ctl*=fm;r.kv*=fm;r.hv*=fm;r.sta*=1-fv/250}return {...c,r,ps,rawr:raw,fat:fv}};
   const LC=T.lineup.map(x=>byId[x.id]);
@@ -535,4 +547,4 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={CHAMPS,isChamp,RTIER,DTIER,TIER_FX,ptTier,potMul,abCapC,NAT_SETS,natHit,ARM_N,armOf,ptGrades,ptLetter,FAT,fatAdd,fatRest,fatSP,FX_TARGETS,FX_T_BY,FA_LINKS,ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={AGAIN_SETS,againCount,againName,CHAMPS,isChamp,RTIER,DTIER,TIER_FX,ptTier,potMul,abCapC,NAT_SETS,natHit,ARM_N,armOf,ptGrades,ptLetter,FAT,fatAdd,fatRest,fatSP,FX_TARGETS,FX_T_BY,FA_LINKS,ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
