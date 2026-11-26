@@ -780,6 +780,9 @@ body{padding-top:env(safe-area-inset-top)}
 body:has(.ofnav){padding-bottom:130px}
 body:has(.ofg:not([data-on=c])) .setb{display:none}
 }
+/* iOS 홈 화면 앱(black-translucent): 내용이 짧으면 하단 고정 바가 바닥에서 뜨는 버그 보정 */
+html{min-height:calc(100% + env(safe-area-inset-top))}
+body{min-height:100vh;min-height:100dvh}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
