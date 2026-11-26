@@ -84,6 +84,7 @@ function blockGrades(n){n=n||3;const g=()=>{const u=rnd();return u<.05?'S':u<.2?
 // 확정권: 뽑기 한 번을 공짜로/확정으로
 const TIX={ch:'커리어하이 카드 1장(연도 지정 가능)',prem:'프리미엄 팩 1개',block:'블록 팩 1개(1장 이상 A급)',star:'스타(6+) 카드 1장',gg:'골든글러브 카드 1장(연도 지정 가능)',
   ex:'EX 카드 1장(구단 지정 가능)',legend:'레전드(9+) 카드 1장',abr:'유학 초기화권',pick:'레전드 선택권(원하는 9+ 카드 1장)'};
+for(const p of PACKS)TIX['pk_'+p.k]=p.n+' 1개'; // 공지 보상용 팩 개봉권(SJ 2026-11-26)
 const tixPool={ch:c=>c.v==='CH',star:c=>c.cost>=6&&!c.mx,gg:c=>c.v==='GG',ex:c=>c.v==='EX'&&!c.mx,legend:c=>c.cost>=9&&!c.mx};
 // 중복 분해: 남는 카드 1장 → 코스트×30P (합성·유학 재료로 쓰지 않을 때)
 const DISMANTLE=30;

@@ -157,12 +157,15 @@ function vShop(){const pk=S.pk||'n',P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.
   ${pk==='ty'?(()=>{const ys=YEARS_OF(pick.ty.line),a=pick.ty.years;return `<div class="lbl">연도 3개 고르기 <small>(${a.length}/3)</small></div><div class="chips">${ys.map(v=>{const on=a.includes(v),full=!on&&a.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${v}</button>`}).join('')}</div>`})():''}
   <div class="tools" style="margin-top:12px"><button data-a="pkbuy" ${ok&&afford?'':'disabled'}>${P[2].toLocaleString()}P로 열기 <kbd class="kb">R</kbd></button>${multi&&sel.length<3?`<span class="note">${3-sel.length}개 더 선택</span>`:''}${!afford?'<span class="note" style="color:var(--bad)">포인트 부족</span>':''}${S.pkMsg?`<span class="note">${esc(S.pkMsg)}</span>`:''}</div>
   ${pkOutHTML()}<!-- 개봉 결과는 열기 버튼 바로 아래(오른쪽 상자)에: 목록 아래에 두면 화면 밖이라 안 보임 -->
-  ${tix.length?`<div class="lbl" style="margin-top:16px">확정권</div><div class="tools">${tix.map(([k,n])=>`<button class="ghost" data-tix="${k}">${esc(TIXN[k]||k)} ×${n}</button>`).join('')}
+  ${tix.length?`<div class="lbl" style="margin-top:16px">확정권</div><div class="tools">${tix.map(([k,n])=>`<button class="ghost" data-tix="${k}">${esc(TIXN[k]||k)} ×${n}</button>${k.startsWith('pk_')&&n>1?`<button class="ghost" data-tix="${k}" data-tixall="1">${n}개 전부 열기</button>`:''}`).join('')}
    ${tix.filter(([k])=>k==='gg'||k==='ch'||k==='ex').map(([k])=>{const v=k==='gg'?'GG':k==='ch'?'CH':'EX',o=k==='ex'?[...new Set(CARDS.filter(c=>c.v==='EX').map(c=>c.line))].sort():[...new Set(CARDS.filter(c=>c.v===v).map(c=>c.year))].sort((a,b)=>b-a);return o.length?`<select id="tixarg-${k}" aria-label="${esc(TIXN[k]||k)} 조건"><option value="">${k==='ex'?'구단':'연도'} 무작위</option>${o.map(x=>`<option value="${esc(x)}">${k==='ex'?esc(msLn(x)):x}</option>`).join('')}</select>`:''}).join('')}
    ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+VN[c.v]:''}</option>`).join('')}</select>`:''}</div>`:''}
   </div></div></section>`}
 function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
   if(D.pkv){const k=S.pk,v=k==='y'||k==='ty'?+D.pkv:D.pkv,a=k==='ty'?S.pkSel.ty.years:S.pkSel[k],i=a.indexOf(v);if(i>=0)a.splice(i,1);else if(a.length<3)a.push(v);return 1}
+  if(D.tix&&String(D.tix).startsWith('pk_')){const k=D.tix,pk=k.slice(3),P=PACKS.find(x=>x[0]===pk),n=D.tixall?(S.tix[k]|0):1,cards=[],txt=[],dex=[],o=S.pk;S.pkOut=null;S.pkMsg='';if(!P)return 1;
+    for(let i=0;i<n&&(S.tix[k]|0)>0;i++){S.tix[k]--;S.pt+=P[2];S.pk=pk;shopAct({a:'pkbuy'});const r=S.pkOut;if(S.pkMsg){S.tix[k]++;S.pt-=P[2];break}if(r){if(r.cards)cards.push(...r.cards);if(r.dex)dex.push(...[].concat(r.dex));if(r.text)txt.push(r.text)}S.pkOut=null}
+    S.pk=o;S.pkOut=cards.length?{cards,dex}:txt.length?{text:txt.join(' / ')}:null;return 1}
   if(D.tix){const k=D.tix;S.pkOut=null;
     if(k==='prem'){S.tix.prem--;S.pt+=1800;const r=ECON.buyCards(S,CARDS,'p');if(r.err){S.tix.prem++;S.pt-=1800;S.pkMsg=r.err}else S.pkOut={cards:r.cards,dex:r.dex}}
     else if(k==='block'){S.tix.block--;const g=ECON.blockGrades(3);if(!g.some(x=>x==='A'||x==='S'))g[2]='A';S.pkOut={text:'블록: '+g.map(x=>{const b=gainBlock(null,x);return `${x}급 ${bname(b)}`}).join(', ')}}
@@ -807,9 +810,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
  <p class="mmeta">${[c.rg?`출신 지역 <b>${esc(c.rg)}</b>`:'',c.hs?`출신 고교 <b>${esc(c.hs)}</b>`:'',c.b?`${c.year-c.b}세`:'',HAND[c.h]||'',`${esc(lname(c.line))} 계보`].filter(Boolean).join(' · ')}</p>
  <div class="faces${S.mflip?' flipped':''}" data-mflip="1" title="탭하면 앞/뒷면"><div class="face f-front">${card(c,{full:1,dfx:{bat:T.bat,pit:T.pit},dids:ids,nocond:1})}</div><div class="face f-back">${backFace(c0,0)}</div></div>${simPanel(c0)}</div></div>`}
 // 공지사항(SJ 2026-11-26): 처음 보는 공지는 자동으로 띄우고, 보상(카드팩 등)은 '받기'로 한 번만 지급. 새 공지는 맨 위에 추가
-const NOTICES=[
- {id:'n1126',d:'2026-11-26',t:'모바일 화면 개편 · 홈 화면 앱 지원',b:['폰에서는 아래 탭바로 메뉴를 옮겨 다닐 수 있어요.','카드팩은 맨 위 드롭다운에서 고르고 바로 열 수 있어요.','브라우저 공유 메뉴의 "홈 화면에 추가"로 앱처럼 설치할 수 있어요.','유학은 이제 다시 보내면 이전 결과가 새 결과로 바뀌어요.'],rw:{tix:{prem:1}}}
-];
+/*NOTICES*/
 const ntcOpen=()=>S.ntcView?NOTICES.find(n=>n.id===S.ntcView):NOTICES.find(n=>!(S.ntc||{})[n.id]);
 function noticeHTML(){if(S.modal||S.dexView||S.bmodal||S.ntcHide)return '';const n=ntcOpen();if(!n)return '';const got=(S.ntc||{})[n.id]==='got',rw=n.rw&&!got;
  return `<div class="modal ntcm" role="dialog" aria-modal="true" aria-label="공지사항"><div class="mbox"><small class="note" style="margin:0">공지 · ${n.d}</small><h2 style="margin:4px 0 10px">${esc(n.t)}</h2><ul class="ntcb">${n.b.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
