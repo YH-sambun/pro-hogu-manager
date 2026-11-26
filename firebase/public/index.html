@@ -993,7 +993,7 @@ const ptAce=(c,r)=>{const v=Math.max(0,...ptGrades(c,r.brk,r.vel).filter(x=>x[0]
 const RTIER=v=>v>=100?3:v>=90?2:v>=80?1:0,DTIER=v=>v>=102?3:v>=97?2:v>=92?1:0;
 const TIER_FX={con:'안타 확률 +0.4%p·삼진 -0.3%p',pow:'홈런 확률 +0.2%p',eye:'볼넷 확률 +0.4%p',spd:'도루 성공률 +3%p',def:'팀 피안타(BABIP) -0.08%p',kv:'탈삼진 +1%p',hv:'피안타 -0.25%p·피홈런 -0.15%p',ctl:'볼넷 허용 -0.4%p',pt:'탈삼진 +0.8%p'}; // 구간 1단계당
 const ptTier=(c,r)=>{const v=Math.max(0,...ptGrades(c,r.brk,r.vel).filter(x=>x[0]!=='직구').map(x=>x[2]));return v>=106?3:v>=100?2:v>=95?1:0};
-function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45+ptAce(c,r),hv:r.stu,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men,ptT:ptTier(c,r)}}
+function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45+ptAce(c,r),hv:r.stu,bk:r.brk,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men,ptT:ptTier(c,r)}}
 // 타순 적성: T 테이블세터(1·2번), C 클린업(3~6번), L 하위 타선(7~9번, 누구나 가능). 적성 밖 타순이면 교타·장타·선구 -10%
 // 실제 기록 기준: 100타석 이상에서 출루율 .330 이상 → 테이블세터, OPS .700 이상 → 클린업(둘 다 가능). 기록이 없으면 능력치로 추정
 const pkt=c=>c.pk+'|'+c.type;
@@ -1326,6 +1326,7 @@ function aiDefSub(g,f){const T=g.t[f],tac=T.tac||TAC_DEF,key=g.inn*2+g.half;if(g
   if(g.inn<8||lead<1||lead>3||!T.bench.length)return;const thr=[999,14,9,6,4][tac.shift];let n=0;
   const opts=T.lu.map((x,i)=>{if(x.pos==='DH')return null;const cs=T.bench.filter(c=>canPlay(c,x.pos));if(!cs.length)return null;const nb=cs.reduce((a,c)=>effDef(c,x.pos)>effDef(a,x.pos)?c:a);return {i,x,nb,gain:(effDef(nb,x.pos)-effDef(x.c,x.pos))*w(x.pos)}}).filter(o=>o&&o.gain>=thr).sort((a,b)=>b.gain-a.gain);
   for(const o of opts){if(n>=2)break;if(!T.bench.includes(o.nb))continue;subIn(g,f,o.i,o.nb,o.x.pos);n++;say(g,`대수비: ${o.x.c.name} → ${o.nb.name} (${PK[o.x.pos]||o.x.pos})`,'c')}}
+let PW_CH=.0003,PW_HB=.001,PW_BB=.0005,PW_CB=.0004,PW_C=84;const setPW=o=>{if(o.c!=null)PW_C=o.c;if(o.ch!=null)PW_CH=o.ch;if(o.hb!=null)PW_HB=o.hb;if(o.bb!=null)PW_BB=o.bb;if(o.cb!=null)PW_CB=o.cb};
 function pa(g,manual){
   if(g.done)return;
   const bat=g.half,f=1-bat;manage(g,f);g.hnr=false;g.inf=false;
@@ -1367,13 +1368,13 @@ function pa(g,manual){
   let br=clutch?{...b0,con:b0.con+(b0.men-70)*.2+(risp?(ofx.clutch||0):0)}:b0;if(ofx.ace&&pc.ovr>=75)br={...br,con:br.con+ofx.ace};
   const def=g.t[f].def,sw=otac.power-2,sh=dtac.shift-2;
   // ── 타석 모델: 능력치 70 = 그 시즌 리그 평균(카드 변환식 기준). 타자·투수 각자의 비율을 log5로 합쳐 특징이 그대로 드러나게 ──
-  const dS=stu-pc.r.stu,kv=(pc.r.kv!=null?pc.r.kv:pc.r.stu)+dS,hv=(pc.r.hv!=null?pc.r.hv:pc.r.stu)+dS,pgb=pc.r.gb!=null?pc.r.gb:LG.gb;
+  const dS=stu-pc.r.stu,kv=(pc.r.kv!=null?pc.r.kv:pc.r.stu)+dS,hv=(pc.r.hv!=null?pc.r.hv:pc.r.stu)+dS,bk=(pc.r.bk!=null?pc.r.bk:70)+dS,pgb=pc.r.gb!=null?pc.r.gb:LG.gb;
   const plat=(!b.bh||!pc.ph?0:b.bh==='S'?.5:b.bh===pc.ph?-1:1)*(pc.arm?1.8:1); // 같은 손 -1, 반대 손 +1, 스위치 +0.5. 언더·사이드는 좌우 차이가 1.8배
   const tC=RTIER(b.r.con),tP=RTIER(b.r.pow),tE=RTIER(b.r.eye),tKV=RTIER(pc.r.kv!=null?pc.r.kv:pc.r.stu),tHV=RTIER(pc.r.hv!=null?pc.r.hv:pc.r.stu),tCT=RTIER(pc.r.ctl),tPT=pc.r.ptT||0,
     defT=DT.lu.reduce((s,x)=>s+(x.pos==='DH'?0:DTIER(effDef(x.c,x.pos))),0); // 구간 효과
   const bBB=cl(LG.bb+(br.eye-70)*.0032+.004*tE,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018-.003*tC,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0016+.002*tP,.002,.1),
     bBA=cl(LG.babip+(br.con-70)*.0028+.004*tC,.2,.42),bGB=cl(LG.gb-(br.pow-70)*.004+(br.spd-70)*.001,.28,.62);
-  const qBB=cl(LG.bb-(ctl-70)*.0045-.004*tCT,.015,.22),qK=cl(LG.k+(kv-70)*.011+.01*tKV+.008*tPT,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005-.0015*tHV,.008,.05),qBA=cl(LG.babip-(hv-70)*.0012-.0025*tHV,.24,.36);
+  const qBB=cl(LG.bb-(ctl-70)*.0045-.004*tCT,.015,.22),qK=cl(LG.k+(kv-70)*.011+.01*tKV+.008*tPT,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005-(ctl-PW_C)*PW_CH-.0015*tHV,.008,.05),qBA=cl(LG.babip-(hv-70)*PW_HB-(bk-PW_C)*PW_BB-(ctl-PW_C)*PW_CB-.0025*tHV,.24,.36); // 2026-11-26(SJ): 제구는 실투(피홈런·피안타), 변화구는 약한 타구에도
   const pBB=cl(log5(bBB,qBB,LG.bb)-.003*sw+.002*po,.015,.25),pK=cl(log5(bK,qK,LG.k)*(1-.05*plat)+.006*sw+(g.hnr?.015:0)+(ofx.kp||0),.03,.45),
     pG=log5(bGB,pgb,LG.gb),pHR=cl(log5(bHR,qHR,LG.hr)*(1-pG)/(1-LG.gb)*(1+.07*plat)*(1+.12*sw)+(ofx.hrp||0),.001,.11),
     pBA=log5(bBA,qBA,LG.babip)+.01*plat-.04*X(def)-.0008*defT+(g.inf?.03:0)-.003*sw-.004*sh-(risp?(dfx.risp||0):0);
@@ -1432,7 +1433,7 @@ function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
 function teamOvr(T){const cs=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);return Math.round(cs.reduce((s,c)=>s+c.ovr,0)/Math.max(1,cs.length))}
 function rr(n){const t=[...Array(n).keys()],R=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[a,b]:[b,a])}R.push(pr);t.splice(1,0,t.pop())}return R}
-if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={AGAIN_SETS,againCount,againName,CHAMPS,isChamp,RTIER,DTIER,TIER_FX,ptTier,potMul,abCapC,NAT_SETS,natHit,ARM_N,armOf,ptGrades,ptLetter,FAT,fatAdd,fatRest,fatSP,FX_TARGETS,FX_T_BY,FA_LINKS,ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
+if(typeof module!=='undefined'&&typeof window==='undefined')module.exports={setPW,AGAIN_SETS,againCount,againName,CHAMPS,isChamp,RTIER,DTIER,TIER_FX,ptTier,potMul,abCapC,NAT_SETS,natHit,ARM_N,armOf,ptGrades,ptLetter,FAT,fatAdd,fatRest,fatSP,FX_TARGETS,FX_T_BY,FA_LINKS,ERA_SETS,LINE_UNIONS,RIVALS,CH_WILD,AB_MUL,abMul,abGain,abCap,EX_MAX,exCount,exErr,exTrim,SYN_EX_MAX,baseId,condMin,sameTY,FX_FAM,pkt,ADJ,ADJ_PCT,adjPair,adjBonus,ABD,AB_BY,AB_CAP,ABG,ageOf,abAge,abRoll,SK_MUL,BO_PEN,BO_TH,BO_PA,BO_OBP,BO_OPS,rates,boKey,boScore,boOf,slotBo,boOk,PAT,patOf,openCount,isOpen,TCARDS,TC_BY,SUPS,SUP_BY,synth,clash,battery,TAC_DEF,MANAGERS,tactic,loadCards,get CARDS(){return CARDS},get byId(){return byId},get TEAMYEARS(){return TEAMYEARS},simTeam,mkGame,pa,simAll,teamYear,bestLineup,teamOvr,rr,teamColor,mkBlock,cellsOf,canPlace,skillOf,setRnd:f=>{rnd=f}};
 
 </script>
 <script>
@@ -3457,7 +3458,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='e9b7a6047d';
+const BUILD='6a0040ac4c';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
