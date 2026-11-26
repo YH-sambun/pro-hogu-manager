@@ -1873,8 +1873,8 @@ function vShop(){const SC=SHOPC[view()]||SHOPC.shop,PK=PACKS.filter(x=>SC.ks?SC.
   <div class="tools" style="margin-top:12px"><button data-a="pkbuy" ${ok&&afford?'':'disabled'}>${P[2].toLocaleString()}P로 열기 <kbd class="kb">R</kbd></button>${multi&&sel.length<3?`<span class="note">${3-sel.length}개 더 선택</span>`:''}${!afford?'<span class="note" style="color:var(--bad)">포인트 부족</span>':''}${S.pkMsg?`<span class="note">${esc(S.pkMsg)}</span>`:''}</div>
   ${pkOutHTML()}<!-- 개봉 결과는 열기 버튼 바로 아래(오른쪽 상자)에: 목록 아래에 두면 화면 밖이라 안 보임 -->
   ${tix.length?`<div class="lbl" style="margin-top:16px">확정권</div><div class="tools">${tix.map(([k,n])=>`<button class="ghost" data-tix="${k}">${esc(TIXN[k]||k)} ×${n}</button>${k.startsWith('pk_')&&n>1?`<button class="ghost" data-tix="${k}" data-tixall="1">${n}개 전부 열기</button>`:''}`).join('')}
-   ${tix.filter(([k])=>k==='gg'||k==='ch'||k==='ex').map(([k])=>{const v=k==='gg'?'GG':k==='ch'?'CH':'EX',o=k==='ex'?[...new Set(CARDS.filter(c=>c.v==='EX').map(c=>c.line))].sort():[...new Set(CARDS.filter(c=>c.v===v).map(c=>c.year))].sort((a,b)=>b-a);return o.length?`<select id="tixarg-${k}" aria-label="${esc(TIXN[k]||k)} 조건"><option value="">${k==='ex'?'구단':'연도'} 무작위</option>${o.map(x=>`<option value="${esc(x)}">${k==='ex'?esc(msLn(x)):x}</option>`).join('')}</select>`:''}).join('')}
-   ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+VN[c.v]:''}</option>`).join('')}</select>`:''}</div>`:''}
+   ${tix.filter(([k])=>k==='gg'||k==='ch'||k==='ex').map(([k])=>{const v=k==='gg'?'GG':k==='ch'?'CH':'EX',o=k==='ex'?[...new Set(CARDS.filter(c=>c.v==='EX').map(c=>c.line))].sort():[...new Set(CARDS.filter(c=>c.v===v).map(c=>c.year))].sort((a,b)=>b-a);return o.length?`<select id="tixarg-${k}" aria-label="${esc(TIXN[k]||k)} 조건"><option value="">${k==='ex'?'구단':'연도'} 무작위</option>${o.map(x=>`<option value="${esc(x)}"${String((S.tixArg||{})[k]||'')===String(x)?' selected':''}>${k==='ex'?esc(msLn(x)):x}</option>`).join('')}</select>`:''}).join('')}
+   ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}"${S.tixPick===c.id?' selected':''}>${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+VN[c.v]:''}</option>`).join('')}</select>`:''}</div>`:''}
   </div></div></section>`}
 function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
   if(D.pkv){const k=S.pk,v=k==='y'||k==='ty'?+D.pkv:D.pkv,a=k==='ty'?S.pkSel.ty.years:S.pkSel[k],i=a.indexOf(v);if(i>=0)a.splice(i,1);else if(a.length<3)a.push(v);return 1}
@@ -2607,6 +2607,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126m',d:'2026-11-26',t:'확정권 구단·연도 지정 수정',b:['EX 카드 확정권의 구단 지정, 골든글러브·커리어하이 확정권의 연도 지정이 고른 뒤 풀려 버리던 문제를 고쳤어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126l',d:'2026-11-26',t:'도감 구단 필터 유지',b:['도감에서 구단을 고른 뒤 연도를 바꿔도 구단 필터가 유지돼요. 그해 이름이 다르면 같은 계보 구단으로 바뀌어요(예: 해태 → KIA).'],rw:{tix:{pk_n:10}}},
  {id:'n1126k',d:'2026-11-26',t:'도감 종류 필터에 국가대표',b:['도감 > 전체 선수의 "전체 종류" 필터에서 국가대표를 고르면 대표팀에 뽑혔던 선수 카드만 모아 볼 수 있어요.','대회별 명단은 도감 위 국가대표 탭에서 볼 수 있어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126j',d:'2026-11-26',t:'도감은 카드 보기, 세트 보상은 미션으로',b:['도감은 전체 선수와 국가대표 카드를 둘러보는 곳이 됐어요.','팀 세트, 골든글러브, 커리어하이, EX, 누적 목표 세트는 미션 > 수집 세트로 옮겼어요. 진행과 보상은 그대로예요.'],rw:{tix:{pk_n:10}}},
@@ -2730,7 +2731,7 @@ vw.addEventListener('dragover',e=>{const c=e.target.closest&&e.target.closest('[
 
 vw.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('[data-cell]');if(!c)return;e.preventDefault();vw.dataset.foot='';tapBlk(+c.dataset.cell,location.hash==='#skill'?S.skc:S.cardId);render()});
 vw.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&(e.target.dataset.pick||e.target.dataset.dexv||e.target.dataset.bslot||e.target.dataset.bput)){e.preventDefault();e.target.click()}});
-vw.addEventListener('change',e=>{const t=e.target;if(t.id==='bldimp')return;if(t.id==='deckname'){S.deckName=t.value;return}if(t.id==='cpn')return; // 쿠폰 입력칸: 다시 그리면 입력값과 받기 버튼 클릭이 사라짐
+vw.addEventListener('change',e=>{const t=e.target;if(t.id==='bldimp')return;if(t.id==='deckname'){S.deckName=t.value;return}if(t.id==='cpn')return;if(t.id.startsWith('tixarg-')){S.tixArg={...(S.tixArg||{}),[t.id.slice(7)]:t.value};return}if(t.id==='tixpick'){S.tixPick=t.value;return} // 쿠폰 입력칸: 다시 그리면 입력값과 받기 버튼 클릭이 사라짐
   S.msg='';if(t.id==='sort')S.sort=t.value;if(t.id==='fteam')S.fteam=t.value;if(t.id==='fyear')S.fyear=t.value;if(t.dataset.bau){S.bau={...BAU0,...(S.bau||{}),[t.dataset.bau]:t.value};if(t.dataset.bau==='t')S.bau.key=(t.value==='B'?BK:PKEY)[0];S.bauRes=null}if(t.dataset.sf){S.sf={...(S.sf||SF0),[t.dataset.sf]:t.value};S.mat=[]}if(t.id==='cpick'){S.cardId=t.value;S.back=false}if(t.dataset.pos)setPos(+t.dataset.pos,t.value);if(t.id==='t-live')S.tacLive=t.checked;render()});
 
 const abd=id=>ABD.find(d=>d[0]===id),abOpen=d=>!d[2]||(ABU[d[2]]?ABU[d[2]][0]():false);
@@ -3289,7 +3290,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='e8464abe27';
+const BUILD='b0dbbfa629';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
