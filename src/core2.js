@@ -78,12 +78,13 @@ const aliasOf=c=>ALIAS[c.pk]||(ALIAS2.find(([k,f])=>k===c.pk&&f(c))||[])[2];
 function loadCards(json){
   // MVP는 이름+연도가 같은 기본 카드 중 OVR이 가장 높은 1장만(동명이인·투타 겸업 다른 카드는 제외)
   const MB={};for(const c of json.cards){if(c.v||c.tx)continue;const k=c.n.replace(/#\d+$/,'')+c.y;if(MVP.has(k)&&(!MB[k]||c.o>MB[k].o))MB[k]=c}const MK=new Set(Object.values(MB).map(c=>c.y+'|'+c.t+'|'+c.n));
+  {const A={};for(const c of json.cards){if(c.v||c.k!=='B'||!c.x)continue;const a=A[c.y]=A[c.y]||[0,0,0];a[0]+=c.x[3];a[1]+=c.x[4];a[2]+=c.x[2]-c.x[5]}LGX={};for(const y in A)if(A[y][2])LGX[y]=[A[y][0]/A[y][2],A[y][1]/A[y][2]]}
   CARDS=json.cards.map(c=>{
     const name=c.n.replace(/#\d+$/,''),r={},keys=c.k==='B'?BK:PKEY;keys.forEach((k,i)=>r[k]=c.r[i]);
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
     const cost=Math.min(10,c.c+(mvp?1:0));
     return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
-      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),xb:c.k==='B'?xbhOf(c.x):null,bo:c.k==='B'?boOf(r,rates(c.x)):null}});
+      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),xb:c.k==='B'?xbhOf(c.x,c.y):null,bo:c.k==='B'?boOf(r,rates(c.x)):null}});
   // 선수 단위 키: 이름+출신고. 1군 중복 검사는 pkt(c)=pk+유형으로 함(투타 겸업 선수는 타자 1장+투수 1장 가능). 출신고가 없으면 같은 이름·같은 유형 카드에 출신고가 하나뿐일 때 그 값을, 아니면 유형을 씀
   const HS={};for(const c of CARDS)if(c.hs){const k=c.name+'|'+c.type;(HS[k]=HS[k]||new Set()).add(c.hs)}
   for(const c of CARDS){const h=HS[c.name+'|'+c.type];c.pk=c.name+'|'+(c.hs||(h&&h.size===1?[...h][0]:c.type))}
@@ -116,7 +117,8 @@ function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,s
 const pkt=c=>c.pk+'|'+c.type;
 const BO_PEN=.9,BO_TH=65,BO_PA=100,BO_OBP=.330,BO_OPS=.700,boScore=R=>({T:R.con*.4+R.eye*.25+R.spd*.35,C:R.pow*.55+R.con*.25+R.eye*.2});
 // XBH(SJ 2026-11-26): 실제 기록의 2루타·3루타 비율(홈런 뺀 안타 중)을 리그 평균(2루타 .19, 3루타 .02) 대비 배수로. 표본이 적으면 평균 쪽으로 당김
-const xbhOf=x=>{if(!x)return [1,1];const [,,h,d,t,hr]=x,n=Math.max(0,h-hr),c=(v,a,b)=>Math.max(a,Math.min(b,v));return [c((d+11.4)/(.19*n+11.4),.6,1.6),c((t+3)/(.02*n+3),.3,3)]};
+// 2026-11-26: 리그 평균은 그해 기준(80년대는 2루타가 적었음). LGX[연도]=[2루타 비율, 3루타 비율]
+let LGX={};const xbhOf=(x,y)=>{if(!x)return [1,1];const [,,h,d,t,hr]=x,n=Math.max(0,h-hr),c=(v,a,b)=>Math.max(a,Math.min(b,v)),[ld,lt]=LGX[y]||[.19,.02];return [c((d+60*ld)/(ld*n+60*ld),.6,1.6),c((t+150*lt)/(lt*n+150*lt),.3,3)]};
 function rates(x){if(!x)return null;const [pa,ab,h,d,t,hr,bb,hbp]=x,obp=(h+bb+hbp)/Math.max(1,ab+bb+hbp),slg=(h+d+2*t+3*hr)/Math.max(1,ab),r=v=>Math.round(v*1000)/1000;return {pa,obp:r(obp),slg:r(slg),ops:r(obp+slg)}}
 function boOf(R,st){if(st){if(st.pa<BO_PA)return ['L'];const o=[];if(st.obp>=BO_OBP)o.push('T');if(st.ops>=BO_OPS)o.push('C');return o.length?o:['L']}
   const s=boScore(R),m=Math.max(s.T,s.C);if(m<BO_TH)return ['L'];return ['T','C'].filter(k=>s[k]>=BO_TH&&m-s[k]<=3)}
