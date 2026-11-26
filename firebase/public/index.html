@@ -1703,13 +1703,14 @@ function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||used().includes(c
   S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
 const TIXN=ECON.TIX,rwText=ECON.rwText,dexHas=id=>ECON.dexHas(S,id),dexCard=id=>byId[id];
-function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
+function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',nat:'국가대표',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
   const prog=s=>ECON.setProgress(S,s),tmOf=s=>s.kind==='team'?s.id.split('|')[1]:'',all=ECON.SETS.filter(s=>s.kind===k);
   const YS=[...new Set(all.map(s=>s.year).filter(Boolean))].sort((a,b)=>b-a),TS=[...new Set(all.map(tmOf).filter(Boolean))].sort();
   let L=all.filter(s=>(!q||s.name.includes(q))&&(!F.y||s.year===+F.y)&&(!F.t||tmOf(s)===F.t)&&(!F.st||(F.st==='done')===!!S.dexDone[s.id]));
   L=L.map(s=>({s,p:prog(s)})).sort((a,b)=>(!!S.dexDone[a.s.id])-(!!S.dexDone[b.s.id])||b.p.have/b.p.need-a.p.have/a.p.need||(b.s.year||0)-(a.s.year||0));
   const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),sel=(id,v,lab,opts)=>`<select id="${id}" aria-label="${lab}"><option value="">${lab}</option>${opts.map(([x,n])=>`<option value="${esc(x)}"${String(v)===String(x)?' selected':''}>${esc(n)}</option>`).join('')}</select>`,on=F.y||F.t||F.st||F.h||q;
   if(k==='all')return dexAll(KN,tix,sel,q);
+  if(k==='nat')return dexNat(KN,tix,q);
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
   <p class="note help">한 번 얻은 카드는 도감에 계속 기록. 세트를 다 모으면 보상이 바로 들어와요. 확정권은 카드팩 화면에서 써요.</p>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
@@ -1721,6 +1722,16 @@ function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN
   ${L.length>lim?`<div class="tools" style="justify-content:center;margin-top:12px"><button class="ghost" data-a="dexmore">더 보기 (${L.length-lim})</button></div>`:''}</section>`}
 const dexHV=F=>`<span class="hvt" role="group" aria-label="보유 여부"><button class="ghost${F.h!=='miss'?' on':''}" data-a="dexhv" data-v="have" aria-pressed="${F.h!=='miss'}">보유</button><button class="ghost${F.h!=='have'?' on':''}" data-a="dexhv" data-v="miss" aria-pressed="${F.h!=='have'}">미보유</button></span>`,dexFD=(n,inner)=>`<details class="dexfd"${S.dexFOpen?' open':''}><summary>필터${n?` · ${n}개 적용 중`:''}</summary><div class="dexf">${inner}</div></details>`;
 const dexCell=c=>{const h=dexHas(c.id);return `<div class="dexc${h?'':' no'}" ${S.owned[c.id]?`data-pick="${esc(c.id)}"`:`data-dexv="${esc(c.id)}"`} role="button" tabindex="0" title="${esc(c.name)} ${c.year} ${esc(c.team)}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`};
+// 도감 · 국가대표(SJ 2026-11-26): 대회별 명단(ECON.NATS)을 세트처럼 보여 줌. 멤버 전원 보유 시 보상은 미션과 같음(natCheck)
+function dexNat(KN,tix,q){const N=ECON.NATS||[],F=S.dexF||{},fin=N.filter(n=>ECON.natProg(S,n).done).length;
+  const L=N.filter(n=>!q||n.name.includes(q)||n.mem.some(m=>m.e.split('@')[0].includes(q)));
+  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">국가대표 완성 ${fin}/${N.length}</span></div>
+  <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${x==='nat'}" class="${x==='nat'?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
+  <div class="dexf">${dexHV(F)}<input id="dexq" value="${esc(q)}" placeholder="대회·선수 이름" aria-label="국가대표 검색"><span class="note" style="margin:0">${L.length}개 대회</span></div>
+  <div class="dexl">${L.map(n=>{const p=ECON.natProg(S,n),mem=n.mem.filter(m=>{const h=m.ids.some(id=>dexHas(id));return !F.h||(F.h==='have')===h});
+   return `<div class="dexs${p.done?' done':''}"><div class="dexh"><b>${esc(n.name.replace(/ 멤버 모으기$/,''))}</b><span class="pill">${p.have}/${p.need}</span><span class="dexrw">${esc(rwText(n.rw))}${n.nt&&n.nt.length?` + 국가대표 카드 ${n.nt.length}장`:''}</span>${p.done?'<span class="pill dexok">완성 · 지급됨</span>':''}</div>
+   <span class="abbar"><i style="width:${p.have/Math.max(1,p.need)*100}%"></i></span>
+   <div class="dexg">${mem.map(m=>{const own=m.ids.find(id=>(S.owned[id]|0)>0),c=byId[own||m.ids.find(id=>dexHas(id))||m.ids[0]];return c?dexCell(c):''}).join('')||'<p class="note">해당 선수 없음</p>'}</div></div>`}).join('')||'<p class="note">해당 대회 없음</p>'}</div></section>`}
 let DEXYS=null;
 function dexAll(KN,tix,sel,q){const F=S.dexF,lim=S.dexLim||60;DEXYS=DEXYS||[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);
   const TS=[...new Set(CARDS.filter(c=>!F.y||c.year===+F.y).map(c=>c.team))].sort(),VK=[['n','일반 카드'],...Object.entries(VN)];
@@ -2417,6 +2428,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 const NOTICES=[
+ {id:'n1126c',d:'2026-11-26',t:'도감 · 국가대표 탭',b:['도감에 국가대표 탭이 생겼어요. 대회별 명단과 모은 선수를 한눈에 볼 수 있어요.','대회 이름이나 선수 이름으로 검색하고, 보유/미보유로 거를 수 있어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126b',d:'2026-11-26',t:'모바일 일람표 · 도감 사진 올리기 · 카드 팝업 정리',b:['보유 카드 일람표가 폰에서 넘치지 않고, "보이는 기록"에서 3칸씩 골라 볼 수 있어요.','도감에서 아직 없는 카드에도 사진을 올릴 수 있어요(카드마다 따로).','카드 상세 팝업을 탭하면 뒤집히고, 폰 화면 한 장에 들어가게 줄였어요.','장비는 칸을 눌러야 맞는 장비가 펼쳐져요.','이제 업데이트마다 공지 보상으로 팩을 드려요.'],rw:{tix:{pk_n:10}}},
  {id:'n1126',d:'2026-11-26',t:'모바일 화면 개편 · 홈 화면 앱 지원',b:['폰에서는 아래 탭바로 메뉴를 옮겨 다닐 수 있어요.','카드팩은 맨 위 드롭다운에서 고르고 바로 열 수 있어요.','브라우저 공유 메뉴의 "홈 화면에 추가"로 앱처럼 설치할 수 있어요.','유학은 이제 다시 보내면 이전 결과가 새 결과로 바뀌어요.'],rw:{tix:{pk_n:10,prem:2,pk_sp:1,pk_tc:1}}}
 ];
@@ -3046,7 +3058,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='2ebf91deee';
+const BUILD='e47577e67e';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>

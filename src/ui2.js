@@ -110,13 +110,14 @@ function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||used().includes(c
   S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
 const TIXN=ECON.TIX,rwText=ECON.rwText,dexHas=id=>ECON.dexHas(S,id),dexCard=id=>byId[id];
-function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
+function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN={all:'전체 선수',team:'팀 세트',nat:'국가대표',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'},q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
   const prog=s=>ECON.setProgress(S,s),tmOf=s=>s.kind==='team'?s.id.split('|')[1]:'',all=ECON.SETS.filter(s=>s.kind===k);
   const YS=[...new Set(all.map(s=>s.year).filter(Boolean))].sort((a,b)=>b-a),TS=[...new Set(all.map(tmOf).filter(Boolean))].sort();
   let L=all.filter(s=>(!q||s.name.includes(q))&&(!F.y||s.year===+F.y)&&(!F.t||tmOf(s)===F.t)&&(!F.st||(F.st==='done')===!!S.dexDone[s.id]));
   L=L.map(s=>({s,p:prog(s)})).sort((a,b)=>(!!S.dexDone[a.s.id])-(!!S.dexDone[b.s.id])||b.p.have/b.p.need-a.p.have/a.p.need||(b.s.year||0)-(a.s.year||0));
   const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),sel=(id,v,lab,opts)=>`<select id="${id}" aria-label="${lab}"><option value="">${lab}</option>${opts.map(([x,n])=>`<option value="${esc(x)}"${String(v)===String(x)?' selected':''}>${esc(n)}</option>`).join('')}</select>`,on=F.y||F.t||F.st||F.h||q;
   if(k==='all')return dexAll(KN,tix,sel,q);
+  if(k==='nat')return dexNat(KN,tix,q);
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">완성 ${dexDone()}세트</span>${tix.map(([t,n])=>`<a href="#shop"><button class="ghost" title="카드팩 화면에서 사용">${esc(TIXN[t]||t)} ×${n}</button></a>`).join('')}</div>
   <p class="note help">한 번 얻은 카드는 도감에 계속 기록. 세트를 다 모으면 보상이 바로 들어와요. 확정권은 카드팩 화면에서 써요.</p>
   <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
@@ -128,6 +129,16 @@ function vDex(){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const k=S.dexK||'all',KN
   ${L.length>lim?`<div class="tools" style="justify-content:center;margin-top:12px"><button class="ghost" data-a="dexmore">더 보기 (${L.length-lim})</button></div>`:''}</section>`}
 const dexHV=F=>`<span class="hvt" role="group" aria-label="보유 여부"><button class="ghost${F.h!=='miss'?' on':''}" data-a="dexhv" data-v="have" aria-pressed="${F.h!=='miss'}">보유</button><button class="ghost${F.h!=='have'?' on':''}" data-a="dexhv" data-v="miss" aria-pressed="${F.h!=='have'}">미보유</button></span>`,dexFD=(n,inner)=>`<details class="dexfd"${S.dexFOpen?' open':''}><summary>필터${n?` · ${n}개 적용 중`:''}</summary><div class="dexf">${inner}</div></details>`;
 const dexCell=c=>{const h=dexHas(c.id);return `<div class="dexc${h?'':' no'}" ${S.owned[c.id]?`data-pick="${esc(c.id)}"`:`data-dexv="${esc(c.id)}"`} role="button" tabindex="0" title="${esc(c.name)} ${c.year} ${esc(c.team)}${h?'':' · 아직 없음'}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}${c.v?`<i class="ovb v-${c.v}">${c.v==='IR'||c.v==='RY'?VN[c.v]:c.v}</i>`:''}</span><small>${String(c.year).slice(2)}' ${esc(c.name)}</small></div>`};
+// 도감 · 국가대표(SJ 2026-11-26): 대회별 명단(ECON.NATS)을 세트처럼 보여 줌. 멤버 전원 보유 시 보상은 미션과 같음(natCheck)
+function dexNat(KN,tix,q){const N=ECON.NATS||[],F=S.dexF||{},fin=N.filter(n=>ECON.natProg(S,n).done).length;
+  const L=N.filter(n=>!q||n.name.includes(q)||n.mem.some(m=>m.e.split('@')[0].includes(q)));
+  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">도감</h2><span class="pill">국가대표 완성 ${fin}/${N.length}</span></div>
+  <div class="subnav" role="tablist" style="margin-top:12px">${Object.entries(KN).map(([x,n])=>`<button role="tab" aria-selected="${x==='nat'}" class="${x==='nat'?'on':''}" data-dexk="${x}">${n}</button>`).join('')}</div>
+  <div class="dexf">${dexHV(F)}<input id="dexq" value="${esc(q)}" placeholder="대회·선수 이름" aria-label="국가대표 검색"><span class="note" style="margin:0">${L.length}개 대회</span></div>
+  <div class="dexl">${L.map(n=>{const p=ECON.natProg(S,n),mem=n.mem.filter(m=>{const h=m.ids.some(id=>dexHas(id));return !F.h||(F.h==='have')===h});
+   return `<div class="dexs${p.done?' done':''}"><div class="dexh"><b>${esc(n.name.replace(/ 멤버 모으기$/,''))}</b><span class="pill">${p.have}/${p.need}</span><span class="dexrw">${esc(rwText(n.rw))}${n.nt&&n.nt.length?` + 국가대표 카드 ${n.nt.length}장`:''}</span>${p.done?'<span class="pill dexok">완성 · 지급됨</span>':''}</div>
+   <span class="abbar"><i style="width:${p.have/Math.max(1,p.need)*100}%"></i></span>
+   <div class="dexg">${mem.map(m=>{const own=m.ids.find(id=>(S.owned[id]|0)>0),c=byId[own||m.ids.find(id=>dexHas(id))||m.ids[0]];return c?dexCell(c):''}).join('')||'<p class="note">해당 선수 없음</p>'}</div></div>`}).join('')||'<p class="note">해당 대회 없음</p>'}</div></section>`}
 let DEXYS=null;
 function dexAll(KN,tix,sel,q){const F=S.dexF,lim=S.dexLim||60;DEXYS=DEXYS||[...new Set(CARDS.map(c=>c.year))].sort((a,b)=>b-a);
   const TS=[...new Set(CARDS.filter(c=>!F.y||c.year===+F.y).map(c=>c.team))].sort(),VK=[['n','일반 카드'],...Object.entries(VN)];
