@@ -2745,6 +2745,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1126z3',d:'2026-11-26',t:'기기 간 보유 카드 동기화 수정',b:['PC와 폰을 오가며 할 때, 한 기기의 저장이 다른 기기에서 얻은 카드를 덮어써 카드가 사라질 수 있던 문제를 고쳤습니다.','이제 로그인하면 클라우드를 먼저 확인하고, 두 기기에서 모두 바뀐 게 있으면 카드·작전 카드·확정권·포인트·블록·장비를 합칩니다. 이미 사라진 카드는 그 카드가 남아 있는 기기에서 새 버전으로 접속하면 돌아옵니다.'],rw:{tix:{pk_n:10}}},
  {id:'n1126z2',d:'2026-11-26',t:'아이폰 팝업 위쪽 버튼 수정',b:['아이폰에서 카드 상세 등 팝업 위쪽 버튼(자리 교체하기·잠금·비교하기·닫기)이 상태표시줄에 가려 눌리지 않던 문제를 고쳤습니다.'],rw:{tix:{pk_n:10}}},
 {id:'n1126z',d:'2026-11-26',t:'폰에서 경기 시작 버튼 가림 수정',b:['폰에서 리그 감독실의 경기 시작 버튼이 아래 묶음 버튼에 가려 눌리지 않던 문제를 고쳤습니다.','폰 상단의 포인트·블록·리그 표시와 부제를 숨겨 화면을 덜 내려도 되게 했습니다. (포인트·블록은 홈 보유 현황에서 볼 수 있어요)'],rw:{tix:{pk_n:10}}},
 {id:'n1126y',d:'2026-11-26',t:'스킬 블록 모두 4칸으로',b:['스킬 블록이 모두 4칸 모양으로 바뀌어, 16칸에 블록 4개를 꽉 채워 끼울 수 있습니다.','갖고 있던 2·3칸 블록은 같은 등급의 4칸 블록으로 바뀌고 능력치도 4칸 기준으로 올라갑니다. 장착돼 있던 2·3칸 블록은 보관함으로 돌아가니 다시 끼워 주세요.'],rw:{tix:{pk_n:10,block:2}}},
@@ -3433,16 +3434,19 @@ function packSave(){syncTeam();const o=JSON.parse(JSON.stringify(S,function(k,v)
   return {top,owned,os:canon(owned),team:JSON.stringify(team),rest:JSON.stringify(o)}}
 const stripS=()=>{const o={...S};for(const k of LOCALK)delete o[k];return o}; // 예전 형식(json 한 덩어리) 저장용
 let pushT=null;ON.last=ON.last||null; // 이 기기가 마지막으로 올린 하위 문서 내용(같으면 다시 안 씀)
-function cloudPush(now){const F=fb();if(!F||!ON.user)return;clearTimeout(pushT);
-  pushT=setTimeout(async()=>{try{const uid=ON.user.uid,ref=(...p)=>F.doc(F.db,'users',uid,...p);S.uid=uid;const P=packSave(),L=ON.last||{};let n=0;
+// 동기화 수정(SJ 2026-11-26: PC에 있던 김광현 EX가 폰 접속 후 사라짐). 원인: 로그인 직후 클라우드를 읽기 전에 이 기기가 먼저 저장하거나(출석 보상 등),
+// 이 기기 저장 시각이 더 늦으면 클라우드(다른 기기 진행분)를 통째로 덮어씀. → ① 클라우드를 한 번 읽어 맞추기 전에는 올리지 않음(ON.synced)
+// ② 마지막으로 맞춘 시점의 보유량(기준점, 기기별 localStorage)을 기억해 두고, 양쪽이 다 바뀌었으면 '기준점 대비 증감'을 합침(mergeSave)
+function cloudPush(now){const F=fb();if(!F||!ON.user||ON.synced!==ON.user.uid)return;clearTimeout(pushT);
+  pushT=setTimeout(async()=>{try{if(ON.synced!==ON.user.uid)return;const uid=ON.user.uid,ref=(...p)=>F.doc(F.db,'users',uid,...p);S.uid=uid;const ts=S.ts||Date.now(),snap=cbSnap(S),P=packSave(),L=ON.last||{};let n=0;
     if(F.writeBatch){try{const b=F.writeBatch(F.db);
       if(L.os!==P.os){b.set(ref('save','owned'),{c:P.owned});n++}
       if(L.team!==P.team){b.set(ref('save','team'),{j:P.team});n++}
       if(L.rest!==P.rest){b.set(ref('save','rest'),{j:P.rest});n++}
-      b.set(ref(),{v:2,ts:S.ts||Date.now(),name:ON.user.displayName||'',cards:Object.keys(P.owned).length,...P.top});await b.commit();
-      ON.last={os:P.os,team:P.team,rest:P.rest};S.cl=canon(P.top);n=-1}
+      b.set(ref(),{v:2,ts,name:ON.user.displayName||'',cards:Object.keys(P.owned).length,...P.top});await b.commit();
+      ON.last={os:P.os,team:P.team,rest:P.rest};S.cl=canon(P.top);setBase(uid,ts,snap);n=-1}
      catch(e){if(e.code!=='permission-denied')throw e;ON.v1=1}} // 규칙을 아직 안 바꿨으면 예전 형식으로
-    if(n!==-1)await F.setDoc(ref(),{json:JSON.stringify(stripS()),ts:S.ts||Date.now(),name:ON.user.displayName||''});
+    if(n!==-1){await F.setDoc(ref(),{json:JSON.stringify(stripS()),ts,name:ON.user.displayName||''});setBase(uid,ts,snap)}
     try{await photoSync()}catch(e){ON.sync='사진 연동 실패: '+e.code}ON.sync=ON.sync&&ON.sync.startsWith('사진')?ON.sync:'클라우드 저장됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+(ON.v1?' (예전 형식: 보안 규칙 게시 필요)':'');if(view()==='online')render()}catch(e){ON.sync='클라우드 저장 실패: '+e.code}},now?0:2500)}
 // 직접 올린 사진(S.photos) 기기 간 연동: users/{uid}/photos/{cardId} = {d: dataURL, ts}. 본문 문서(1MB 한도)와 분리.
 // S.photoTs[id]=올린 시각, S.phPull=마지막으로 클라우드 사진을 받은 시각. ON.ph=클라우드에 있다고 아는 사진(id→dataURL)
@@ -3466,18 +3470,52 @@ function adoptCloud(o,uid){const ph=S.photos,pt=S.photoTs,pp=S.phPull;S=o;S.phot
 // 다른 기기에서 먼저 저장하면 이쪽 덱이 사라질 수 있었음 → 덱은 id 기준으로 양쪽을 합침. 지운 덱은 deckGone(id 목록)으로 되살아나지 않게
 function mergeDecks(a,b){const gone=new Set([...(a.deckGone||[]),...(b.deckGone||[])]),m=new Map();
   for(const d of [...(b.decks||[]),...(a.decks||[])])if(d&&d.id&&!gone.has(d.id))m.set(d.id,d);a.decks=[...m.values()];a.deckGone=[...gone].slice(-200)}
-async function cloudPull(){const F=fb(),u=ON.user,ref=(...p)=>F.doc(F.db,'users',u.uid,...p);try{
+// 기준점: 이 기기가 클라우드와 마지막으로 맞춘 때(올렸거나 받았을 때)의 클라우드 ts와 보유량. 계정별로 이 기기 localStorage에만 둠
+const CNTK=['owned','tq','sq','tix'],NUMK=['pt','exShard'],LSTK=['blocks','eq'],CBK=()=>KEY+'-cb';
+const cbSnap=s=>JSON.parse(JSON.stringify({...Object.fromEntries(CNTK.map(k=>[k,s[k]||{}])),...Object.fromEntries(NUMK.map(k=>[k,+s[k]||0])),...Object.fromEntries(LSTK.map(k=>[k,(s[k]||[]).map(x=>x&&x.u).filter(Boolean)]))}));
+function getBase(uid){try{const b=JSON.parse(localStorage.getItem(CBK())||'null');return b&&b.uid===uid?b:null}catch(e){return null}}
+function setBase(uid,ts,snap){try{localStorage.setItem(CBK(),JSON.stringify({...snap,uid,ts}))}catch(e){}}
+// L=이 기기, C=클라우드, B=기준점(없으면 null: 예전 버전에서 넘어온 첫 동기화 → 양쪽 중 큰 값/합집합으로 아무것도 잃지 않게)
+// 카드·작전카드·확정권 장수와 포인트: 클라우드 값 + 이 기기에서 기준점 이후 늘고 준 만큼. 블록·장비: 양쪽에서 새로 생긴 것은 모두, 한쪽에서 지운 것은 지움
+// 그 밖의 값(라인업·시즌·미션 진행 등)은 더 최근에 저장한 쪽. 도감·받은 공지 보상·끝낸 미션 챕터는 합집합, 경기 수(gp)는 큰 값
+function mergeSave(L,C,B){const lw=(L.ts||0)>(C.ts||0),N=lw?L:C,O=lw?C:L,m=JSON.parse(JSON.stringify(N));
+  const d=(l,c,b)=>Math.max(0,B?c+l-b:Math.max(l,c));
+  for(const k of CNTK){const l=L[k]||{},c=C[k]||{},b=B&&B[k]||{},r={};
+    for(const id of new Set([...Object.keys(l),...Object.keys(c)])){const v=d(l[id]|0,c[id]|0,b[id]|0);if(v>0)r[id]=v}m[k]=r}
+  for(const k of NUMK)m[k]=d(+L[k]||0,+C[k]||0,B?+B[k]||0:0);
+  for(const k of ['dex','dexDone','ntc','msFin'])if(O[k]||N[k])m[k]={...(O[k]||{}),...(N[k]||{})}; // 받은 공지 보상·끝낸 미션 챕터도 합집합(두 번 받기 방지)
+  m.gp={...(O.gp||{})};for(const id in N.gp||{})m.gp[id]=Math.max(m.gp[id]|0,N.gp[id]|0);
+  m.eqN=Math.max(L.eqN|0,C.eqN|0);
+  for(const k of LSTK){const bs=B?new Set(B[k]||[]):null,lm=new Map((L[k]||[]).filter(x=>x&&x.u).map(x=>[x.u,x])),cm=new Map((C[k]||[]).filter(x=>x&&x.u).map(x=>[x.u,x])),nm=lw?lm:cm,om=lw?cm:lm,r=[];
+    for(const u of new Set([...nm.keys(),...om.keys()])){const inL=lm.has(u),inC=cm.has(u),inB=bs?bs.has(u):false;
+      if(bs&&!((inL&&inC)||(!inB&&(inL||inC))))continue; // 기준점에 있던 것을 한쪽에서 지웠으면 지움
+      const a=nm.get(u),b=om.get(u);
+      if(a&&b&&!inB&&canon(a)!==canon(b)){r.push(a);r.push({...b,u:k==='eq'?'e'+(++m.eqN):u+'m'});continue} // 두 기기가 같은 번호로 각자 만든 장비 → 둘 다 남김
+      r.push(JSON.parse(JSON.stringify(a||b)))}
+    m[k]=r}
+  for(const x of [...(m.blocks||[]),...(m.eq||[])])if(x.on&&!m.owned[x.on]){x.on=null;if('at' in x)x.at=null} // 사라진 카드에 붙어 있던 블록·장비는 떼어 둠
+  mergeDecks(m,O);return m}
+const backupLocal=()=>{try{const o={...S};delete o.photos;delete o.photoTs;localStorage.setItem(KEY+'-bak',JSON.stringify(o,function(k,v){return this===o&&TRANS.has(k)?undefined:v}))}catch(e){}}; // 덮어쓰기 전 이 기기 저장 사본(만일을 위해)
+async function cloudPull(){const F=fb(),u=ON.user,ref=(...p)=>F.doc(F.db,'users',u.uid,...p);let push=0;try{
   const d=await F.getDoc(ref());
-  if(d.exists()){const c=d.data(),newer=S.uid!==u.uid||(c.ts||0)>(S.ts||0);
-    if(c.v===2&&newer){const [o,t,r]=await Promise.all([F.getDoc(ref('save','owned')),F.getDoc(ref('save','team')),F.getDoc(ref('save','rest'))]);
-      const x=r.exists()?JSON.parse(r.data().j):{};if(S.decks&&S.decks.length&&(!S.uid||S.uid===u.uid))mergeDecks(x,S);x.team=t.exists()?JSON.parse(t.data().j):S.team;x.owned=o.exists()?(o.data().c||{}):{};Object.assign(x,topOf(c));x.ts=c.ts||0;
-      adoptCloud(x,u.uid);S.cl=canon(topOf(c));ON.last={os:canon(x.owned),team:r.exists()&&t.exists()?t.data().j:null,rest:r.exists()?r.data().j:null}}
-    else if(c.v!==2&&c.json&&newer){adoptCloud(JSON.parse(c.json),u.uid);ON.last=null;cloudPush(true)} // 예전 형식 → 새 형식으로 다시 저장
-    else{ // 이 기기 저장이 최신: 콘솔에서 요약 필드(pt 등)를 고쳤으면 반영 후 저장
+  if(d.exists()){const c=d.data(),mine=S.uid===u.uid,B=mine?getBase(u.uid):null,bts=B?B.ts:0,
+      cNew=!mine||(c.ts||0)>bts, // 이 기기가 마지막으로 맞춘 뒤 다른 기기가 클라우드에 저장함(기준점 없으면 늘 참)
+      lNew=mine&&(S.ts||0)>bts;  // 이 기기도 그 뒤에 저장함
+    if(c.v===2&&cNew){const [o,t,r]=await Promise.all([F.getDoc(ref('save','owned')),F.getDoc(ref('save','team')),F.getDoc(ref('save','rest'))]);
+      let x=r.exists()?JSON.parse(r.data().j):{};x.team=t.exists()?JSON.parse(t.data().j):S.team;x.owned=o.exists()?(o.data().c||{}):{};Object.assign(x,topOf(c));x.ts=c.ts||0;
+      const cloudSnap=cbSnap(x);
+      if(lNew){backupLocal();x=mergeSave(S,x,B);x.ts=Math.max(Date.now(),(c.ts||0)+1,(S.ts||0)+1); // 양쪽 다 바뀜 → 합쳐서 다시 올림
+        adoptCloud(x,u.uid);setBase(u.uid,c.ts||0,cloudSnap);S.cl=canon(topOf(c));ON.last=null;ON.sync='다른 기기 저장과 합쳤어요';push=1}
+      else{if(S.decks&&S.decks.length&&(!S.uid||mine))mergeDecks(x,S);if(mine)backupLocal();
+        adoptCloud(x,u.uid);setBase(u.uid,c.ts||0,cloudSnap);S.cl=canon(topOf(c));ON.last={os:canon(x.owned),team:r.exists()&&t.exists()?t.data().j:null,rest:r.exists()?r.data().j:null}}}
+    else if(c.v!==2&&c.json&&cNew){if(mine)backupLocal();let x=JSON.parse(c.json);if(lNew)x=mergeSave(S,x,B);adoptCloud(x,u.uid);S.ts=Date.now();ON.last=null;push=1} // 예전 형식 → 새 형식으로 다시 저장
+    else{ // 클라우드는 이 기기가 마지막으로 맞춘 그대로: 이 기기 저장을 올림. 콘솔에서 요약 필드(pt 등)를 고쳤으면 반영 후 저장
       if(c.v===2){try{const r=await F.getDoc(ref('save','rest'));if(r.exists()){const n0=(S.decks||[]).length;mergeDecks(S,JSON.parse(r.data().j));if(S.decks.length!==n0)ON.sync='다른 기기에서 짠 덱을 합쳤어요'}}catch(e){}}
       if(c.v===2){const ct=canon(topOf(c));if(S.cl&&ct!==S.cl){Object.assign(S,topOf(c));S.cl=ct;ON.sync='콘솔에서 바꾼 값을 반영했어요'}}
-      cloudPush(true)}}
-  else{S.uid=u.uid;cloudPush(true)}}catch(e){ON.sync='클라우드 불러오기 실패: '+e.code}
+      push=1}}
+  else{S.uid=u.uid;push=1}
+  ON.synced=u.uid;if(push){S.ts=Math.max(S.ts||0,Date.now());try{localStorage.setItem(KEY,JSON.stringify(S,function(k,v){return this===S&&TRANS.has(k)?undefined:v}))}catch(e){}cloudPush(true)}}
+  catch(e){ON.sync='클라우드 불러오기 실패: '+e.code+' · 다시 시도하려면 [지금 클라우드 저장]'}
   try{await photoPull();cloudPush(true)}catch(e){ON.sync='사진 불러오기 실패: '+e.code}}
 async function loadLeagues(){const F=fb();try{const q=F.query(F.collection(F.db,'leagues'),F.where('members','array-contains',ON.user.uid));
   ON.leagues=(await F.getDocs(q)).docs.map(d=>({id:d.id,...d.data()}));if(ON.cur&&!ON.leagues.find(l=>l.id===ON.cur))ON.cur=null;if(!ON.cur&&ON.leagues[0])ON.cur=ON.leagues[0].id;if(ON.cur)await loadLeague()}catch(e){ON.msg='리그 목록 오류: '+e.code}}
@@ -3486,7 +3524,7 @@ async function loadLeague(){const F=fb(),lid=ON.cur;
   const gs=await F.getDocs(F.query(F.collection(F.db,'leagues',lid,'games'),F.orderBy('at','desc'),F.limit(200)));ON.games=gs.docs.map(d=>d.data())}
 async function afterLogin(){if(!S||!ON.user||ON.pulled===ON.user.uid)return;ON.pulled=ON.user.uid;await cloudPull();await loadLeagues();render()}
 function fbBoot(){const F=fb();if(!F)return;if(fbBoot.done){afterLogin();return}fbBoot.done=1;
-  F.onAuthStateChanged(F.auth,async u=>{ON.user=u;ON.pulled=null;ON.ready=1;if(S)render();if(u)await afterLogin();else{ON.leagues=[];ON.cur=null;if(S)render()}})}
+  F.onAuthStateChanged(F.auth,async u=>{ON.user=u;ON.pulled=null;ON.synced=null;ON.ready=1;if(S)render();if(u)await afterLogin();else{ON.leagues=[];ON.cur=null;if(S)render()}})}
 addEventListener('fb-ready',fbBoot);
 const code6=()=>Array.from({length:6},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
 const myName=()=>(ON.user&&(ON.user.displayName||ON.user.email||'').split('@')[0])||'나';
@@ -3505,7 +3543,7 @@ async function oAct(a,b){const F=fb(),u=ON.user;ON.msg='';
   try{
   if(a==='o-login'){await F.signInWithPopup(F.auth,new F.GoogleAuthProvider());return}
   if(a==='o-logout'){await F.signOut(F.auth);return}
-  if(a==='o-save'){cloudPush(true);return}
+  if(a==='o-save'){if(ON.synced!==u.uid){ON.pulled=null;await afterLogin();return}cloudPush(true);return}
   if(a==='o-pre'){preload();return}
   if(a==='o-sel'||a==='o-ref'){if(b.dataset.l)ON.cur=b.dataset.l;await loadLeagues()}
   else if(a==='o-create'){const nm=($('#oln').value||'').trim().slice(0,20);if(!nm){ON.msg='리그 이름 필요';return}
@@ -3619,7 +3657,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='b5cd284fb1';
+const BUILD='7b6833b8e7';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
