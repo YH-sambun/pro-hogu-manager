@@ -139,14 +139,14 @@ async function oAct(a,b){const F=fb(),u=ON.user;ON.msg='';
     ON.cur=code;await loadLeagues();ON.msg=`${d.data().name} 리그에 들어왔어요. 라인업을 등록하면 친구들이 도전할 수 있어요.`}
   else if(a==='o-reg'){useMode('on');const e=validate();if(e.length){ON.msg='라인업 오류: '+e[0];return}
     const T=clean(S.team),ids=new Set(regCards(T).map(c=>c.id)),blocks=S.blocks.filter(x=>x.on&&ids.has(x.on));
-    await F.setDoc(F.doc(F.db,'leagues',ON.cur,'teams',u.uid),{name:S.team.name,owner:myName(),json:JSON.stringify({name:S.team.name,lineup:T.lineup,bench:T.bench,rot:T.rot,pen:T.pen,blocks,abSt:S.abSt||{},mgr:S.team.mgr||'',fxsel:S.team.fxsel||[],eq:eqMap(),tsel:(S.tq||{})[S.team.tsel]>0?S.team.tsel:null,sup:(S.team.sup||[]).filter(x=>x.left>0)}),ovr:teamOvr(T),cost:regCards(T).reduce((s,c)=>s+c.cost,0),fx:teamColor(regCards(T)).fx.map(f=>f.n).join(', '),updated:F.serverTimestamp()});
+    await F.setDoc(F.doc(F.db,'leagues',ON.cur,'teams',u.uid),{name:S.team.name,owner:myName(),json:JSON.stringify({name:S.team.name,lineup:T.lineup,bench:T.bench,rot:T.rot,pen:T.pen,rotMode:S.rotMode||'strict',blocks,abSt:S.abSt||{},mgr:S.team.mgr||'',fxsel:S.team.fxsel||[],eq:eqMap(),tsel:(S.tq||{})[S.team.tsel]>0?S.team.tsel:null,sup:(S.team.sup||[]).filter(x=>x.left>0)}),ovr:teamOvr(T),cost:regCards(T).reduce((s,c)=>s+c.cost,0),fx:teamColor(regCards(T)).fx.map(f=>f.n).join(', '),updated:F.serverTimestamp()});
     await loadLeague();ON.msg='현재 라인업을 리그에 등록했어요.'}
   else if(a==='o-play'||a==='o-quick'){useMode('on');const h=b.dataset.u,t=ON.teams[h];if(!t)return;const e=validate();if(e.length){ON.msg='라인업 오류: '+e[0];return}
     const T=JSON.parse(t.json);T.color='#3d7fd1';
     const prev=ON.games.filter(x=>(x.a===ON.user.uid&&x.h===h)||(x.h===ON.user.uid&&x.a===h)).length;let st=0;for(const x of ON.games.filter(x=>x.a===ON.user.uid||x.h===ON.user.uid)){const me=x.a===ON.user.uid?0:1;if(x.res===1-me){if(st<=0)st--;else break}else break}
     // 5판 3선승(SJ 2026-11-26): 단판이면 1선발만 좋으면 돼서 선발진 깊이가 의미 없음 → 양쪽 다 1선발부터 로테이션 순서대로. 무승부 경기는 승수에 안 들어가고 최대 7경기, 그래도 안 끝나면 시리즈 무승부
-    const U=userT('on');U.ctx={rematch:prev>0,streak:st};const sw=[0,0],gl=[],rs=[0,0];let last=null;
-    for(let i=0;i<OBO_MAX&&sw[0]<3&&sw[1]<3;i++){U.rotIdx=i;T.rotIdx=i;const g=mkGame(simTeam(U,S.cond),simTeam(T));g.me=0;g.ctrl=null;g.pair=[0,1];simAll(g);
+    const U=userT('on');U.ctx={rematch:prev>0,streak:st};const sw=[0,0],gl=[],rs=[0,0],F0={},F1={};let last=null; // 시리즈 피로: 경기마다 누적, 경기 사이 하루 휴식(선발 운용 '유연'일 때 에이스 재등판 판단에 씀)
+    for(let i=0;i<OBO_MAX&&sw[0]<3&&sw[1]<3;i++){U.rotIdx=i;T.rotIdx=i;const g=mkGame(simTeam(U,S.cond,F0),simTeam(T,undefined,F1));g.me=0;g.ctrl=null;g.pair=[0,1];simAll(g);fatAdd(F0,g,0);fatAdd(F1,g,1);fatRest(F0);fatRest(F1);
       if(g.res>=0)sw[g.res]++;rs[0]+=g.sc[0];rs[1]+=g.sc[1];gl.push({sc:g.sc,sp:[g.px[0][0]&&g.px[0][0].c.name,g.px[1][0]&&g.px[1][0].c.name]});last=g}
     G=last;G.friendly={lid:ON.cur,h,hn:t.name+' ('+t.owner+')',sw,gl,rs};if(a==='o-quick'){await oFinish();return}G.hl=1;location.hash='game'}
   }catch(e){ON.msg='오류: '+(e.code||e.message)}finally{render()}}
