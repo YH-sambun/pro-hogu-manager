@@ -24,6 +24,8 @@ const EXQ=12,EXMIN=4,EXPC=2,ex=new Set();const lines=[...new Set(base.map(c=>c.l
 for(const l of lines){const L=base.filter(c=>c.l===l),seasons=new Set(L.map(c=>c.y)).size,q=Math.max(EXMIN,Math.round(EXQ*seasons/45));
   const X=[...ex].filter(c=>c.l===l),used=new Set(X.map(c=>c.y)),cnt={};X.forEach(c=>cnt[nm(c)]=(cnt[nm(c)]||0)+1);let n=used.size;
   for(const c of L.slice().sort((a,b)=>b.o-a.o)){if(n>=q)break;if(used.has(c.y)||(cnt[nm(c)]||0)>=EXPC)continue;ex.add(c);used.add(c.y);cnt[nm(c)]=(cnt[nm(c)]||0)+1;n++}}
+// 2026-11-26(SJ): 소규모 계보 보정 EX 추가(김현욱 97 쌍방울, 장명부 83 삼미)
+for(const [n,y,t] of [['김현욱',1997,'쌍방울'],['장명부',1983,'삼미']]){const c=base.filter(c=>nm(c)===n&&c.y===y&&c.t===t).sort((a,b)=>b.o-a.o)[0];if(c)ex.add(c)}
 for(const c of ex)add.push({...c,v:'EX',r:c.r.map(v=>Math.min(120,v+5)),o:c.o+4,c:Math.min(10,c.c+1)})
 // 신인왕(RY): KBO 역대 신인상(data/ry_raw.txt, 1983~). 능력치 +3(상한 120), OVR +2. 컨디션 하한 보통(엔진 condMin)
 {const rp=__dirname+'/../data/ry_raw.txt';if(fs.existsSync(rp))for(const l of fs.readFileSync(rp,'utf8').trim().split('\n')){const [y,r]=l.split(':'),[n,t]=r.split('@');
