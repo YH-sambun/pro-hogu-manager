@@ -578,7 +578,7 @@ function recBenchC(r,t){const has=r.bench.findIndex(id=>id&&canPos(byId[id],'C')
  const pool=REC_ALL?CARDS:OWN.filter(c=>!c.dup&&!abOf(c.id)),ids=[...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean),names=new Set(ids.map(id=>byId[id].on||byId[id].name)),room=COST_CAP-recCost(r);
  const yc={};if(t&&t.ycap)for(const id of ids){const c=byId[id];if(t.m(c))yc[c.year]=(yc[c.year]||0)+1}
  const slots=r.bench.map((id,i)=>[i,id?byId[id]:null]).sort((a,b)=>(!a[1]?-1:0)-(!b[1]?-1:0)||(t&&a[1]&&t.m(a[1])?1:0)-(t&&b[1]&&t.m(b[1])?1:0)||((a[1]?a[1].ovr:0)-(b[1]?b[1].ovr:0)));
- for(const [i,o] of slots){const oc=o?o.cost:0,c=pool.filter(c=>c.type==='B'&&c.v!=='EX'&&canPos(c,'C')&&!names.has(c.on||c.name)&&c.cost<=oc+room&&!(t&&t.ycap&&t.m(c)&&(yc[c.year]||0)-(o&&t.m(o)&&o.year===c.year?1:0)>=t.ycap)).sort((a,b)=>(t&&t.m(b)?1:0)-(t&&t.m(a)?1:0)||b.ovr-a.ovr)[0];
+ for(const [i,o] of slots){const oc=o?o.cost:0,c=pool.filter(c=>c.type==='B'&&c.v!=='EX'&&canPos(c,'C')&&!names.has(c.on||c.name)&&c.cost<=oc+room&&!(t&&o&&t.m(o)&&!t.m(c))&&!(t&&t.ycap&&t.m(c)&&(yc[c.year]||0)-(o&&t.m(o)&&o.year===c.year?1:0)>=t.ycap)).sort((a,b)=>(t&&t.m(b)?1:0)-(t&&t.m(a)?1:0)||b.ovr-a.ovr)[0];
   if(c){r.bench.splice(i,1);r.bench.unshift(c.id);break}}
  return r}
 function recommend(mode){const t=recFx();return recBenchC(recCap(recommend0(mode),t),t)}
