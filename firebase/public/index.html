@@ -927,6 +927,7 @@ body.xl .cback .grid4{background:#fff!important;border:1px solid #d4d4d4;border-
 button.dkdel{background:transparent;border:1px solid #e05252;color:#ff8a8a}button.dkdel.on{background:#c62828;color:#fff;border-color:#c62828}body.xl button.dkdel{background:#fff!important;color:#c00!important;border:1px solid #c00!important}body.xl button.dkdel.on{background:#c00!important;color:#fff!important}
 [data-a=pkbuy],button[data-tix]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
 .mp{position:relative}.mpn{position:absolute;right:6px;bottom:6px;z-index:3;padding:1px 7px;border-radius:9px;background:#e8691b;color:#fff;font:800 12px var(--fb);font-style:normal;pointer-events:none}body.xl .mpn{background:#555!important}
+.rotb{font-size:16px;padding:8px 18px}.rotb kbd{font:700 11px var(--fb);background:rgba(255,255,255,.18);border-radius:4px;padding:1px 5px;margin-left:4px}.cell.selb{outline:3px solid #ffd54a;outline-offset:-3px;box-shadow:0 0 8px #ffd54a}body.xl .cell.selb{outline-color:#217346!important;box-shadow:none}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2709,7 +2710,7 @@ const SXH={B:['BABIP','wRC+'],P:['WHIP','FIP','LOB%','피BABIP']},sxF=(t,i,v)=>v
 function seasonLine(c){const H=c.type==='B'?['타율','홈런','타점','도루','경기','타석']:['ERA','승','패','세이브','홀드','탈삼진','이닝','경기'],X=[]; // 카드에는 클래식 기록만 (세부 지표 c.sx는 성능 배분에만 사용)
  return `<div class="scroll"><table class="sl"><thead><tr><th>연도</th>${H.map(h=>`<th>${h}</th>`).join('')}${X.map(h=>`<th class="sxh">${h}</th>`).join('')}</tr></thead><tbody><tr><td>${c.year}</td>${c.s.map((v,i)=>`<td>${i===0?(c.type==='B'?Number(v).toFixed(3).replace(/^0/,''):Number(v).toFixed(2)):v}</td>`).join('')}${X.map((h,i)=>`<td>${sxF(c.type,i,c.sx[i])}</td>`).join('')}</tr></tbody></table></div>`}
 function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells(b).forEach(([r,q])=>occ[(r+b.at[0])*4+q+b.at[1]]=b)});const op=open(c),os=openSet(c),pt=patOf(c);
- const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g:''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g:''}"></span>`}).join('');
+ const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g:''}${b&&b.u===S.blkSel?' selb':''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g:''}"></span>`}).join('');
  const no=c.no!=null&&c.no!==''?String(c.no):'',info=[ageOf(c)!=null?`${ageOf(c)}세`:'',c.hs||'',c.un||'',HAND[c.h]||'',no?`No. ${no}`:'',PFULL[c.pos]||c.pos,c.rg0?(c.rg0===c.rg?c.rg0:`${c.rg0}(${c.rg})`):(c.rg||'')].filter(Boolean);
  // 뒷면(SJ 2026-11-26): 위 2단(사진+프로필 | 수비 위치·구종) → 시즌 기록 → 아래 2단(스킬 칸 | 장착 스킬·서포트)
  return `<div class="cback cb2${live?' live':''}" style="--tc:${c.col}"><div class="cbh"><b>${no?esc(no)+'. ':''}${esc(c.name)}</b><span>${c.year} ${esc(c.team)}</span></div>
@@ -2720,9 +2721,9 @@ function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells
   <div class="sup2"><span>SUPPORT CARD</span>${supOn(c.id)?`<b>${esc(sp(supOn(c.id).id)[1])}</b><small>${esc(sp(supOn(c.id).id)[3])} · ${supOn(c.id).left}경기 남음</small>`:'<small>없음</small>'}</div></div></div></div>`}
 function skFront(c){const sk=skillOf(c.id),ks=(c.type==='B'?BK:PKEY).filter(k=>sk[k]);
  return `${S.work?xlSheet(c):card(c,{full:1})}<div class="skd"><h3>스킬로 바뀐 능력치</h3>${ks.length?`<table><tr><th>능력</th><th>원래</th><th>스킬 후</th><th>변화</th></tr>${ks.map(k=>{const v=c.r[k],t=Math.min(120,v+sk[k]);return `<tr><td>${SKN[k]}</td><td>${v}</td><td><b>${t}</b></td><td class="up">+${t-v}</td></tr>`}).join('')}</table>`:'<p class="note">장착한 스킬이 없어요. 뒷면에서 블록을 끼우면 여기서 변화가 보여요.</p>'}</div>`}
-function blkInv(c){const sk=skillOf(c.id),sel=S.blocks.find(b=>b.u===S.blkSel),mine=S.blocks.filter(b=>b.t===c.type&&(b.on===c.id||(b.on===null&&(!b.home||b.home.cid===c.id)))),BF=S.blkF||{},KS=[...new Set(mine.flatMap(b=>Object.keys(b.st)))],GO='SABC',shown=mine.filter(b=>b.on===c.id||((!BF.k||b.st[BF.k]!=null)&&(!BF.g||b.g===BF.g))).sort((x,y)=>(y.on===c.id)-(x.on===c.id)||GO.indexOf(x.g)-GO.indexOf(y.g));
+function blkInv(c){const sk=skillOf(c.id),sel=S.blocks.find(b=>b.u===S.blkSel),mine=S.blocks.filter(b=>b.t===c.type&&(b.on===c.id||(b.on===null&&(!b.home||b.home.cid===c.id)))),BF=S.blkF||{},KS=[...new Set(mine.flatMap(b=>Object.keys(b.st)))],GO='SABC',shown=mine.filter(b=>b.on===c.id||b.home||b.u===S.blkSel||((!BF.k||b.st[BF.k]!=null)&&(!BF.g||b.g===BF.g))).sort((x,y)=>(y.on===c.id)-(x.on===c.id)||GO.indexOf(x.g)-GO.indexOf(y.g));
  return `<p class="note help" style="margin-top:0">장착한 블록은 이 선수 안에서만 이동·회전. 빼면 사라짐.</p>
- <div class="tools"><button class="ghost" data-a="rot" ${sel&&!sel.on?'':'disabled'}>선택 블록 회전</button>${sel&&sel.home?'<button class="ghost danger" data-a="blkdel">빼내기 (블록 사라짐)</button>':''}<span class="note" style="margin:0">${sel?'놓을 칸 선택 (끌어 놓기 가능)':'블록 선택 또는 칸에 끌어 놓기'}</span></div>
+ <div class="tools"><button class="rotb" data-a="rot" data-hk="9" ${sel?'':'disabled'} title="R 키 · 보드의 블록 두 번 누르기">↻ 회전 <kbd>R</kbd></button>${sel&&(sel.home||sel.on===c.id)?'<button class="ghost danger" data-a="blkdel">빼내기 (블록 사라짐)</button>':''}<span class="note" style="margin:0">${sel?(sel.on===c.id?'장착된 자리에서 바로 돌아가요 · 다른 칸을 눌러 옮기기':'놓을 칸 선택 (끌어 놓기 가능)'):'블록 선택 · 보드의 블록을 누르면 들어 올려져요'}</span></div>
  <div class="tools blkf"><select id="blkfk" aria-label="블록 종류"><option value="">전체 종류</option>${KS.map(k=>`<option value="${k}"${BF.k===k?' selected':''}>${SKN[k]||k}</option>`).join('')}</select><select id="blkfg" aria-label="블록 등급"><option value="">전체 등급</option>${['S','A','B','C'].map(g=>`<option value="${g}"${BF.g===g?' selected':''}>${g}급</option>`).join('')}</select><span class="note" style="margin:0">${shown.length}/${mine.length}개${BF.k||BF.g?' · 장착한 블록은 항상 보여요':''}</span></div>
  <div class="inv">${(()=>{const G=[],M={};shown.forEach(b=>{if(b.on||b.home){G.push([b,1]);return}const k=b.sh+'|'+b.g+'|'+Object.keys(b.st).sort().map(x=>x+b.st[x]).join(',')+'|'+S.locks.includes('b'+b.u);if(M[k]){M[k][1]++;if(b.u===S.blkSel)M[k][0]=b}else{M[k]=[b,1];G.push(M[k])}});return G})().map(([b,n])=>{const cs=cells(b),h=Math.max(...cs.map(x=>x[0]))+1,w=Math.max(...cs.map(x=>x[1]))+1;
   return `<button class="blk${b.u===S.blkSel?' sel':''}" data-blk="${b.u}" draggable="${b.on?'false':'true'}"><span class="mini" style="grid-template-columns:repeat(${w},12px)">${[...Array(h*w).keys()].map(i=>{const on=cs.some(([r,q])=>r*w+q===i);return `<i class="${on?'cell g-'+b.g:''}" style="${on?'':'visibility:hidden'}"></i>`}).join('')}</span><small><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))}${n>1?`<b class="blkn">×${n}</b>`:''}</small><small>${Object.entries(b.st).map(([k,v])=>SKN[k]+'+'+v).join(' ')} · ${b.on?'장착됨':'보관 중'}${S.locks.includes('b'+b.u)?' · 잠금':''}</small></button>`}).join('')||'<p class="note">맞는 블록 없음</p>'}</div>
@@ -2745,6 +2746,11 @@ function tapBlk(i,cid){const c=by[cid],r=Math.floor(i/4),q=i%4;const hit=S.block
  // 누른 칸이 블록의 어느 칸이든 덮이면 OK: 끌어온 칸 → 블록의 각 칸 순서로 맞춰 봄
  const tries=[...(grab?[grab]:[]),...cells(b)],hitT=tries.find(([a,d])=>fit(r-a,q-d));
  if(hitT){b.on=cid;b.at=[r-hitT[0],q-hitT[1]];delete b.home;S.blkSel=null}}
+// 회전(SJ 2026-11-28): 장착했거나 들어 올린 블록은 돌린 뒤 원래 자리 가장 가까운 곳에 바로 다시 끼움. 자리가 없으면 들어 올린 채로 두고 안내
+function rotBlk(b){if(!b)return;const cid=b.on||(b.home&&b.home.cid),prev=b.on?b.at:b.home&&b.home.at;b.rot=((b.rot||0)+1)%4;if(!cid||!prev||!by[cid])return;
+ const os=openSet(by[cid]),fitAt=(r0,q0)=>cells(b).every(([a,d])=>{const R=a+r0,Q=d+q0;return R>=0&&Q>=0&&R<4&&Q<4&&os.has(R*4+Q)&&!S.blocks.some(o=>o!==b&&o.on===cid&&cells(o).some(([x,y])=>x+o.at[0]===R&&y+o.at[1]===Q))});
+ let best=null;for(let r0=-3;r0<4;r0++)for(let q0=-3;q0<4;q0++)if(fitAt(r0,q0)){const d=Math.abs(r0-prev[0])+Math.abs(q0-prev[1]);if(!best||d<best[2])best=[r0,q0,d]}
+ if(best){b.on=cid;b.at=[best[0],best[1]];delete b.home;S.msg=''}else{if(b.on){b.home={cid,at:prev,rot:(b.rot+3)%4};b.on=null;b.at=null}S.msg='돌린 모양이 들어갈 빈칸이 없어요 · 다시 돌리거나 다른 칸을 눌러 놓아 주세요'}}
 // 미리보기: 놓일 칸 전부 표시
 function blkFoot(i,cid){const b=S.blocks.find(x=>x.u===S.blkSel);if(!b)return null;const r=Math.floor(i/4),q=i%4,os=openSet(by[cid]);
  for(const [a,d] of [...(grab?[grab]:[]),...cells(b)]){const r0=r-a,q0=q-d;if(r0<0||q0<0)continue;const cs=cells(b).map(([x,y])=>[x+r0,y+q0]);
@@ -2817,7 +2823,8 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
- {id:'n1128d',d:'2026-11-28',t:'합성 재료: 같은 작전·서포트 카드 묶음',b:['합성에서 같은 작전 카드·서포트 카드를 한 칸으로 묶어 ×장수로 보여줘요. 누를 때마다 한 장씩 재료로 들어가고, 다 넣은 뒤 누르면 한 장씩 빠져요.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128e',d:'2026-11-28',t:'스킬 끼우기 편의 개선',b:['장착한 블록을 고른 채 [↻ 회전]·R 키·보드에서 두 번 누르기로 그 자리에서 바로 돌릴 수 있어요. 돌린 모양이 안 맞으면 가장 가까운 빈자리로 옮겨 끼워요.','고른 블록은 보드에 노란 테두리로 표시돼요.','필터를 바꿔도 장착·들어 올린·고른 블록은 목록에서 사라지지 않아요.'],rw:{tix:{pk_n:10,block:1}}},
+{id:'n1128d',d:'2026-11-28',t:'합성 재료: 같은 작전·서포트 카드 묶음',b:['합성에서 같은 작전 카드·서포트 카드를 한 칸으로 묶어 ×장수로 보여줘요. 누를 때마다 한 장씩 재료로 들어가고, 다 넣은 뒤 누르면 한 장씩 빠져요.'],rw:{tix:{pk_n:10}}},
 {id:'n1128c',d:'2026-11-28',t:'히든 스텟: 희생타 · 수비 세분화',b:['히든 스텟 추가: 희생타가 많았던 선수는 주자 3루 땅볼·희생플라이·진루타가 잘 나와요.','수비는 실제 KBO 기록(2001~)으로 포구·송구·범위를 나눠 실책·보살·도루저지·피안타에 각각 반영돼요.','일부 선수의 포지션 수비 수치가 조금 바뀌었어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1128b',d:'2026-11-28',t:'블록 자동 합성 안내 수정',b:['블록 자동 합성에서 재료 안내가 바르게 보이도록 고쳤어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1128a',d:'2026-11-28',t:'상점 길게 눌러 연속 구매',b:['상점의 [○○P로 열기] 버튼이나 보유 팩 개봉 버튼을 누르고 있으면 계속 구매·개봉돼요. 손을 떼면 멈춰요.','포인트가 모자라거나 팩이 다 떨어지면 자동으로 멈춰요.'],rw:{tix:{pk_n:10}}},
@@ -2960,7 +2967,7 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-revx],[
  else if(D.pf)S.pf=D.pf;else if(D.side)S.side=D.side;else if(D.face)S.back=D.face==='1';
  else if(D.cell)tapBlk(+D.cell,location.hash==='#skill'?S.skc:S.cardId);
  else if(D.blk){const u=D.blk;S.blkSel=S.blkSel===u?null:u}
- else{const a=D.a;if(a==='rot'){const b=S.blocks.find(x=>x.u===S.blkSel);if(b&&!b.on)b.rot=(b.rot+1)%4}if(a==='blkdel'){S.blocks=S.blocks.filter(b=>!(b.u===S.blkSel&&b.home));S.blkSel=null}
+ else{const a=D.a;if(a==='rot'){rotBlk(S.blocks.find(x=>x.u===S.blkSel))}if(a==='blkdel'){S.blocks=S.blocks.filter(b=>!(b.u===S.blkSel&&(b.home||b.on)));S.blkSel=null}
   if(a==='recapply'){S.undo=JSON.stringify({lu:S.lu,bench:S.bench,rot:S.rot,pen:S.pen});Object.assign(S,recommend(S.recm));S.recm=null;S.sel=null}
   if(a==='recclose')S.recm=null;
   if(a==='recundo'&&S.undo){Object.assign(S,JSON.parse(S.undo));S.undo=null}
@@ -2971,6 +2978,8 @@ vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-revx],[
  render()});
 vw.addEventListener('toggle',e=>{const t=e.target;if(t.classList&&t.classList.contains('pdet')&&S)S.pdetOpen=t.open;if(t.classList&&t.classList.contains('dexfd')&&S)S.dexFOpen=t.open},true);
 // 단축키(SJ 2026-11-26): 숫자 1~9 = 화면 버튼(data-hk, 버튼 오른쪽 위 숫자), F1~F4 = 하위 탭, Shift(또는 Alt)+1~5 = 위 메뉴(홈·경기·팀·카드·상점)
+document.addEventListener('keydown',e=>{if(S&&!S.modal&&location.hash==='#skill'&&(e.code==='KeyR')&&!e.ctrlKey&&!e.metaKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName||'')&&S.blkSel){e.preventDefault();rotBlk(S.blocks.find(x=>x.u===S.blkSel));save();render()}});
+vw.addEventListener('dblclick',e=>{const c=e.target.closest&&e.target.closest('[data-cell]');if(!c||location.hash!=='#skill')return;const b=S.blocks.find(x=>x.u===S.blkSel);if(b){e.preventDefault();rotBlk(b);save();render()}});
 document.addEventListener('keydown',e=>{if(!S||S.modal||S.dexView||(S.reveal&&S.reveal.length)||e.ctrlKey||e.metaKey)return;const tg=e.target,typing=/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName||'')||tg.isContentEditable;
  const fk=/^F([1-4])$/.exec(e.key);if(fk&&!e.shiftKey&&!e.altKey){const k=view(),g=NAVG[k],L=NAVS[g]||[],t=L[+fk[1]-1];if(t){e.preventDefault();if(t[0]!==k)location.hash=t[0]}return}
  if(typing)return;const dg=/^(?:Digit|Numpad)([1-9])$/.exec(e.code);if(!dg)return;
@@ -3785,7 +3794,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',gear:'장비창고',cards:'선수단',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='4a1fa0269b';
+const BUILD='f9ece7141c';
 const TABI={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 3h4V6h-4zM3 12h18v1.6H3z" fill="currentColor"/></svg>',home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
