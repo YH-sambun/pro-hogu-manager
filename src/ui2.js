@@ -82,7 +82,7 @@ function ensureUI(){if(S.__ui)return;Object.defineProperty(S,'__ui',{value:1,enu
 const statLine=c=>c.type==='B'?`타율 ${c.s[0].toFixed(3).replace(/^0/,'')} · ${c.s[1]}홈런 · ${c.s[2]}타점 · ${c.s[3]}도루 · ${c.s[4]}경기`:`평균자책 ${c.s[0].toFixed(2)} · ${c.s[1]}승 ${c.s[2]}패 · ${c.s[3]}세이브 · ${c.s[4]}홀드 · ${c.s[5]}탈삼진 · ${c.s[6]}이닝`;
 // 보유 카드 목록: 같은 카드 2장 이상이면 중복분을 id#2, id#3…으로 펼침 (합성·유학 재료)
 let OWN=[],OWNU=[],DUP={};
-function rebuildOwn(){OWN=[];OWNU=[];DUP={};if(S.blocks)S.blocks=S.blocks.filter(b=>{if(!b.on)return true;const m=/~(\d+)$/.exec(b.on);return (S.owned[baseId(b.on)]|0)>=(m?+m[1]:1)}); // 분해·제출 등으로 사라진 카드에 끼워져 있던 블록 정리(합성 때와 같이 함께 소멸)
+function rebuildOwn(){OWN=[];OWNU=[];DUP={};if(S.blocks){const seen=new Set();for(const b of S.blocks){if(seen.has(b.u))b.u=b.u+'x'+Math.floor(Math.random()*1e9).toString(36);seen.add(b.u)}}/* 예전 블록 u 중복 정리: 같은 u면 다른 모양 블록이 끌려 보였음 */if(S.blocks)S.blocks=S.blocks.filter(b=>{if(!b.on)return true;const m=/~(\d+)$/.exec(b.on);return (S.owned[baseId(b.on)]|0)>=(m?+m[1]:1)}); // 분해·제출 등으로 사라진 카드에 끼워져 있던 블록 정리(합성 때와 같이 함께 소멸)
  for(const id in S.owned){const c=byId[id];if(!c)continue;OWN.push(c);OWNU.push(c);for(let k=2;k<=(S.owned[id]|0);k++){const d={...c,id:id+'~'+k,dup:1};DUP[d.id]=d;OWN.push(d)}}}
 const by=new Proxy({},{get:(_,k)=>typeof k==='string'?(DUP[k]||byId[k]):undefined,has:(_,k)=>!!(DUP[k]||byId[k])});
 // 경기 화면용 (엔진 G)

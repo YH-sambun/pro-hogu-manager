@@ -85,7 +85,7 @@ function loadCards(json){
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
     const cost=Math.min(10,c.c+(mvp?1:0));
     return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,pu:c.pu||null,pe:c.pe||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
-      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),xb:c.k==='B'?xbhOf(c.x,c.y):null,bo:c.k==='B'?boOf(r,rates(c.x)):null}});
+      tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,gm:c.gm||null,sm:c.sm||null,dh:c.dh||null,st:rates(c.x),xb:c.k==='B'?xbhOf(c.x,c.y):null,bo:c.k==='B'?boOf(r,rates(c.x)):null}});
   // 선수 단위 키: 이름+출신고. 1군 중복 검사는 pkt(c)=pk+유형으로 함(투타 겸업 선수는 타자 1장+투수 1장 가능). 출신고가 없으면 같은 이름·같은 유형 카드에 출신고가 하나뿐일 때 그 값을, 아니면 유형을 씀
   const HS={};for(const c of CARDS)if(c.hs){const k=c.name+'|'+c.type;(HS[k]=HS[k]||new Set()).add(c.hs)}
   for(const c of CARDS){const h=HS[c.name+'|'+c.type];c.pk=c.name+'|'+(c.hs||(h&&h.size===1?[...h][0]:c.type))}
@@ -190,6 +190,9 @@ function effDef(c,pos){if(pos==='DH')return 0;if(c.ps&&c.ps[pos]!=null)return c.
   if(pos==='C')return d*.35;if(pos==='1B')return d*.8;if(m==='DH')return d*.5;
   if(IF.includes(pos)&&IF.includes(m))return d*.85;if(OF.includes(pos)&&OF.includes(m))return d*(pos==='CF'?.85:.92);
   if(m==='1B')return d*.6;return d*.65}
+// 2026-11-28(SJ): 수비 히든(포구·송구·범위). 보이는 수비 = 기본 + 포지션 가중합. 엔진은 용도별로 기본 + 해당 히든을 씀
+const DHW={C:[.4,.6,0],'1B':[.7,0,.3],'2B':[.3,.2,.5],SS:[.25,.3,.45],'3B':[.35,.4,.25],LF:[.3,.25,.45],CF:[.2,.2,.6],RF:[.2,.45,.35]};
+function defH(c,pos,i){const v=effDef(c,pos),d=c.dh,w=DHW[pos];if(!d||!w)return v;return v+d[i]-(w[0]*d[0]+w[1]*d[1]+w[2]*d[2])}
 const canPlay=(c,pos)=>pos==='DH'||(c.ps?c.ps[pos]!=null:c.pos===pos);
 function order(slots){ // 클린업 적성 4명(4번 최고) → 테이블세터 2명 → 나머지 하위. 적성자가 모자라면 점수 순으로 채움
   let R=[...slots];const sc=(x,k)=>boKey(x.c,k),take=(k,n)=>{const has=x=>x.c.bo&&x.c.bo.includes(k);
@@ -274,12 +277,13 @@ const GRADES={C:{m:.75,w:50},B:{m:1,w:30},A:{m:1.25,w:15},S:{m:1.5,w:5}};
 const GRID=4;
 // 블록은 모두 4칸(SJ 2026-11-26): 16칸에 최대 4개
 const SH4=Object.keys(SHAPES).filter(k=>SHAPES[k].length===4);
+let BLK_SEQ=0;/* 같은 ms에 여러 개 만들어도 u가 겹치지 않게 */
 function mkBlock(t,g){const sh=pick(SH4);
   if(!g){let u=rnd()*100;g='C';for(const k of ['S','A','B','C']){if((u-=GRADES[k].w)<0){g=k;break}}}
   const keys=t==='B'?BK:PKEY,pts=Math.max(1,Math.round(SHAPES[sh].length*GRADES[g].m)),ks=[...keys].sort(()=>rnd()-.5).slice(0,g==='S'?2:1),st={};
   for(let i=0;i<pts;i++){const k=ks[i%ks.length];st[k]=(st[k]||0)+1}
   const main=Object.entries(st).sort((a,b)=>b[1]-a[1])[0][0];
-  return {u:'b'+Date.now().toString(36)+Math.floor(rnd()*1e6).toString(36),sh,g,t,st,rot:0,on:null,at:null,name:`${SKN_E[main]||main} 연마-${sh}형`}}
+  return {u:'b'+Date.now().toString(36)+(++BLK_SEQ).toString(36)+Math.floor(Math.random()*1e6).toString(36),sh,g,t,st,rot:0,on:null,at:null,name:`${SKN_E[main]||main} 연마-${sh}형`}}
 const SKN_E={con:'교타',pow:'장타',eye:'선구',bun:'번트',spd:'주력',def:'수비',men:'정신',vel:'구속',stu:'구위',brk:'변화',ctl:'제구',sta:'체력'};
 function cellsOf(b){let c=SHAPES[b.sh].map(x=>[...x]);for(let i=0;i<(b.rot||0)%4;i++)c=c.map(([r,q])=>[q,-r]);
   const mr=Math.min(...c.map(x=>x[0])),mc=Math.min(...c.map(x=>x[1]));return c.map(([r,q])=>[r-mr,q-mc])}
@@ -436,7 +440,7 @@ function simTeam(T,cond,fat){
   const lu=T.lineup.map((x,i)=>{const c=mod(byId[x.id]);let m=1;if(!boOk(c,i)){m*=BO_PEN;c.boBad=1}const a=adjBonus(LC,i);if(a){m*=1+a*ADJ_PCT/100;c.adj=a}
     if(m!==1)c.r={...c.r,con:c.r.con*m,pow:c.r.pow*m,eye:c.r.eye*m};return {c,pos:x.pos}});
   const w=p=>p==='C'||p==='SS'||p==='CF'?1.3:1,fld=lu.filter(x=>x.pos!=='DH');
-  const def=fld.reduce((s,x)=>s+effDef(x.c,x.pos)*w(x.pos),0)/fld.reduce((s,x)=>s+w(x.pos),0)+(fx.def||0);
+  const def=fld.reduce((s,x)=>s+defH(x.c,x.pos,2)*w(x.pos),0)/fld.reduce((s,x)=>s+w(x.pos),0)+(fx.def||0);
   return {name:T.name,color:T.color,lu,bench:(T.bench||[]).map(id=>byId[id]).filter(Boolean).map(mod),sp:mod(byId[fatSP(T,fat)]),pen:T.pen.map(id=>mod(byId[id])),tired:fat?T.pen.filter(id=>(fat[id]||0)>=FAT.rpOut):[],def,tc,tac,fx,mgr:T.mgr||'',tcards:(T.tsel?[T.tsel]:(T.tcards||[])).slice(0,5),ctx:T.ctx||{}}}
 
 function newPit(g,s,c,starter){if(starter&&g.ta[s].has('p1'))c={...c,r:{...c.r,sta:c.r.sta+10,stu:c.r.stu+3,kv:c.r.kv+3,hv:c.r.hv+3}};const T=g.t[s],tac=T.tac||TAC_DEF,fx=T.fx||{},cat=(T.lu.find(x=>x.pos==='C')||{}).c,bt=battery(c,cat);
@@ -452,6 +456,7 @@ function mkGame(A,H){
 function say(g,txt,k){g.log.push({inn:g.inn,half:g.half,txt,k:k||''})}
 const lim=p=>p.L;
 // 리그 기준(능력치 70일 때 비율). 엔진 안에서만 쓰는 값
+const odd=(p,m)=>{const o=p/(1-p)*m;return o/(1+o)},SMX=b=>b.sm?cl((b.sm-1)*.08,-.06,.12):0; // 희생타 지수(리그 대비 희생번트+희생플라이 비율) → 주자 3루 땅볼·뜬공 득점, 진루타 확률
 const LG={bb:.085,k:.175,hr:.025,babip:.3,gb:.45},log5=(b,p,l)=>{const o=b/(1-b)*p/(1-p)/(l/(1-l));return o/(1+o)};
 function manage(g,f){
   const T=g.t[f],p=g.pit[f],lead=g.sc[f]-g.sc[1-f],closer=T.pen[0],tac=T.tac||TAC_DEF,cv=tac.relief,fx=T.fx||{},clean=g.outs===0&&!g.bases.some(Boolean);
@@ -474,7 +479,7 @@ function aiDef(g,f){const T=g.t[f],tac=T.tac||TAC_DEF,B=g.bases,b=g.t[1-f].lu[g.
   if(B[2]&&g.outs<2&&close&&g.inn>=[99,9,7,5,1][tac.shift])g.inf=true;
   if(!B[0]&&(B[1]||B[2])&&g.inn>=7&&close&&b.r.pow>=[999,100,92,85,78][tac.ibb])return {kind:'ibb'};return null}
 // 선수 교체: 대주자(공격)·대수비(수비). 바뀐 선수는 박스에 새 줄로 기록하고 팀 수비력을 다시 계산
-const reDef=T=>{const w=p=>p==='C'||p==='SS'||p==='CF'?1.3:1,fl=T.lu.filter(x=>x.pos!=='DH');if(fl.length)T.def=fl.reduce((s,x)=>s+effDef(x.c,x.pos)*w(x.pos),0)/fl.reduce((s,x)=>s+w(x.pos),0)+((T.fx||{}).def||0)};
+const reDef=T=>{const w=p=>p==='C'||p==='SS'||p==='CF'?1.3:1,fl=T.lu.filter(x=>x.pos!=='DH');if(fl.length)T.def=fl.reduce((s,x)=>s+defH(x.c,x.pos,2)*w(x.pos),0)/fl.reduce((s,x)=>s+w(x.pos),0)+((T.fx||{}).def||0)};
 function subIn(g,s,i,nb,pos){const T=g.t[s],k=T.bench.findIndex(x=>x.id===nb.id);if(k<0)return;T.bench.splice(k,1);T.lu[i]={c:nb,pos};g.bx[s][nb.id]={c:nb,pos,ab:0,h:0,hr:0,rbi:0,bb:0,k:0,sb:0,r:0,e:0,a:0};reDef(T)}
 // 대주자: 7회 이후 2점 차 이내(지고 있거나 동점·1점 리드), 느린 주자를 벤치의 빠른 선수로. 감독 대타(ph) 성향이 높을수록 적극적
 function aiPR(g,bat){const T=g.t[bat],tac=T.tac||TAC_DEF,B=g.bases,d=g.sc[bat]-g.sc[1-bat];
@@ -502,10 +507,10 @@ function pa(g,manual){
   if(!tk&&!mine(bat))tk=aiOff(g,bat);if(!tk&&!mine(f))tk=aiDef(g,f);
   const OT=g.t[bat],DT=g.t[f],ofx=OT.fx||{},dfx=DT.fx||{},otac=OT.tac||TAC_DEF,dtac=DT.tac||TAC_DEF,po=dtac.shift,OA=g.ta[bat],DA=g.ta[f];
   // 개인 수비: 수비 위치의 야수와 그 포지션 수비값. 보살(a)·실책(e)은 수비팀 박스에 기록
-  const fld=p=>{const x=DT.lu.find(y=>y.pos===p);return x?{c:x.c,d:effDef(x.c,p),p}:null},cr=F=>{const o=g.bx[f][F.c.id];if(o)o.a=(o.a||0)+1},ce=F=>{const o=g.bx[f][F.c.id];if(o)o.e=(o.e||0)+1};
-  const DX=d=>(d-90)/10,OFP={'좌':'LF','중':'CF','우':'RF'},CAT=fld('C'),cArm=CAT?DX(CAT.d):0; // 포지션 수비값은 대개 80~100, 90이 보통
+  const fld=p=>{const x=DT.lu.find(y=>y.pos===p);return x?{c:x.c,d:defH(x.c,p,0),a:defH(x.c,p,1),p}:null},cr=F=>{const o=g.bx[f][F.c.id];if(o)o.a=(o.a||0)+1},ce=F=>{const o=g.bx[f][F.c.id];if(o)o.e=(o.e||0)+1};
+  const DX=d=>(d-90)/10,OFP={'좌':'LF','중':'CF','우':'RF'},CAT=fld('C'),cArm=CAT?DX(CAT.a):0; // 포지션 수비값은 대개 80~100, 90이 보통
   // 보살: 추가 진루를 노린 주자를 외야 송구로 잡을 확률(외야 수비↑, 주자 주력↓). 포수 수비는 도루 성공률을 낮춤
-  const armOut=(F,s,base)=>F&&rnd()<cl(base+.02*DX(F.d)-.03*X(s.c.r.spd),.005,.15);
+  const armOut=(F,s,base)=>F&&rnd()<cl(base+.02*DX(F.a)-.03*X(s.c.r.spd),.005,.15);
   const pVel=()=>{const p=g.pit[f]&&g.pit[f].c;const r=p&&(p.rawr||p.r);return r&&r.vel!=null?r.vel:70}; // 2026-11-27 SJ: 구속 빠른 투수는 도루 저지에 유리
   const stealP=s=>cl((.6+.25*X(s.c.r.spd)+.03*RTIER(s.c.r.spd)+(ofx.steal||0)-.04*po-.04*cArm-.05*X(pVel()))*(OA.has('b6')?1.2:1)*(DA.has('c4')?.8:1),.05,.95);
   if(tk&&tk.kind==='ph'){const T0=g.t[bat],i=T0.bench.findIndex(x=>x.id===tk.arg);if(i>=0){const nb=T0.bench.splice(i,1)[0],slot=T0.lu[g.idx[bat]];
@@ -548,10 +553,10 @@ function pa(g,manual){
   const tC=RTIER(b.r.con),tP=RTIER(b.r.pow),tE=RTIER(b.r.eye),tKV=RTIER(pc.r.kv!=null?pc.r.kv:pc.r.stu),tHV=RTIER(pc.r.hv!=null?pc.r.hv:pc.r.stu),tCT=RTIER(pc.r.ctl),tPT=pc.r.ptT||0,
     defT=DT.lu.reduce((s,x)=>s+(x.pos==='DH'?0:DTIER(effDef(x.c,x.pos))),0); // 구간 효과
   const bBB=cl(LG.bb+(br.eye-70)*.0032+.004*tE,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018-.003*tC,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0016+.002*tP,.002,.1),
-    bBA=cl(LG.babip+(br.con-70)*.0028+.004*tC,.2,.42),bGB=cl(LG.gb-(br.pow-70)*.004+(br.spd-70)*.001,.28,.62);
+    bBA=cl(LG.babip+(br.con-70)*.0028+.004*tC,.2,.42),bGB0=cl(LG.gb-(br.pow-70)*.004+(br.spd-70)*.001,.28,.62),bGB=b.gm?cl(odd(LG.gb,b.gm),.25,.7):bGB0; // 2026-11-28(SJ): 실제 땅볼/뜬공(GO/AO) 비율. 타율·홈런 기대치는 기존 식(bGB0) 기준으로 유지하고 타구 구성만 바뀜
   const qBB=cl(LG.bb-(ctl-70)*.0045-.004*tCT,.015,.22),qK=cl(LG.k+(kv-70)*.011+.01*tKV+AR.k,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005-(ctl-PW_C)*PW_CH-.0015*tHV,.008,.05)*AR.hr,qBA=cl(LG.babip-(hv-70)*PW_HB-(bk-PW_C)*PW_BB-(ctl-PW_C)*PW_CB-.0025*tHV,.24,.36)*AR.ba; // 2026-11-26(SJ): 제구는 실투(피홈런·피안타), 변화구는 약한 타구에도
   const pBB=cl(log5(bBB,qBB,LG.bb)-.003*sw+.002*po,.015,.25),pK=cl(log5(bK,qK,LG.k)*(1-.05*plat)+.006*sw+(g.hnr?.015:0)+(ofx.kp||0),.03,.45),
-    pG=log5(bGB,pgb,LG.gb),pHR=cl(log5(bHR,qHR,LG.hr)*(1-pG)/(1-LG.gb)*(1+.07*plat)*(1+.12*sw)+(ofx.hrp||0),.001,.11),
+    pG=log5(bGB,pgb,LG.gb),pG0=log5(bGB0,pgb,LG.gb),pHR=cl(log5(bHR,qHR,LG.hr)*(1-pG0)/(1-LG.gb)*(1+.07*plat)*(1+.12*sw)+(ofx.hrp||0),.001,.11),
     pBA=log5(bBA,qBA,LG.babip)+.01*plat-.04*X(def)-.0008*defT+(g.inf?.03:0)-.003*sw-.004*sh-(risp?(dfx.risp||0):0);
   P.bf++;let u=rnd(),txt='',n=0,big='';const sb=g.sc[bat];
   if(u<pBB+.007){const hbp=u>=pBB;n=force(g,run);bs.bb++;P.bb++;txt=hbp?'몸에 맞는 공':'볼넷'}
@@ -560,7 +565,7 @@ function pa(g,manual){
   else if((u-=pK)<pHR){bs.ab++;bs.h++;bs.hr++;P.h++;P.hr++;g.hits[bat]++;const on=B.filter(Boolean).length;
     for(const r of B)if(r)score(g,r);score(g,run);g.bases=[null,null,null];n=on+1;txt=`${pick(DIR)}월 ${['솔로','투런','스리런','만루'][on]} 홈런!`;big='hr'}
   else{bs.ab++;const gb=rnd()<pG; // 땅볼 타구는 안타가 덜 되고(주력이 빠르면 내야안타) 장타가 거의 없음. 뜬공·라인드라이브는 장타
-    const pHit=cl(pBA+(gb?-.035+(br.spd-70)*.0015:.03),.15,.5);
+    const pHit=cl(pBA+.065*(pG-pG0)+(gb?-.035+(br.spd-70)*.0015:.03),.15,.5);
     if(rnd()<pHit){bs.h++;P.h++;g.hits[bat]++;const t=rnd(),xb=b.xb||[1,1],p3=gb?.004*xb[1]:cl((.025+(br.spd-70)*.0012)*xb[1],.003,.1),p2=gb?cl((.06+(br.pow-70)*.002+(br.spd-70)*.001)*xb[0],.02,.15):cl((.262+(br.pow-70)*.006-(hv-70)*.002+(br.spd-70)*.002)*(.5+.5*xb[0]),.12,.55); // XBH: 순장타(파워)·주력 + 실제 2·3루타 비율
       if(t<p3){for(const r of B)if(r)score(g,r);n=B.filter(Boolean).length;g.bases=[null,null,run];txt=`${pick(DIR)}중간 3루타`}
       else if(t<p3+p2){const nb=[null,run,null],dd=pick(['좌익선상','좌중간','우중간','우익선상']),F=fld(dd[0]==='좌'?'LF':dd==='우익선상'?'RF':'CF');let ex='';if(B[2]){score(g,B[2]);n++}if(B[1]){score(g,B[1]);n++}
@@ -574,9 +579,9 @@ function pa(g,manual){
       else if(gb){
         if(B[0]&&o0<2&&rnd()<(.28-.1*X(br.spd))*(g.hnr?.25:1)){out(g,2);B[0]=null;txt='병살타';if(g.outs<3){if(B[2]){score(g,B[2])}B[2]=B[1];B[1]=null}}
         else{out(g,1);txt=`${fp==='P'?'투수':PK[fp]} 땅볼`;
-          const adv=ofx.adv||0;if(g.outs<3){if(B[2]&&rnd()<(g.inf?.12:.45)+(ofx.sf||0)+adv){score(g,B[2]);n++;B[2]=null}if(B[1]&&!B[2]&&rnd()<.5+adv){B[2]=B[1];B[1]=null}if(B[0]&&!B[1]&&rnd()<.5+adv){B[1]=B[0];B[0]=null}}}}
+          const adv=ofx.adv||0;if(g.outs<3){if(B[2]&&rnd()<(g.inf?.12:.45)+(ofx.sf||0)+adv+SMX(b)){score(g,B[2]);n++;B[2]=null}if(B[1]&&!B[2]&&rnd()<.5+adv+SMX(b)){B[2]=B[1];B[1]=null}if(B[0]&&!B[1]&&rnd()<.5+adv+SMX(b)){B[1]=B[0];B[0]=null}}}}
       else{out(g,1);txt=`${PK[fp]} ${rnd()<.2?'파울 ':''}플라이 아웃`;
-        if(g.outs<3&&B[2]&&rnd()<.6+.2*X(B[2].c.r.spd)+(ofx.sf||0)){if(['LF','CF','RF'].includes(fp)&&armOut(FD,B[2],.03)){const s3=B[2];out(g,1);cr(FD);B[2]=null;txt+=` (${FD.c.name} 홈 보살, ${s3.c.name} 태그아웃)`}else{score(g,B[2]);n++;B[2]=null;txt+=' (희생플라이)'}}}}}
+        if(g.outs<3&&B[2]&&rnd()<.6+.2*X(B[2].c.r.spd)+(ofx.sf||0)+SMX(b)){if(['LF','CF','RF'].includes(fp)&&armOut(FD,B[2],.03)){const s3=B[2];out(g,1);cr(FD);B[2]=null;txt+=` (${FD.c.name} 홈 보살, ${s3.c.name} 태그아웃)`}else{score(g,B[2]);n++;B[2]=null;txt+=' (희생플라이)'}}}}}
   bs.rbi+=n;const ran=g.sc[bat]-sb;
   say(g,`${b.name}: ${txt}${ran?` — ${ran}점 (${g.sc[0]}:${g.sc[1]})`:''}`,big||(ran?'r':''));
   g.idx[bat]=(g.idx[bat]+1)%9;
