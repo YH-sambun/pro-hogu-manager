@@ -591,8 +591,8 @@ function recCap(r,t){if(!t||!t.ycap)return r;const sl=[...r.lu.map((x,i)=>['lu',
 function recBenchC(r,t){const has=r.bench.findIndex(id=>id&&canPos(byId[id],'C')&&byId[id].type==='B');if(has>=0){if(has>0)r.bench.unshift(r.bench.splice(has,1)[0]);return r}
  const pool=REC_ALL?CARDS:OWN.filter(c=>!c.dup&&!abOf(c.id)&&!recNx(c)),ids=[...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean),names=new Set(ids.map(id=>byId[id].on||byId[id].name)),room=COST_CAP-recCost(r);
  const yc={};if(t&&t.ycap)for(const id of ids){const c=byId[id];if(t.m(c))yc[c.year]=(yc[c.year]||0)+1}
- const slots=r.bench.map((id,i)=>[i,id?byId[id]:null]).sort((a,b)=>(!a[1]?-1:0)-(!b[1]?-1:0)||(!REC_ALL&&recBB()?recSpOk(a[1])-recSpOk(b[1]):0)||(t&&a[1]&&t.m(a[1])?1:0)-(t&&b[1]&&t.m(b[1])?1:0)||((a[1]?a[1].ovr:0)-(b[1]?b[1].ovr:0)));
- for(const [i,o] of slots){const oc=o?o.cost:0,c=pool.filter(c=>c.type==='B'&&c.v!=='EX'&&canPos(c,'C')&&!names.has(c.on||c.name)&&c.cost<=oc+room&&!(t&&o&&t.m(o)&&!t.m(c))&&!(t&&t.ycap&&t.m(c)&&(yc[c.year]||0)-(o&&t.m(o)&&o.year===c.year?1:0)>=t.ycap)).sort((a,b)=>(t&&t.m(b)?1:0)-(t&&t.m(a)?1:0)||(!REC_ALL&&recOn()?(recMatch(b)||recSpOk({...b,v:'EX'}))-(recMatch(a)||recSpOk({...a,v:'EX'})):0)||b.ovr-a.ovr)[0];
+ const slots=r.bench.map((id,i)=>[i,id?byId[id]:null]).sort((a,b)=>(!a[1]?-1:0)-(!b[1]?-1:0)||(!REC_ALL&&recBB()?recSpOk(a[1])-recSpOk(b[1]):0)||(!REC_ALL&&recOn()&&a[1]&&b[1]?recCT(a[1])-recCT(b[1]):0)||(t&&a[1]&&t.m(a[1])?1:0)-(t&&b[1]&&t.m(b[1])?1:0)||((a[1]?a[1].ovr:0)-(b[1]?b[1].ovr:0)));
+ for(const [i,o] of slots){const oc=o?o.cost:0,c=pool.filter(c=>c.type==='B'&&c.v!=='EX'&&canPos(c,'C')&&!names.has(c.on||c.name)&&c.cost<=oc+room&&!(t&&o&&t.m(o)&&!t.m(c))&&!(t&&t.ycap&&t.m(c)&&(yc[c.year]||0)-(o&&t.m(o)&&o.year===c.year?1:0)>=t.ycap)).sort((a,b)=>(t&&t.m(b)?1:0)-(t&&t.m(a)?1:0)||(!REC_ALL&&recOn()?recCT(b)-recCT(a):0)||b.ovr-a.ovr)[0];
   if(c){r.bench.splice(i,1);r.bench.unshift(c.id);break}}
  return r}
 function recommend(mode){const t=recFx();return recBenchC(recCap(recommend0(mode),t),t)}
@@ -600,7 +600,10 @@ function recommend0(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)retur
 // 2026-11-28 SJ: 추천에 EX·커하·영결 포함 여부 체크(nx: 뺄 종류), 타자 특수카드는 벤치로(bb), 투수 특수카드는 선발 우선, 아래 목록 필터 연동(lf)
 const REC_SP={EX:'EX',CH:'커리어하이',RN:'영구결번'},recSp=c=>!!(c&&REC_SP[c.v]),recNx=c=>!!(c&&S.recF&&S.recF.nx&&S.recF.nx[c.v]),recBB=()=>!S.recF||S.recF.bb!==false,recLF=()=>(!S.recF||S.recF.lf!==false)&&recOn();
 // 조건(연도·구단·덱 효과)이 있으면 그 조건에 맞거나 같은 계보(원 소속 구단)인 특수카드만 우선 배치(2026-11-28 SJ: 22 SSG 추천에 다른 구단 커하·EX가 들어감)
-const recSpOk=c=>{if(!recSp(c))return false;if(!recOn())return true;if(recMatch(c))return true;const f=S.recF||RF0;if(f.team==='all')return false;const x=CARDS.find(x=>x.team===f.team);return !!x&&c.line===x.line};
+let REC_CH=null; // 조건 추천 때 우선 배치할 커리어하이(와일드로 세는 CH_WILD장만). 나머지 CH는 일반 카드 취급
+const recSpOk=c=>{if(!recSp(c))return false;if(!recOn())return true;if(recMatch(c))return true;if(c.v==='CH'&&REC_CH&&!REC_CH.has(c.id))return false;const f=S.recF||RF0;if(f.team==='all')return false;const x=CARDS.find(x=>x.team===f.team);return !!x&&c.line===x.line};
+// 백업 포수 후보 순위(2026-11-28 SJ: 18 이재원이 들어가 단일연도가 깨짐): 조건에 맞음 3 > 같은 계보 특수카드(와일드로 셈) 2 > 같은 계보 일반 1 > 그 외 0
+const recCT=c=>recMatch(c)?3:recSpOk(c)?2:recSpOk({...c,v:'EX'})?1:0;
 const recExTrim=cs=>{const keep=new Set();for(const t of ['B','P']){const x=cs.filter(c=>c&&c.v==='EX'&&c.type===t).sort((a,b)=>(recSpOk(b)-recSpOk(a))||(t==='P'?((b.pos==='SP')-(a.pos==='SP'))||b.ovr-a.ovr:b.ovr-a.ovr)).slice(0,EX_MAX[t]);x.forEach(c=>keep.add(c))}return cs.filter(c=>c&&(c.v!=='EX'||keep.has(c)))};
 const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||c.v==='EX'&&!!t.ls&&t.ls.includes(c.line))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
 // 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
@@ -626,6 +629,7 @@ function recommend1(mode,cp){const own=recExTrim([...new Map([...(REC_ALL?(recFx
  const yc={};for(const c of own){const k=c.year+' '+c.team;yc[k]=(yc[k]||0)+1}const topY=Object.entries(yc).sort((a,b)=>b[1]-a[1])[0][0];
  const w=c=>(mode==='deck'&&c.year+' '+c.team===topY?15:0)-(mode==='cost'?c.cost*4:0)-cp*c.cost+(recOn()&&recMatch(c)?40:0)+(recFx()&&recFx().s&&(c.on||c.name)===recFx().s&&recFx().m(c)?80:0)+(recFx()&&recFx().must&&(recFx().mhit?recFx().must.some(e=>recFx().mhit(c,e)):recFx().m(c))?200:0);
  const B=own.filter(c=>c.type==='B'),P=own.filter(c=>c.type==='P'),used2=new Set(),lu=[];
+ REC_CH=null;if(!REC_ALL&&recOn()){const ch=own.filter(c=>c.v==='CH'&&!recMatch(c)&&recSpOk(c)).sort((a,b)=>((b.pos==='SP')-(a.pos==='SP'))||b.ovr-a.ovr);REC_CH=new Set(ch.slice(0,CH_WILD).map(c=>c.id))}
  const bb=!REC_ALL&&recBB(),spB=bb?B.filter(recSpOk).sort((a,b)=>bv(b)+w(b)-bv(a)-w(a)):[],bSp=new Set(spB.slice(0,spB.slice(0,5).some(c=>c.v!=='EX'&&canPos(c,'C'))?5:4)),Bs=bb?B.filter(c=>!bSp.has(c)):B; // 벤치에 들어갈 특수 타자(백업 포수 자리 1칸 남김), 넘치는 특수 타자는 주전 후보
  for(const p of ['C','SS','CF','2B','3B','RF','LF','1B']){const cand=(Bs.some(c=>!used2.has(c.id)&&canPos(c,p))?Bs:B).filter(c=>!used2.has(c.id)&&canPos(c,p)).map(c=>[c,(c.ps&&c.ps[p]!=null?c.ps[p]*.5:-1e9)+bv(c)*.8+w(c)]).sort((a,b)=>b[1]-a[1])[0];if(cand){used2.add(cand[0].id);lu.push([p,cand[0].id])}}
  const dh=(Bs.some(c=>!used2.has(c.id))?Bs:B).filter(c=>!used2.has(c.id)).sort((a,b)=>bv(b)+w(b)-bv(a)-w(a))[0];if(dh){used2.add(dh.id);lu.push(['DH',dh.id])}
