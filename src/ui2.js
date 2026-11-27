@@ -82,7 +82,8 @@ function ensureUI(){if(S.__ui)return;Object.defineProperty(S,'__ui',{value:1,enu
 const statLine=c=>c.type==='B'?`타율 ${c.s[0].toFixed(3).replace(/^0/,'')} · ${c.s[1]}홈런 · ${c.s[2]}타점 · ${c.s[3]}도루 · ${c.s[4]}경기`:`평균자책 ${c.s[0].toFixed(2)} · ${c.s[1]}승 ${c.s[2]}패 · ${c.s[3]}세이브 · ${c.s[4]}홀드 · ${c.s[5]}탈삼진 · ${c.s[6]}이닝`;
 // 보유 카드 목록: 같은 카드 2장 이상이면 중복분을 id#2, id#3…으로 펼침 (합성·유학 재료)
 let OWN=[],OWNU=[],DUP={};
-function rebuildOwn(){OWN=[];OWNU=[];DUP={};for(const id in S.owned){const c=byId[id];if(!c)continue;OWN.push(c);OWNU.push(c);for(let k=2;k<=(S.owned[id]|0);k++){const d={...c,id:id+'~'+k,dup:1};DUP[d.id]=d;OWN.push(d)}}}
+function rebuildOwn(){OWN=[];OWNU=[];DUP={};if(S.blocks)S.blocks=S.blocks.filter(b=>{if(!b.on)return true;const m=/~(\d+)$/.exec(b.on);return (S.owned[baseId(b.on)]|0)>=(m?+m[1]:1)}); // 분해·제출 등으로 사라진 카드에 끼워져 있던 블록 정리(합성 때와 같이 함께 소멸)
+ for(const id in S.owned){const c=byId[id];if(!c)continue;OWN.push(c);OWNU.push(c);for(let k=2;k<=(S.owned[id]|0);k++){const d={...c,id:id+'~'+k,dup:1};DUP[d.id]=d;OWN.push(d)}}}
 const by=new Proxy({},{get:(_,k)=>typeof k==='string'?(DUP[k]||byId[k]):undefined,has:(_,k)=>!!(DUP[k]||byId[k])});
 // 경기 화면용 (엔진 G)
 function diamond(g){const on=i=>g.bases[i]?'on':'';return `<svg viewBox="0 -12 200 182" class="gdia" role="img" aria-label="주자 상황">
@@ -541,6 +542,9 @@ function synList(pool,mk){return `<div class="scroll"><table class="tbl lul synl
 // 목표 등급 미만에서만 쓰면 등급이 안 올라가는 짝은 건너뜀. 결과가 목표면 멈춤, 아니면 재료 최대 등급 이하일 때 다시 재료로
 const BAU0={t:'P',key:'ctl',g:'A',max:'B'},BAU_MAX=300,GO='CBAS';
 const bauHit=(b,o)=>b.t===o.t&&GO.indexOf(b.g)>=GO.indexOf(o.g)&&(b.st[o.key]||0)>0&&Object.entries(b.st).sort((x,y)=>y[1]-x[1])[0][0]===o.key;
+// 재료에서 빠진 이유별 개수(SJ 2026-11-28: '블록 1099개인데 재료 2개'가 왜인지 보이게)
+function bauWhy(o){const L=new Set(S.locks||[]),n={t:0,on:0,lk:0,g:0,hit:0};for(const b of S.blocks){if(b.t!==o.t)n.t++;else if(b.on)n.on++;else if(L.has('b'+b.u))n.lk++;else if(GO.indexOf(b.g)>GO.indexOf(o.max))n.g++;else if(bauHit(b,o))n.hit++}
+  return `전체 ${S.blocks.length}개 중 제외: ${o.t==='B'?'투수용':'타자용'} ${n.t} · 장착 중 ${n.on} · 잠금 ${n.lk} · ${o.max}등급 초과 ${n.g} · 이미 목표 ${n.hit}`}
 function bauPool(o){const L=new Set(S.locks||[]);return S.blocks.filter(b=>!b.on&&b.t===o.t&&!L.has('b'+b.u)&&GO.indexOf(b.g)<=GO.indexOf(o.max)&&!bauHit(b,o))}
 function bauRun(){const o={...BAU0,...(S.bau||{})};if(GO.indexOf(o.max)<GO.indexOf(o.g)-1){S.bauRes={err:`재료를 ${o.max}등급까지만 쓰면 ${o.g}등급이 나올 수 없어요. 같은 등급 2개를 합쳐야 한 단계 올라가요.`};return}
   let n=0,used=0,hit=null;const made={};
@@ -554,7 +558,7 @@ function bauRun(){const o={...BAU0,...(S.bau||{})};if(GO.indexOf(o.max)<GO.index
 function bauHTML(){const o={...BAU0,...(S.bau||{})},K=o.t==='B'?BK:PKEY,P=bauPool(o),cnt=GO.split('').map(g=>`${g} ${P.filter(b=>b.g===g).length}`).join(' · '),R=S.bauRes,sel=(k,opts)=>`<select data-bau="${k}" aria-label="${k}">${opts.map(([v,n])=>`<option value="${v}"${String(o[k])===v?' selected':''}>${esc(n)}</option>`).join('')}</select>`;
   return `<div class="box bau" style="margin-top:12px"><h3 style="margin:0 0 6px">자동 합성 <small>원하는 블록이 나올 때까지</small></h3>
   <div class="tools" style="flex-wrap:wrap;gap:6px">${sel('t',[['B','타자용'],['P','투수용']])}${sel('key',K.map(x=>[x,SKN[x]||x]))}${sel('g',[['B','B등급 이상'],['A','A등급 이상'],['S','S등급']])}<small style="align-self:center">재료는</small>${sel('max',[['C','C등급까지'],['B','B등급까지'],['A','A등급까지'],['S','S등급까지']])}<button data-a="bau-go" ${P.length<2||GO.indexOf(o.max)<GO.indexOf(o.g)-1?'disabled':''}>자동 합성 시작</button></div>${GO.indexOf(o.max)<GO.indexOf(o.g)-1?`<p class="note" style="color:#ff8a7a;margin:6px 0 0">재료를 ${o.max}등급까지만 쓰면 ${o.g}등급이 나올 수 없어요. 합성은 같은 등급 2개일 때만 한 단계 올라가요.</p>`:''}
-  <p class="note" style="margin:6px 0 0">쓸 수 있는 재료 ${P.length}개 (${cnt}) · 장착·잠금 블록과 이미 목표에 맞는 블록은 안 써요. 같은 등급 2개는 60%로 한 단계 올라가고, 능력치는 무작위(${o.t==='B'?'타자 7종':'투수 6종'} 중 하나)예요.</p>
+  <p class="note" style="margin:6px 0 0">쓸 수 있는 재료 ${P.length}개 (${cnt}) · ${bauWhy(o)} · 장착·잠금 블록과 이미 목표에 맞는 블록은 안 써요. 같은 등급 2개는 60%로 한 단계 올라가고, 능력치는 무작위(${o.t==='B'?'타자 7종':'투수 6종'} 중 하나)예요.</p>
   ${R?R.err?`<p class="note" style="color:#ff8a7a">${esc(R.err)}</p>`:`<p class="note" aria-live="polite">${R.hit?`<b>성공!</b> ${R.n}번 합성 만에 <b>${R.hit.g}등급 ${esc(bname(R.hit))}</b> (${Object.entries(R.hit.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')})`:`<b>재료가 떨어져 멈췄어요.</b> ${R.n}번 합성`} · 재료 ${R.used}개 사용 · 만들어진 등급 ${Object.entries(R.made).map(([g,v])=>g+' '+v).join(', ')||'-'} · 남은 재료 ${R.left}개</p>`:''}</div>`}
 function vSynth(){const k=S.sk||'p',pool=synPoolF(k),mk=new Set(S.mat),m=pool.filter(x=>mk.has(x.key)),err=synCheck(k,m);
  return `<section class="band"><h2>합성</h2><div class="subnav" role="tablist">${Object.entries(SYN).map(([x,v])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-sk="${x}">${v.n}</button>`).join('')}</div>
