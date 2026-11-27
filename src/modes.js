@@ -383,7 +383,7 @@ function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<
   ['작전·서포트 카드, 스킬 블록','카드에 적힌 상황에서 해당 능력치 가감']]))}
  ${sec('교체 규칙',T(['교체','언제'],[
   ['선발 강판','투구 한계 도달, 또는 감독 성향에 따라 4~8실점'],['셋업','8회, 1~3점 리드, 선발이 한계의 80%를 넘겼을 때'],
-  ['마무리','9회 이후 1~3점 리드(성향 따라 동점~4점, 8회 2아웃 조기 투입)'],['중계','앞 투수가 한계에 닿거나 많이 맞았을 때 순서대로'],
+  ['마무리','9회 이후 1~3점 리드(성향 따라 동점~4점, 8회 2아웃 조기 투입)'],['필승조 (중계1)','7회 이후 동점~3점 리드에 먼저 나옴'],['접전 (중계2)','점수 차 3점 이내 상황'],['롱릴리프 (중계3)','5회 이전 선발이 내려가면 나와서 길게(보통 불펜의 약 1.8배) 던짐'],['패전처리 (중계4)','5점 이상 앞서거나 4점 이상 뒤질 때. 그 상황 투수가 없거나 지쳤으면 다음 순서'],
   ['대타','7회 이후 2점 차 이내, 득점권 주자, 벤치 타자가 더 좋을 때'],['대주자','7회 이후 접전, 느린 주자를 벤치의 빠른 선수로'],
   ['대수비','8회 이후 1~3점 리드에서 수비가 크게 처지는 자리']]))}`}
 
@@ -407,7 +407,7 @@ function myTeamHTML(L,m){const k=MODEK(m),T=userT(m),P=(L&&L.ps)||{},st=id=>P['0
    ${(T.bench||[]).filter(Boolean).map(id=>`<tr class="use"><td>벤치</td><td>${esc((byId[baseId(id)]||{}).pos||'')}</td><td class="l">${nm(id)}</td>${bat(st(id))}</tr>`).join('')}</tbody></table>
    <table class="tbl"><thead><tr><th>보직</th><th class="l">투수</th><th>평균자책</th><th>이닝</th><th>승</th><th>세이브</th><th>탈삼진</th>${L?'<th>피로</th>':''}</tr></thead><tbody>
    ${(T.rot||[]).filter(Boolean).map((id,i)=>`<tr${id===spN?' class="me"':''}><td>선발${i+1}${id===spN?' · 다음':''}</td><td class="l">${nm(id)}</td>${pit(st(id),id,1)}</tr>`).join('')}
-   ${(T.pen||[]).filter(Boolean).map((id,i)=>`<tr><td>${['마무리','셋업'][i]||'중계'}</td><td class="l">${nm(id)}</td>${pit(st(id),id)}</tr>`).join('')}</tbody></table></div></details></section>`}
+   ${(T.pen||[]).filter(Boolean).map((id,i)=>`<tr><td>${['마무리','셋업',...PEN_RL][i]||'중계'}</td><td class="l">${nm(id)}</td>${pit(st(id),id)}</tr>`).join('')}</tbody></table></div></details></section>`}
 
 // ── 덱 대결 시뮬(SJ 2026-11-26): 보유 덱·가상으로 짜본 덱·리그별 라인업끼리 N경기 시뮬. 보상·기록·피로 없음(순수 확인용) ──
 // 양쪽 다 내 스킬 블록·유학·장비가 그대로 붙음. 홈/원정은 번갈아, 선발은 로테이션 순서대로
