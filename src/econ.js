@@ -232,7 +232,7 @@ function cardEq(S,cardId,byId){const o={},c=byId[cardId];for(const it of S.eq||[
 // 챕터 3개 완료 → 레전드 선택권, 전부 → 명예의 전당 보상(첫 완료 기준 S.msFin). 진행 기록 S.ms[챕터id]={cyc,m1:시각,...,mid,fin}
 // 제출 미션은 기본적으로 중복만 소모(1장은 남김). S.opt.submitLast=true면 마지막 1장도 제출 가능(도감 기록은 유지)
 const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['m2',2,'그 구단 주전 세트 1개 완성',{pt:2000,tix:{star:1,abr:1},eq:'일반'}],
-  ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,exShard:1,eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 리그 우승 (주간 리그 1위·연도별 리그 한국시리즈 우승)',{pt:4000,tix:{gg:1},eq:'희귀'}],
+  ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,tix:{ex:1},eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 리그 우승 (주간 리그 1위·연도별 리그 한국시리즈 우승)',{pt:4000,tix:{gg:1},eq:'희귀'}],
   ['m5',5,'그 구단 레전드(9+) 카드 3장 보유',{pt:5000,tix:{legend:1},eq:'희귀'}]];
 const MS_META=[[3,'챕터 3개 완료',{pt:10000,tix:{pick:1}}],['all','모든 챕터 완료 · 명예의 전당',{pt:50000,tix:{pick:2}}]];
 let CHAPTERS=[],CARDS_=[];
@@ -254,7 +254,7 @@ function msProg(S,ch,mid){const l=ch.line,st=(S.ms&&S.ms[ch.id])||{};if(st[mid])
 function msDone(S,ch,mid,out){S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{};if(st[mid])return;st[mid]=Date.now();
   const rw={...MS_DEF.find(m=>m[0]===mid)[3]};if(rw.exShard){S.exShard=(S.exShard|0)+rw.exShard;while(S.exShard>=3){S.exShard-=3;rw.tix={...(rw.tix||{}),ex:((rw.tix||{}).ex|0)+1}}delete rw.exShard}
   let eqx='';if(rw.eq){const it=mkEquip(S,rw.eq,ch.line);eqx=' · 장비: '+eqName(it);delete rw.eq}
-  grant(S,rw);out.push({ch:ch.line,what:msText(S,ch,mid)+(mid==='m3'?' (EX 조각 +1)':'')+eqx,rw});
+  grant(S,rw);out.push({ch:ch.line,what:msText(S,ch,mid)+eqx,rw});
   const n=MS_DEF.filter(m=>st[m[0]]).length;
   if(n>=3&&!st.mid){st.mid=Date.now();const r={tix:{ex:1}};grant(S,r);out.push({ch:ch.line,what:'미션 3개 달성',rw:r})}
   if(n>=5&&!st.fin){st.fin=Date.now();{const it=mkEquip(S,'전설',ch.line);out.push({ch:ch.line,what:'챕터 완료 · 전설 장비: '+eqName(it),rw:{}})}const miss=ch.mx.filter(id=>!(S.owned[id]>0));
