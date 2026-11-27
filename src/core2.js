@@ -216,7 +216,8 @@ function teamColor(cards,sel,bench){
   // 커리어하이(CH)는 CH_WILD장까지 같은 계보 최다 연도에 합류(EX와 같은 방식), 영구결번(RN)은 계보와 무관하게 최다 연도에 합류
   // 2026-11-25(SJ): EX도 영구결번처럼 어떤 덱이든 만족(계보·연도 무관하게 최다 연도·최다 구단에 합류). 커리어하이만 같은 계보 한정
   // 2026-11-27(SJ): EX는 같은 계보 덱 인원으로만 셈(카드 설명대로). 같은 계보 최다 연도에 합류(커리어하이와 같은 방식, 장수 제한은 1군 EX 한도). 계보 무관 와일드는 영구결번만
-  const chW=new Set([...cards.filter(c=>c.v==='CH').slice(0,CH_WILD),...cards.filter(c=>c.v==='EX')]),wild=c=>chW.has(c),any=c=>c.v==='RN';
+  // 2026-11-28(SJ): 영구결번·커리어하이·EX 모두 원 소속 계보로만 셈(구단은 항상 같아야). 연도만 같은 계보 최다 연도에 합류. 계보 무관 와일드는 없음
+  const chW=new Set([...cards.filter(c=>c.v==='CH').slice(0,CH_WILD),...cards.filter(c=>c.v==='EX'||c.v==='RN')]),wild=c=>chW.has(c),any=c=>false;
   const yk=(()=>{const m={};for(const c of cards)if(!wild(c)&&!any(c)){const k=yearKey(c);m[k]=(m[k]||0)+1}
     for(const c of cards)if(wild(c)){let b=null;for(const k in m)if(k.split(' ')[1]===c.line&&(!b||m[k]>m[b]))b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
     for(const c of cards)if(any(c)){let b=null;for(const k in m)if(!b||m[k]>m[b])b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
