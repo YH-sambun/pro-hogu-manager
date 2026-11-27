@@ -94,7 +94,7 @@ const tixPool={ch:c=>c.v==='CH',star:c=>c.cost>=6&&!c.mx,gg:c=>c.v==='GG',ex:c=>
 const DISMANTLE=30;
 
 function wpick(pool){const tot=pool.reduce((s,c)=>s+W[c.cost],0);let u=rnd()*tot;for(const c of pool)if((u-=W[c.cost])<0)return c;return pool[pool.length-1]}
-function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'&&c.v!=='RN'&&!c.mx); // 영구결번(RN·mx)은 미션 전용 // EX는 팩에서 안 나옴(확정권·도감 전용). 올스타(AS)·GG는 일반 확률로 섞임
+function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'&&c.v!=='RN'&&c.v!=='FL'&&!c.mx); /* FL 연습생(가상 불펜)은 자동 보유라 팩 제외 */ // 영구결번(RN·mx)은 미션 전용 // EX는 팩에서 안 나옴(확정권·도감 전용). 올스타(AS)·GG는 일반 확률로 섞임
   if(pk.k==='p')pool=pool.filter(c=>c.cost>=6); // SJ 2026-11-26: 프리미엄=고코스트 팩
   if(pk.k==='c1')pool=pool.filter(c=>c.cost===1);
   const arr=(a,b)=>(Array.isArray(a)?a:a!=null?[a]:b!=null?[b]:[]).slice(0,3);
@@ -246,7 +246,7 @@ function msText(S,ch,mid){const q=msReq(msCyc(S,ch));return {m1:`그 구단 카�
 const ownedOf=(S,f)=>CARDS_.filter(c=>(S.owned[c.id]|0)>0&&f(c));
 function msProg(S,ch,mid){const l=ch.line,st=(S.ms&&S.ms[ch.id])||{};if(st[mid])return {done:true,have:1,need:1};
   const q=msReq(st.cyc|0);
-  if(mid==='m1'){const n=ownedOf(S,c=>c.line===l).length;return {have:Math.min(n,q.m1),need:q.m1}}
+  if(mid==='m1'){const n=ownedOf(S,c=>c.line===l&&c.v!=='FL').length;/* 연습생(FL)은 자동 보유라 제외 */return {have:Math.min(n,q.m1),need:q.m1}}
   if(mid==='m2'){const n=SETS.filter(s=>s.kind==='team'&&s.line===l&&S.dexDone&&S.dexDone[s.id]).length;return {have:Math.min(n,q.m2),need:q.m2}}
   if(mid==='m3'){return {have:(st.sub|0),need:q.m3}}
   if(mid==='m4')return {have:Math.min(st.lw|0,q.m4),need:q.m4};

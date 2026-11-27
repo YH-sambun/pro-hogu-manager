@@ -121,7 +121,7 @@ const MIXPOOL={};
 function mixTeam(t,name,color){const [lo,hi]=TIERS[t-1].m,P=MIXPOOL[t]||(MIXPOOL[t]=CARDS.filter(c=>!c.v&&c.ovr>=lo&&c.ovr<=hi));
   for(let tries=0;tries<20;tries++){const used=new Set(),ids=[];
     const take=(f,n)=>{let L=P.filter(f);if(!L.length)L=CARDS.filter(c=>!c.v&&f(c));if(!L.length)return;if(!L.length)return;for(let i=0;i<n;i++){let c,k=0;do c=pick(L);while(used.has(c.pk)&&k++<50);if(!used.has(c.pk)){ids.push(c.id);used.add(c.pk)}}};
-    for(const p of ['C','1B','2B','3B','SS','LF','CF','RF'])take(c=>c.type==='B'&&c.ps&&c.ps[p]!=null,2);take(c=>c.type==='B',6);take(c=>c.pos==='SP',6);take(c=>c.pos==='RP',7);
+    for(const p of ['C','1B','2B','3B','SS','LF','CF','RF'])take(c=>c.type==='B'&&c.ps&&c.ps[p]!=null,2);take(c=>c.type==='B',6);take(c=>c.pos==='SP',6);take(c=>c.pos==='RP',9);
     const T={name,full:name,color,mix:1,...bestLineup(ids),rotIdx:0};if(T.lineup.length===9&&T.rot.length>=5&&T.pen.length)return T}
   return null}
 function lgTeams(t){const T=TIERS[t-1],out=[];

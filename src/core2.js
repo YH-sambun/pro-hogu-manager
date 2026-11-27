@@ -65,7 +65,7 @@ const CH_WILD=1; // 커리어하이: 연도 무관으로 단일연도 인원에 
 const EX_MAX={B:1,P:1},exCount=ids=>{const n={B:0,P:0};for(const id of ids){const c=byId[baseId(id)];if(c&&c.v==='EX')n[c.type]++}return n},
   exErr=ids=>{const n=exCount(ids),e=[];if(n.B>EX_MAX.B)e.push(`EX 타자는 ${EX_MAX.B}명까지 쓸 수 있어요(지금 ${n.B}명)`);if(n.P>EX_MAX.P)e.push(`EX 투수는 ${EX_MAX.P}명까지 쓸 수 있어요(지금 ${n.P}명)`);return e},
   exTrim=cs=>{const keep=new Set();for(const t of ['B','P']){const x=cs.filter(c=>c&&c.v==='EX'&&c.type===t).sort((a,b)=>b.ovr-a.ovr).slice(0,EX_MAX[t]);x.forEach(c=>keep.add(c))}return cs.filter(c=>c&&(c.v!=='EX'||keep.has(c)))};
-const COST_CAP=150,ROSTER={bat:9,bench:5,sp:5,rp:6} // 불펜: [마무리, 셋업, 중계1~4];
+const FILL_P=13,COST_CAP=150,ROSTER={bat:9,bench:3,sp:5,rp:8} // 2026-11-28 SJ: 벤치 3·불펜 8. 불펜: [마무리, 셋업, 중계1~6];
 // 투구폼(SJ 2026-11-25): 언더핸드(U)·사이드암(S) 투수. 공개 기사·위키 명단 기준(스포츠경향·OSEN·위키백과 '사이드암'), 나머지는 오버·스리쿼터로 봄
 // [이름, U/S, 계보 제한, 시작 연도]. 동명이인은 계보·연도로 거름
 const ARM_LIST=[["이강철","U"],["박충식","U"],["박정현","U",["키움"]],["한희민","U"],["정대현","U",["SK","롯데"]],["김병현","U"],["박종훈","U",["SK"]],["고영표","U"],["우규민","U"],["이재곤","U"],["양현","U"],["김대우","U",["키움","삼성"],2011],["임창용","S"],["김현욱","S",["삼성","KIA"]],["조웅천","S"],["권오준","S"],["심창민","S"],["임경완","S"],["배장호","S"],["유동훈","S"],["손영민","S"],["마정길","S"],["나승현","S"],["조용훈","S"],["신정락","S"],["신승현","S"],["한현희","S"],["김성배","S"],["이재학","S"],["이태양","S",["NC"]],["임기영","S"],["서준원","S"],["최원준","S",["두산"],2017],["박민호","S"],["박준표","S"],["원종현","S"],["박치국","S"],["정우영","S"],["엄상백","S"],["강재민","S"],["신재영","S"],["오현택","S"],["신용운","S"],["임치영","S"],["김선규","S"],["정재원","S",["한화"]],["정대훈","S"],["김재영","S",["한화"]],["김기표","S"],["김동혁","S",["키움"]],["전우엽","S"],["변시원","S"],["박진태","S"],["박민석","S"],["이정호","S",["두산"]],["이강준","S"],["이영욱","S",["삼성","SK"]],["김대유","S"],["김창훈","S"],["임현준","S"]];
@@ -80,6 +80,10 @@ function loadCards(json){
   // MVP는 이름+연도가 같은 기본 카드 중 OVR이 가장 높은 1장만(동명이인·투타 겸업 다른 카드는 제외)
   const MB={};for(const c of json.cards){if(c.v||c.tx)continue;const k=c.n.replace(/#\d+$/,'')+c.y;if(MVP.has(k)&&(!MB[k]||c.o>MB[k].o))MB[k]=c}const MK=new Set(Object.values(MB).map(c=>c.y+'|'+c.t+'|'+c.n));
   {const A={};for(const c of json.cards){if(c.v||c.k!=='B'||!c.x)continue;const a=A[c.y]=A[c.y]||[0,0,0];a[0]+=c.x[3];a[1]+=c.x[4];a[2]+=c.x[2]-c.x[5]}LGX={};for(const y in A)if(A[y][2])LGX[y]=[A[y][0]/A[y][2],A[y][1]/A[y][2]]}
+  // 2026-11-28(SJ): 불펜 8명이 되면서 투수 카드가 13장 안 되는 연도 팀(주로 1980년대)은 단일연도 25명을 못 채움 → 모자란 수만큼 최하 능력치 가상 불펜(김삼성·이삼성…, v:'FL' 연습생) 생성. 모두 자동 보유, 팩·세트·합성·유학 제외
+  {const PN={},BASE={};for(const c of json.cards){if(c.v||c.tx)continue;const k=c.y+'|'+c.t;BASE[k]=BASE[k]||c;if(c.k==='P')PN[k]=(PN[k]||0)+1}
+   const SN=['김','이','박','최','정','강','조','윤','장'],add=[];for(const k in BASE){const n=PN[k]||0,b=BASE[k];if(b.y<=1987)continue; /* 1982~87은 단일연도를 한 묶음(yearKey)으로 세서 투수가 충분 */for(let i=0;i<FILL_P-n;i++)add.push({n:SN[i]+b.t,y:b.y,t:b.t,l:b.l,k:'P',p:'RP',r:[40,35,35,35,30,40],s:[9,0,0,0,0,0,0,0],o:35,c:1,h:'a',v:'FL'})}
+   json={...json,cards:[...json.cards,...add]}}
   CARDS=json.cards.map(c=>{
     const name=c.n.replace(/#\d+$/,''),r={},keys=c.k==='B'?BK:PKEY;keys.forEach((k,i)=>r[k]=c.r[i]);
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
@@ -478,7 +482,7 @@ const ERA_SP=y=>{y=+y||2026;const k=[[1985,1.27],[1995,1.12],[2005,0.82]];if(y<=
 const lim=p=>p.L;
 // 리그 기준(능력치 70일 때 비율). 엔진 안에서만 쓰는 값
 const odd=(p,m)=>{const o=p/(1-p)*m;return o/(1+o)},SMX=b=>b.sm?cl((b.sm-1)*.08,-.06,.12):0; // 희생타 지수(리그 대비 희생번트+희생플라이 비율) → 주자 3루 땅볼·뜬공 득점, 진루타 확률
-const LG={bb:.085,k:.175,hr:.025,babip:.3,gb:.45},log5=(b,p,l)=>{const o=b/(1-b)*p/(1-p)/(l/(1-l));return o/(1+o)};
+const LG={bb:.085,k:.175,hr:.025,babip:.298,gb:.45} /* 2026-11-28: 로스터 25+불펜 8명으로 R/G 상승 → babip .300→.298 보정 */,log5=(b,p,l)=>{const o=b/(1-b)*p/(1-p)/(l/(1-l));return o/(1+o)};
 function manage(g,f){
   const T=g.t[f],p=g.pit[f],lead=g.sc[f]-g.sc[1-f],closer=T.pen[0],tac=T.tac||TAC_DEF,cv=tac.relief,fx=T.fx||{},clean=g.outs===0&&!g.bases.some(Boolean);
   const lo=[1,1,1,0,-1][cv],hi=[3,3,4,4,4][cv],cfree=closer&&!g.used[f].has(closer.id)&&p.c.id!==closer.id;
@@ -487,10 +491,11 @@ function manage(g,f){
   const need=p.bf>=lim(p)||(p.starter&&p.r>=[8,7,6,5,4][tac.hook]+Math.round(Math.max(0,ERA_SP(p.c.year)-0.82)*5))||(!p.starter&&p.r>=[4,3,3,2,2][tac.relief]&&p.bf>=3);
   if(!need)return;
   // 2026-11-28 SJ: 중계 보직. pen[2] 필승조(7회 이후 동점~3점 리드), pen[3] 접전(점수 차 3점 이내), pen[4] 롱릴리프(5회 이전 선발 강판, 길게 던짐), pen[5] 패전처리(5점 이상 차). 그 상황 보직이 없거나 지쳤으면 다음 순서
-  const sit=p.starter&&g.inn<=5?2:Math.abs(lead)>=5||lead<=-4?3:g.inn>=7&&lead>=0&&lead<=3?0:Math.abs(lead)<=3?1:3,ord=[[0,1,2,3],[1,0,2,3],[2,3,1,0],[3,2,1,0]][sit];
+  // 중계5 추격조(1~3점 뒤질 때), 중계6 전천후(어느 상황이든 앞 순서 다음)
+  const sit=p.starter&&g.inn<=5?2:Math.abs(lead)>=5||lead<=-4?3:g.inn>=7&&lead>=0&&lead<=3?0:lead<0&&lead>=-3?4:Math.abs(lead)<=3?1:3,ord=[[0,1,4,2,3,5],[1,0,4,2,3,5],[2,3,4,1,0,5],[3,4,2,1,0,5],[4,1,2,3,0,5]][sit];
   const cand=ord.map(i=>T.pen[2+i]).filter(c=>c&&!g.used[f].has(c.id)),nx=cand.filter(c=>(c.fat||0)<30)[0]||cand[0]||(T.pen[1]&&!g.used[f].has(T.pen[1].id)?T.pen[1]:null)||(closer&&!g.used[f].has(closer.id)&&g.inn>=8?closer:null);
   if(nx){const ri=T.pen.indexOf(nx)-2;bring(g,f,nx,ri>=0&&ri===ord[0]?PEN_RL[ri]:'');if(ri===2&&sit===2)g.pit[f].L*=1.8}}
-const PEN_RL=['필승조','접전','롱릴리프','패전처리']; // 중계1~4 보직 이름
+const PEN_RL=['필승조','접전','롱릴리프','패전처리','추격조','전천후']; // 중계1~4 보직 이름
 function bring(g,f,c,role){g.pit[f]=newPit(g,f,c,false);say(g,`투수 교체: ${g.t[f].name} ${role?role+' ':''}${c.name}`,'c')}
 function score(g,r){g.sc[g.half]++;if(g.sc[g.half]===g.sc[1-g.half]+1){g.wrec=g.wrec||[null,null];g.wrec[g.half]=g.pit[g.half]} /* 2026-11-28 SJ: 승리 투수 = 마지막으로 리드를 잡을 때 그 팀 투수 */g.hr++;r.p.r++;g.bx[g.half][r.c.id].r++}
 function out(g,n){g.outs+=n;g.pit[1-g.half].outs+=n}
@@ -629,10 +634,10 @@ function bestLineup(ids){
   const ps=cs.filter(c=>c.type==='P').sort((a,b)=>b.ovr-a.ovr),rot=[],pen=[];
   for(const c of ps)if(c.pos==='SP'&&rot.length<5&&!used.has(pkt(c))){rot.push(c.id);used.add(pkt(c))}
   const rps=ps.filter(c=>c.pos==='RP'&&!used.has(pkt(c))).sort((a,b)=>(b.r.men+b.ovr)-(a.r.men+a.ovr));
-  for(const c of rps)if(pen.length<6){pen.push(c.id);used.add(pkt(c))}
-  for(const c of ps)if(!used.has(pkt(c))){if(rot.length<5)rot.push(c.id);else if(pen.length<6)pen.push(c.id);else continue;used.add(pkt(c))}
+  for(const c of rps)if(pen.length<ROSTER.rp){pen.push(c.id);used.add(pkt(c))}
+  for(const c of ps)if(!used.has(pkt(c))){if(rot.length<5)rot.push(c.id);else if(pen.length<ROSTER.rp)pen.push(c.id);else continue;used.add(pkt(c))}
   const restB=bats.filter(c=>!used.has(pkt(c))).sort((a,b)=>b.ovr-a.ovr),bc=restB.find(c=>canPlay(c,'C'));
-  const bench=[...(bc?[bc]:[]),...restB.filter(c=>c!==bc)].slice(0,5).map(c=>{used.add(pkt(c));return c.id});
+  const bench=[...(bc?[bc]:[]),...restB.filter(c=>c!==bc)].slice(0,ROSTER.bench).map(c=>{used.add(pkt(c));return c.id});
   return {lineup:order(slots).map(x=>({id:x.c.id,pos:x.pos})),bench,rot,pen}}
 function teamYear(key){const [y,t]=key.split(' '),ids=TEAMYEARS[key],c=byId[ids[0]];
   return {name:`${y} ${t}`,full:`${y} ${t}`,key,color:LINE_COLOR[c.line]||'#555',...bestLineup(ids),rotIdx:0}}
