@@ -115,7 +115,7 @@ const ptTier=(c,r)=>{const v=Math.max(0,...ptGrades(c,r.brk,r.vel).filter(x=>x[0
 
 // ===== 구종 2.0 (SJ 2026-11-27) =====
 // 구종별 [땅볼, 헛스윙(탈삼진), 실투 피홈런, 계열 F=직구류 B=변화구]. 등급은 C→B→A→S 단계마다 고르게 효과(PT_KC), 낮은 등급(72 미만)은 실투 피홈런
-const PTX={'직구':[-.09,0,.15,'F'],'투심':[.10,.2,.08,'F'],'싱커':[.20,.3,.05,'B'],'포크':[.12,1.2,.1,'B'],'스플리터':[.12,1.15,.1,'B'],'체인지업':[.08,1,.12,'B'],'팜볼':[.10,.8,.08,'B'],'커브':[.05,1,.2,'B'],'커터':[.04,.6,.1,'B'],'슬라이더':[0,1.2,.25,'B'],'너클볼':[.03,1,.3,'B'],'스위퍼':[-.02,1.25,.25,'B']};
+const PTX={'직구':[-.09,0,.15,'F'],'투심':[.10,.2,.08,'F'],'싱커':[.20,.3,.05,'B'],'포크':[.12,1.2,.1,'B'],'스플리터':[.12,1.15,.1,'B'],'체인지업':[.08,1,.12,'B'],'팜볼':[.10,.8,.08,'B'],'커브':[.05,1,.2,'B'],'커터':[.04,.6,.1,'B'],'슬라이더':[0,1.2,.25,'B'],'너클볼':[.03,1,.3,'B'],'스위퍼':[-.06,1.2,.25,'B']};
 // 투타 6조합: RR·RL·LL·LR(정통파 투수손+타자손), US·UX(언더·사이드 같은 손·반대 손). [구사 배율, 효과 배율] — MLB Statcast 공개 투타별 구사율·헛스윙률 경향 기준(KBO 자료 생기면 교체)
 const MUK=['RR','RL','LL','LR','US','UX'];
 // PTM[구종][케이스]=[구사 배수, 효과 배수]. 케이스 RR 우투-우타, RL 우투-좌타, LL 좌투-좌타, LR 좌투-우타, US 언더·사이드-같은손, UX 언더·사이드-반대손
@@ -135,17 +135,19 @@ const PTM={'직구':[[0.96,1],[1.19,1],[0.91,0.95],[1.11,1],[0.79,1.07],[1.04,1.
  '팜볼':[[0.68,0.96],[1.22,1.04],[0.58,0.99],[1.45,1.05],[0.73,0.98],[1.33,1.01]],
  '스플리터':[[1.26,0.96],[2.0,1.09],[0.35,0.93],[0.72,1],[0.5,0.92],[0.95,0.96]],
  '포크':[[1.26,0.96],[2.0,1.09],[0.35,0.93],[0.72,1],[0.5,0.92],[0.95,0.96]],
- '스위퍼':[[1.45,1.1],[0.55,0.85],[1.5,1.15],[0.6,0.88],[1.45,1.12],[0.55,0.82]]};
+ '스위퍼':[[1.45,1.09],[0.55,0.83],[1.5,1.16],[0.6,0.79],[1.45,1.12],[0.55,0.77]]};
+// 스위퍼 인플레이 피안타율(BABIP) 배수, 슬라이더 대비 (FanGraphs 'The Secret Benefit (And Cost) Of Sweeping Sliders', Statcast 우투수: 같은손 .246 vs .277, 반대손 .284 vs .268). 케이스 순서 MUK와 같음
+const PTBA={'스위퍼':[.89,1.06,.89,1.06,.89,1.06]};;
 let PT_KC=.0015,PT_GB0=.47,PT_C=66,PT_HR0=.88;
 const muKey=(pc,bh)=>{const ph=pc.ph||'R',b=bh==='S'?(ph==='R'?'L':'R'):(bh||'R');return pc.arm?(b===ph?'US':'UX'):ph+b};
 function arsOf(pc,bh){const key=muKey(pc,bh);pc._ar=pc._ar||{};if(pc._ar[key])return pc._ar[key];const r=pc.r,A=r.ars||[['직구','C',68]],mi=MUK.indexOf(key);
   const m=t=>(PTM[t]||[])[mi]||[1,1],fam={F:[],B:[]},PU=r.pu,si=key==='RR'||key==='LR'||(pc.arm&&((pc.ph||'R')==='R')===(key==='US'))?0:1; // 실제 구사율: 우타자 상대[0], 좌타자 상대[1]
   for(const [t,,v] of A){const x=PTX[t]||PTX['커브'];fam[x[3]].push({t,v,x,u:PU?((PU[t]?PU[t][si]:1)+.5):m(t)[0]*Math.exp((v-78)/15),e:m(t)[1]})}
   let fB=.5;if(PU&&fam.B.length){const sF=fam.F.reduce((s,p)=>s+p.u,0),sB=fam.B.reduce((s,p)=>s+p.u,0);fB=cl(sB/(sF+sB||1),.25,.75)}
-  let k=0,gb=PT_GB0+(pc.arm==='U'?.05:pc.arm==='S'?.03:0)-((r.vel!=null?r.vel:70)-70)*.0015,hr=1,wp=1;
+  let ba=1,k=0,gb=PT_GB0+(pc.arm==='U'?.05:pc.arm==='S'?.03:0)-((r.vel!=null?r.vel:70)-70)*.0015,hr=1,wp=1;
   for(const f of ['F','B']){const L=fam[f],W=L.reduce((s,p)=>s+p.u,0)||1,tot=fam.B.length?(f==='B'?fB:1-fB):f==='F'?1:0;
-    for(const p of L){const sh=tot*p.u/W;k+=sh*p.x[1]*p.e*(p.v-PT_C)*PT_KC;gb+=sh*p.x[0]*(p.x[0]>0?p.e*Math.max(.3,p.v/78):1);hr+=sh*p.x[2]*Math.max(0,72-p.v)/10;if(p.t==='너클볼')wp+=sh*1.6}}
-  return pc._ar[key]={k,gb:cl(gb,.3,.66),hr:hr*PT_HR0,wp}}
+    for(const p of L){const sh=tot*p.u/W;k+=sh*p.x[1]*p.e*(p.v-PT_C)*PT_KC;gb+=sh*p.x[0]*(p.x[0]>0?p.e*Math.max(.3,p.v/78):1);hr+=sh*p.x[2]*Math.max(0,72-p.v)/10;if(PTBA[p.t])ba+=sh*(PTBA[p.t][mi]-1);if(p.t==='너클볼')wp+=sh*1.6}}
+  return pc._ar[key]={k,gb:cl(gb,.3,.66),hr:hr*PT_HR0,wp,ba}}
 function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45,ars:ptGrades(c,r.brk,r.vel),pu:c.pu||null,hv:r.stu,bk:r.brk,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men,ptT:ptTier(c,r)}}
 // 타순 적성: T 테이블세터(1·2번), C 클린업(3~6번), L 하위 타선(7~9번, 누구나 가능). 적성 밖 타순이면 교타·장타·선구 -10%
 // 실제 기록 기준: 100타석 이상에서 출루율 .330 이상 → 테이블세터, OPS .700 이상 → 클린업(둘 다 가능). 기록이 없으면 능력치로 추정
@@ -547,7 +549,7 @@ function pa(g,manual){
     defT=DT.lu.reduce((s,x)=>s+(x.pos==='DH'?0:DTIER(effDef(x.c,x.pos))),0); // 구간 효과
   const bBB=cl(LG.bb+(br.eye-70)*.0032+.004*tE,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018-.003*tC,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0016+.002*tP,.002,.1),
     bBA=cl(LG.babip+(br.con-70)*.0028+.004*tC,.2,.42),bGB=cl(LG.gb-(br.pow-70)*.004+(br.spd-70)*.001,.28,.62);
-  const qBB=cl(LG.bb-(ctl-70)*.0045-.004*tCT,.015,.22),qK=cl(LG.k+(kv-70)*.011+.01*tKV+AR.k,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005-(ctl-PW_C)*PW_CH-.0015*tHV,.008,.05)*AR.hr,qBA=cl(LG.babip-(hv-70)*PW_HB-(bk-PW_C)*PW_BB-(ctl-PW_C)*PW_CB-.0025*tHV,.24,.36); // 2026-11-26(SJ): 제구는 실투(피홈런·피안타), 변화구는 약한 타구에도
+  const qBB=cl(LG.bb-(ctl-70)*.0045-.004*tCT,.015,.22),qK=cl(LG.k+(kv-70)*.011+.01*tKV+AR.k,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005-(ctl-PW_C)*PW_CH-.0015*tHV,.008,.05)*AR.hr,qBA=cl(LG.babip-(hv-70)*PW_HB-(bk-PW_C)*PW_BB-(ctl-PW_C)*PW_CB-.0025*tHV,.24,.36)*AR.ba; // 2026-11-26(SJ): 제구는 실투(피홈런·피안타), 변화구는 약한 타구에도
   const pBB=cl(log5(bBB,qBB,LG.bb)-.003*sw+.002*po,.015,.25),pK=cl(log5(bK,qK,LG.k)*(1-.05*plat)+.006*sw+(g.hnr?.015:0)+(ofx.kp||0),.03,.45),
     pG=log5(bGB,pgb,LG.gb),pHR=cl(log5(bHR,qHR,LG.hr)*(1-pG)/(1-LG.gb)*(1+.07*plat)*(1+.12*sw)+(ofx.hrp||0),.001,.11),
     pBA=log5(bBA,qBA,LG.babip)+.01*plat-.04*X(def)-.0008*defT+(g.inf?.03:0)-.003*sw-.004*sh-(risp?(dfx.risp||0):0);

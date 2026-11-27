@@ -29,6 +29,7 @@ const SPECIAL=c=>{
   if(c.n==='윤석민'&&c.y>=2009)return {'팜볼':'C'};
   return null};
 const FAMOUS={'선동열':['슬라이더'],'최동원':['커브'],'구대성':['슬라이더','체인지업'],'손민한':['싱커','슬라이더'],'이상훈':['슬라이더'],'송진우':['슬라이더','체인지업'],'정민태':['슬라이더','커브'],'김시진':['커브'],'조계현':['커브','슬라이더'],'이강철':['커브','싱커'],'한희민':['싱커','커브']};
+const SWEEP_MAIN={'하트':1992,'네일':1993,'크로우':1994};
 const st={match:0,exact:0,near:0,classic:0,special:0,sweeper:0};
 function pick(c){const nm=c.n.replace(/#\d+$/,''),L=YG[nm];if(!L)return null;let m=L.filter(x=>x.b===c.b);
   if(!m.length&&L.length===1&&L[0].S.some(s=>c.y>=s.y1-1&&c.y<=s.y2+1))m=L; // 출생연도 오기 대비: 같은 이름 1명이고 그 해 데이터가 있으면
@@ -59,6 +60,9 @@ for(const c of D.cards){if(c.k!=='P')continue;
     for(const t of FAMOUS[c.n]||[]){pt[t]=GR(oldB[i0++]||68);const j=pool.findIndex(x=>x[0]===t);if(j>=0)pool.splice(j,1)} // 잘 알려진 주무기는 꼭 넣음(등급은 기존 상위 값)
     for(let i=i0;i<n;i++){const W=pool.reduce((s,x)=>s+x[1],0);let x=r()*W,j=0;while(j<pool.length-1&&(x-=pool[j][1])>0)j++;pt[pool[j][0]]=GR(oldB[i]||68);pool.splice(j,1)}
     delete c.pu;st.classic++}
+  // SJ 2026-11-27: 트래킹이 스위퍼를 '슬라이더'로 분류한 스위퍼 주력 투수 → 2023년 이후 카드는 슬라이더를 스위퍼로 (둘 다 있으면 하나로 합침)
+  if(SWEEP_MAIN[c.n]===c.b&&c.y>=2023&&pt['슬라이더']){const g=[pt['슬라이더'],pt['스위퍼']].filter(Boolean).sort((a,b)=>GV[b]-GV[a])[0];delete pt['슬라이더'];pt['스위퍼']=g;
+    if(c.pu&&c.pu['슬라이더']){const a=c.pu['슬라이더'],b=c.pu['스위퍼']||[0,0];c.pu['스위퍼']=[a[0]+b[0],a[1]+b[1]];delete c.pu['슬라이더']}}
   const sp=SPECIAL(c);if(sp){Object.assign(pt,sp);st.special++}
   c.pt=pt}
 fs.writeFileSync(OUT||CF,JSON.stringify(D));
