@@ -971,6 +971,14 @@ function modal(){if(S.reveal&&S.reveal.length)return revealHTML();if(S.dexView)r
  ${S.work?xlSheet(c):`<div class="faces${S.mflip?' flipped':''}" data-mflip="1" title="탭하면 앞/뒷면"><div class="face f-front">${card(c,{full:1})}</div><div class="face f-back">${backFace(c,0)}</div></div>`}
  ${eqHTML(c)}
  <p class="note" style="text-align:center"><label class="phup">사진 올리기<input type="file" accept="image/*" data-up="${esc(baseId(c.id))}" hidden></label>${(S.photos||{})[baseId(c.id)]?' · <button class="ghost phrm" data-a="rmphoto">올린 사진 지우기</button>':''} · <a href="#skill" data-skillgo="${esc(c.id)}">스킬 장착</a>${credLine(c)?'<br>'+credLine(c):''}</p></div></div>`}
+// 상점 연속 구매(SJ 2026-11-28): 구매·개봉 버튼을 누르고 있으면 0.45초 뒤부터 계속 눌림(다시 그려져도 같은 버튼을 찾아 누름). 손을 떼면 멈춤
+let HOLD=null,HOLDSKIP=0;const HOLDQ='[data-a=pkbuy],[data-tix]:not([data-tixall])';
+const holdStop=()=>{if(!HOLD)return;clearTimeout(HOLD.t);if(HOLD.n>0)HOLDSKIP=Date.now();HOLD=null};
+vw.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest(HOLDQ);if(!b||b.disabled||(e.button|0)!==0)return;holdStop();
+ const sel=b.dataset.a==='pkbuy'?'[data-a=pkbuy]':`[data-tix="${CSS.escape(b.dataset.tix)}"]:not([data-tixall])`;
+ HOLD={n:0,t:setTimeout(function tick(){if(!HOLD)return;const x=vw.querySelector(sel);if(!x||x.disabled){holdStop();return}x.click();HOLD.n++;HOLD.t=setTimeout(tick,HOLD.n<5?200:100)},450)}});
+for(const ev of ['pointerup','pointercancel'])document.addEventListener(ev,holdStop);addEventListener('blur',holdStop);
+vw.addEventListener('click',e=>{if(HOLDSKIP&&Date.now()-HOLDSKIP<400&&e.isTrusted&&e.target.closest&&e.target.closest(HOLDQ)){HOLDSKIP=0;e.stopPropagation();e.preventDefault()}},true); // 길게 누른 뒤 손 뗄 때의 한 번 더 눌림 막기
 vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-revx],[data-ntc],[data-tix],[data-abreset],[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bswap],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-synexm],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face],[data-skflip],[data-rotm]');if(!t)return;const D=t.dataset;
  if(D.revx){(S.reveal||[]).shift();if(!(S.reveal||[]).length)S.reveal=null;render();return}
  if(D.ntc){S.ntcView=D.ntc;S.ntcHide=false;render();return}
