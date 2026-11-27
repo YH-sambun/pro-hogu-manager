@@ -1731,7 +1731,7 @@ function cardEq(S,cardId,byId){const o={},c=byId[cardId];for(const it of S.eq||[
 // 챕터 3개 완료 → 레전드 선택권, 전부 → 명예의 전당 보상(첫 완료 기준 S.msFin). 진행 기록 S.ms[챕터id]={cyc,m1:시각,...,mid,fin}
 // 제출 미션은 기본적으로 중복만 소모(1장은 남김). S.opt.submitLast=true면 마지막 1장도 제출 가능(도감 기록은 유지)
 const MS_DEF=[['m1',1,'그 구단 카드 10장 보유',{pt:1000,eq:'일반'}],['m2',2,'그 구단 주전 세트 1개 완성',{pt:2000,tix:{star:1,abr:1},eq:'일반'}],
-  ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,tix:{ex:1},eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 리그 우승 (주간 리그 1위·연도별 리그 한국시리즈 우승)',{pt:4000,tix:{gg:1},eq:'희귀'}],
+  ['m3',3,'그 구단 7코스트 이상 카드 5장 제출',{pt:3000,exShard:1,eq:'희귀'}],['m4',4,'그 구단 선수 15명 이상 1군으로 리그 우승 (주간 리그 1위·연도별 리그 한국시리즈 우승)',{pt:4000,tix:{gg:1},eq:'희귀'}],
   ['m5',5,'그 구단 레전드(9+) 카드 3장 보유',{pt:5000,tix:{legend:1},eq:'희귀'}]];
 const MS_META=[[3,'챕터 3개 완료',{pt:10000,tix:{pick:1}}],['all','모든 챕터 완료 · 명예의 전당',{pt:50000,tix:{pick:2}}]];
 let CHAPTERS=[],CARDS_=[];
@@ -1751,9 +1751,9 @@ function msProg(S,ch,mid){const l=ch.line,st=(S.ms&&S.ms[ch.id])||{};if(st[mid])
   if(mid==='m4')return {have:Math.min(st.lw|0,q.m4),need:q.m4};
   if(mid==='m5'){const n=ownedOf(S,c=>c.line===l&&c.cost>=9&&!c.mx).length;return {have:Math.min(n,q.m5),need:q.m5}}}
 function msDone(S,ch,mid,out){S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{};if(st[mid])return;st[mid]=Date.now();
-  const rw={...MS_DEF.find(m=>m[0]===mid)[3]};if(rw.exShard){S.exShard=(S.exShard|0)+rw.exShard;while(S.exShard>=3){S.exShard-=3;rw.tix={...(rw.tix||{}),ex:((rw.tix||{}).ex|0)+1}}delete rw.exShard}
+  const rw={...MS_DEF.find(m=>m[0]===mid)[3]};let shx='';if(rw.exShard){S.exShard=(S.exShard|0)+rw.exShard;shx=' · EX 조각 +'+rw.exShard;while(S.exShard>=3){S.exShard-=3;rw.tix={...(rw.tix||{}),ex:((rw.tix||{}).ex|0)+1}}delete rw.exShard;shx+=rw.tix&&rw.tix.ex?' (3개 모여 EX 확정권 1장)':` (${S.exShard}/3)`}
   let eqx='';if(rw.eq){const it=mkEquip(S,rw.eq,ch.line);eqx=' · 장비: '+eqName(it);delete rw.eq}
-  grant(S,rw);out.push({ch:ch.line,what:msText(S,ch,mid)+eqx,rw});
+  grant(S,rw);out.push({ch:ch.line,what:msText(S,ch,mid)+shx+eqx,rw});
   const n=MS_DEF.filter(m=>st[m[0]]).length;
   if(n>=3&&!st.mid){st.mid=Date.now();const r={tix:{ex:1}};grant(S,r);out.push({ch:ch.line,what:'미션 3개 달성',rw:r})}
   if(n>=5&&!st.fin){st.fin=Date.now();{const it=mkEquip(S,'전설',ch.line);out.push({ch:ch.line,what:'챕터 완료 · 전설 장비: '+eqName(it),rw:{}})}const miss=ch.mx.filter(id=>!(S.owned[id]>0));
@@ -1907,7 +1907,7 @@ function logHTML(g){const HK=['i','r','hr','c','h','e'];let gr=[];for(const x of
   return gr.reverse().slice(0,30).map(a=>{const h=a[0].k==='i'?a[0]:null,rest=(h?a.slice(1):a).reverse();return (h?`<li class="i">${esc(h.txt)}</li>`:'')+rest.map(x=>`<li class="${x.k}">${esc(x.txt)}</li>`).join('')}).join('')}
 // ===== 엔진·econ 연결 =====
 const cells=cellsOf;
-const BO={T:'테이블세터',C:'클린업',L:'하위 타선'},BOS={T:'테세',C:'클린',L:'하위'};
+const BO={T:'상위 타선',C:'클린업',L:'하위 타선'},BOS={T:'상위',C:'클린',L:'하위'};
 const MG=MANAGERS.map(m=>Array.isArray(m)?{id:m[0],n:m[1],st:m[2],g:m[4],sn:m[5],se:m[6],tac:Object.fromEntries(['power','steal','bunt','ph','hook','relief','ibb','shift'].map((k,i)=>[k,+m[3][i]||0]))}:{...m,tac:m.t});
 const tc=id=>TC_BY[id];
 const sp=id=>SUP_BY[id];
@@ -2460,7 +2460,7 @@ function luPow(i){const [p,id]=S.lu[i],c=by[id];if(!c)return {v:0,ok:1,adj:0};co
  return {raw,adj,base:ok?raw:Math.round(raw*BO_PEN),v:(ok?raw:Math.round(raw*BO_PEN))+adj,ok}}
 function lineupChart(){const L=S.lu.map((x,i)=>luPow(i)),n=S.lu.length,bad=L.map((x,i)=>x.ok?null:i).filter(x=>x!==null),loss=L.reduce((t,x)=>t+x.raw-x.base,0);
  const links=S.lu.map((x,i)=>{const j=(i+1)%n,q=adjPair(by[x[1]],by[S.lu[j][1]]);return q?{i,j,...q}:null}).filter(Boolean),gain=links.reduce((t,q)=>t+q.v*2,0);
- return `<p class="note help" style="margin:0 0 6px">타순별 공격력 · 테이블세터: 출루율 .330+ · 클린업: OPS .700+ (100타석+) · 1~6번 적성 밖 -10%, 7~9번 무관 · 앞뒤 타자 궁합: 같은 팀 +2(같은 계보 +1), 같은 고교 +3·대학 +2·지역 +1, 9번-1번도 이어짐</p>
+ return `<p class="note help" style="margin:0 0 6px">타순별 공격력 · 상위 타선(1·2번): 출루율 .330+ · 클린업: OPS .700+ (100타석+) · 1~6번 적성 밖 -10%, 7~9번 무관 · 앞뒤 타자 궁합: 같은 팀 +2(같은 계보 +1), 같은 고교 +3·대학 +2·지역 +1, 9번-1번도 이어짐</p>
  ${lineChart(L,links)}`}
 // 꺾은선 그래프: 타순별 공격력(적성 페널티·인접 궁합 반영). 빨간 점 = 적성 밖, 파란 점 = 인접 궁합
 function lineChart(L,links){const W=360,H=170,px=i=>24+i*(W-40)/8,lo=Math.min(50,...L.map(x=>x.v))-5,hi=Math.max(95,...L.map(x=>x.v))+3,py=v=>12+(hi-v)/(hi-lo)*(H-44);
@@ -2756,7 +2756,8 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
- {id:'n1127a',d:'2026-11-27',t:'장비 전체 보기 · 미션 EX 보상 명칭',b:['팀 > 장비(F3)에서 가진 장비를 한눈에 볼 수 있어요. 누가 착용했는지 보이고, 바로 빼거나 1군 선수에게 끼울 수 있어요. 같은 구단 장비를 그 구단 선수에게 끼우면 효과 +10%(★ 표시).','구단 미션 ★3 보상을 EX 조각이 아니라 EX 확정권 1장(구단 지정 가능)으로 바로잡았어요.'],rw:{tix:{pk_n:10,prem:1}}},
+ {id:'n1127b',d:'2026-11-27',t:'미션 ★3 보상 · 타순 이름',b:['구단 미션 ★3 보상은 EX 조각 1개예요. 조각 3개가 모이면 EX 확정권 1장(구단 지정 가능)으로 바뀌어요. 미션 목록에 지금 모은 조각 수(n/3)를 함께 표시합니다.','타순 적성 "테이블세터(테세)"를 "상위 타선(상위)"으로 바꿨어요.'],rw:{tix:{pk_n:10}}},
+{id:'n1127a',d:'2026-11-27',t:'장비 전체 보기 · 미션 EX 보상 명칭',b:['팀 > 장비(F3)에서 가진 장비를 한눈에 볼 수 있어요. 누가 착용했는지 보이고, 바로 빼거나 1군 선수에게 끼울 수 있어요. 같은 구단 장비를 그 구단 선수에게 끼우면 효과 +10%(★ 표시).','구단 미션 ★3 보상 표시를 바로잡았어요.'],rw:{tix:{pk_n:10,prem:1}}},
 {id:'n1126z3',d:'2026-11-26',t:'기기 간 보유 카드 동기화 수정',b:['PC와 폰을 오가며 할 때, 한 기기의 저장이 다른 기기에서 얻은 카드를 덮어써 카드가 사라질 수 있던 문제를 고쳤습니다.','이제 로그인하면 클라우드를 먼저 확인하고, 두 기기에서 모두 바뀐 게 있으면 카드·작전 카드·확정권·포인트·블록·장비를 합칩니다. 이미 사라진 카드는 그 카드가 남아 있는 기기에서 새 버전으로 접속하면 돌아옵니다.'],rw:{tix:{pk_n:10}}},
  {id:'n1126z2',d:'2026-11-26',t:'아이폰 팝업 위쪽 버튼 수정',b:['아이폰에서 카드 상세 등 팝업 위쪽 버튼(자리 교체하기·잠금·비교하기·닫기)이 상태표시줄에 가려 눌리지 않던 문제를 고쳤습니다.'],rw:{tix:{pk_n:10}}},
 {id:'n1126z',d:'2026-11-26',t:'폰에서 경기 시작 버튼 가림 수정',b:['폰에서 리그 감독실의 경기 시작 버튼이 아래 묶음 버튼에 가려 눌리지 않던 문제를 고쳤습니다.','폰 상단의 포인트·블록·리그 표시와 부제를 숨겨 화면을 덜 내려도 되게 했습니다. (포인트·블록은 홈 보유 현황에서 볼 수 있어요)'],rw:{tix:{pk_n:10}}},
@@ -3675,8 +3676,8 @@ function vMission0(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section c
   <div class="msgrid">${CH.map(ch=>{const st=(S.ms||{})[ch.id]||{},n=ECON.MS_DEF.filter(m=>st[m[0]]).length,cyc=ECON.msCyc?ECON.msCyc(S,ch):0,left=ch.mx.filter(id=>!(S.owned[id]>0)).length,done=(S.msFin||{})[ch.id]&&!left;
     return `<div class="msch${done?' fin':''}"><div class="msh"><b>${esc(msLn(ch.line))}</b>${cyc?`<em class="cyc">${cyc+1}회차</em>`:''}<span class="msn">${n}/5</span>${done?'<em>완료</em>':st.mid?'<em class="mid">3개 달성</em>':''}</div>
     ${ch.mx.length?`<div class="msrn"><small>${rnName(ch.line)} ${ch.mx.length-left}/${ch.mx.length}${left&&(S.msFin||{})[ch.id]?` · 남은 ${left}장`:''}</small>${ch.mx.map(id=>{const c=byId[id];return c?`<span class="${S.owned[id]>0?'got':''}" ${S.owned[id]>0?`data-pick="${esc(id)}" role="button" tabindex="0"`:`data-dexv="${esc(id)}" role="button" tabindex="0"`}>${c.no?`<i>${esc(c.no)}</i>`:''}${esc(c.name)}</span>`:''}).join('')}</div>`:''}
-    <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
-    <p class="note msr">3개 → EX 확정권 · 5개 → 전설 장비 + ${ch.mx.length?rnName(ch.line)+' 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
+    <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${rw.exShard?` · EX 조각 ${rw.exShard}개 (3개 모으면 EX 확정권 1장 · 지금 ${(S.exShard|0)}/3)`:''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
+    <p class="note msr">미션 3개 달성 → EX 확정권 · 5개 모두 → 전설 장비 + ${ch.mx.length?rnName(ch.line)+' 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
 // ===== 화면 전환 =====
 const ROUTES={equip:vEquip,lineup:()=>luHead()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,shop_sp:vShop,shop_tc:vShop,shop_b:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder,dsim:vDsim};
 const LEG=new Set(['season','years','online','game','cards']);
@@ -3684,7 +3685,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',cards:'카드',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='a0f5962da7';
+const BUILD='14d2374da7';
 const TABI={home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>

@@ -100,7 +100,7 @@ function logHTML(g){const HK=['i','r','hr','c','h','e'];let gr=[];for(const x of
   return gr.reverse().slice(0,30).map(a=>{const h=a[0].k==='i'?a[0]:null,rest=(h?a.slice(1):a).reverse();return (h?`<li class="i">${esc(h.txt)}</li>`:'')+rest.map(x=>`<li class="${x.k}">${esc(x.txt)}</li>`).join('')}).join('')}
 // ===== 엔진·econ 연결 =====
 const cells=cellsOf;
-const BO={T:'테이블세터',C:'클린업',L:'하위 타선'},BOS={T:'테세',C:'클린',L:'하위'};
+const BO={T:'상위 타선',C:'클린업',L:'하위 타선'},BOS={T:'상위',C:'클린',L:'하위'};
 const MG=MANAGERS.map(m=>Array.isArray(m)?{id:m[0],n:m[1],st:m[2],g:m[4],sn:m[5],se:m[6],tac:Object.fromEntries(['power','steal','bunt','ph','hook','relief','ibb','shift'].map((k,i)=>[k,+m[3][i]||0]))}:{...m,tac:m.t});
 const tc=id=>TC_BY[id];
 const sp=id=>SUP_BY[id];
@@ -653,7 +653,7 @@ function luPow(i){const [p,id]=S.lu[i],c=by[id];if(!c)return {v:0,ok:1,adj:0};co
  return {raw,adj,base:ok?raw:Math.round(raw*BO_PEN),v:(ok?raw:Math.round(raw*BO_PEN))+adj,ok}}
 function lineupChart(){const L=S.lu.map((x,i)=>luPow(i)),n=S.lu.length,bad=L.map((x,i)=>x.ok?null:i).filter(x=>x!==null),loss=L.reduce((t,x)=>t+x.raw-x.base,0);
  const links=S.lu.map((x,i)=>{const j=(i+1)%n,q=adjPair(by[x[1]],by[S.lu[j][1]]);return q?{i,j,...q}:null}).filter(Boolean),gain=links.reduce((t,q)=>t+q.v*2,0);
- return `<p class="note help" style="margin:0 0 6px">타순별 공격력 · 테이블세터: 출루율 .330+ · 클린업: OPS .700+ (100타석+) · 1~6번 적성 밖 -10%, 7~9번 무관 · 앞뒤 타자 궁합: 같은 팀 +2(같은 계보 +1), 같은 고교 +3·대학 +2·지역 +1, 9번-1번도 이어짐</p>
+ return `<p class="note help" style="margin:0 0 6px">타순별 공격력 · 상위 타선(1·2번): 출루율 .330+ · 클린업: OPS .700+ (100타석+) · 1~6번 적성 밖 -10%, 7~9번 무관 · 앞뒤 타자 궁합: 같은 팀 +2(같은 계보 +1), 같은 고교 +3·대학 +2·지역 +1, 9번-1번도 이어짐</p>
  ${lineChart(L,links)}`}
 // 꺾은선 그래프: 타순별 공격력(적성 페널티·인접 궁합 반영). 빨간 점 = 적성 밖, 파란 점 = 인접 궁합
 function lineChart(L,links){const W=360,H=170,px=i=>24+i*(W-40)/8,lo=Math.min(50,...L.map(x=>x.v))-5,hi=Math.max(95,...L.map(x=>x.v))+3,py=v=>12+(hi-v)/(hi-lo)*(H-44);
@@ -1162,8 +1162,8 @@ function vMission0(){const CH=ECON.CHAPTERS||[];if(!CH.length)return `<section c
   <div class="msgrid">${CH.map(ch=>{const st=(S.ms||{})[ch.id]||{},n=ECON.MS_DEF.filter(m=>st[m[0]]).length,cyc=ECON.msCyc?ECON.msCyc(S,ch):0,left=ch.mx.filter(id=>!(S.owned[id]>0)).length,done=(S.msFin||{})[ch.id]&&!left;
     return `<div class="msch${done?' fin':''}"><div class="msh"><b>${esc(msLn(ch.line))}</b>${cyc?`<em class="cyc">${cyc+1}회차</em>`:''}<span class="msn">${n}/5</span>${done?'<em>완료</em>':st.mid?'<em class="mid">3개 달성</em>':''}</div>
     ${ch.mx.length?`<div class="msrn"><small>${rnName(ch.line)} ${ch.mx.length-left}/${ch.mx.length}${left&&(S.msFin||{})[ch.id]?` · 남은 ${left}장`:''}</small>${ch.mx.map(id=>{const c=byId[id];return c?`<span class="${S.owned[id]>0?'got':''}" ${S.owned[id]>0?`data-pick="${esc(id)}" role="button" tabindex="0"`:`data-dexv="${esc(id)}" role="button" tabindex="0"`}>${c.no?`<i>${esc(c.no)}</i>`:''}${esc(c.name)}</span>`:''}).join('')}</div>`:''}
-    <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
-    <p class="note msr">3개 → EX 확정권 · 5개 → 전설 장비 + ${ch.mx.length?rnName(ch.line)+' 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
+    <ol>${ECON.MS_DEF.map(([mid,star,desc,rw])=>{const p=ECON.msProg(S,ch,mid);return `<li class="${p.done?'done':''}"><i class="mst">★${star}</i><span>${esc((ECON.msText?ECON.msText(S,ch,mid):desc).replace(/^그 구단 /,""))}<small>${esc(rwText(rw)||'')}${rw.exShard?` · EX 조각 ${rw.exShard}개 (3개 모으면 EX 확정권 1장 · 지금 ${(S.exShard|0)}/3)`:''}</small></span><b>${p.done?'완료':`${p.have}/${p.need}`}</b>${mid==='m3'&&!p.done?`<button class="ghost" data-a="mssub" data-line="${esc(ch.line)}">제출</button>`:''}</li>`}).join('')}</ol>
+    <p class="note msr">미션 3개 달성 → EX 확정권 · 5개 모두 → 전설 장비 + ${ch.mx.length?rnName(ch.line)+' 1장':'EX 확정권 + 10,000P'}</p></div>`}).join('')}</div></section>${msSubHTML()}`}
 // ===== 화면 전환 =====
 const ROUTES={equip:vEquip,lineup:()=>luHead()+vLineup(),mission:vMission,home:vHome,season:vSeason,years:vYears,online:vOnline,game:vGame,skill:vSkill,cards:vCards,card:vCard,shop:vShop,shop_sp:vShop,shop_tc:vShop,shop_b:vShop,synth:vSynth,abroad:vAbroad,dex:vDex,guide:vGuide,builder:vBuilder,dsim:vDsim};
 const LEG=new Set(['season','years','online','game','cards']);
