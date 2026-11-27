@@ -211,6 +211,8 @@ const REGION_OF=(c)=>{const t=c.team;if(['MBC','LG','OB','두산','넥센','히�
 const yearKey=c=>(c.year<=1987?'1982-87':String(c.year))+' '+c.line;
 // 덱 효과(팀컬러): 계열마다 하나씩, 등급 S>A>B. Y=연도 계열, F=구단 계열, E=인연 계열(동문)
 const FX_FAM={Y:'연도',F:'구단',E:'인연'};
+// 2026-11-28 SJ: B 효과 조건 완화(연도 팀 덱 기준 약 30~70% 성립)하고 효과는 줄임. A 기준도 불펜 8명에 맞춤
+const BQ={reg:5,rl:3,sw:2,nat:4,sub:2,subA:4,lp:4,lpA:9,lb:4,hs:3,hsA:5,un:3};
 function teamColor(cards,sel,bench){
   // 2026-11-26(SJ 확정): 팀컬러 기본은 벤치 포함 25명. 25명이 불가능한 올스타덱·골든글러브덱만 주전 20명(st).
   // 국가대표·이름 세트·좌완/좌타/잠수함·동문은 명단·보직 기준이라 주전(st)으로 셈. 코스트 보너스도 주전 기준 그대로
@@ -246,11 +248,11 @@ function teamColor(cards,sel,bench){
   if(ln.length>=2&&ln[0][1]>=10&&ln[1][1]>=10&&ln[0][1]+ln[1][1]>=25&&!all.some(x=>x.fam==='F'&&x.g==='A'&&x.name!=='단일구단'))add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
   // 2026-11-27(SJ): 지역 효과는 구단 연고지가 아니라 선수 출신 지역(c.reg, 고교 기준). 1군 25명 중 같은 출신 6명 이상이면 B, 보너스는 그 출신 선수에게만
   {const m={};for(const c of cards)if(c.reg){(m[c.reg]=m[c.reg]||new Set()).add(c.pk)}const r=Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])[0];
-   if(r&&r[1]>=6){const x=mk('E','B','출신 지역',`${r[0]} 출신 ${r[1]}명 · 해당 선수만`,3,2);x.only='reg:'+r[0];add(x)}}
+   if(r&&r[1]>=BQ.reg){const x=mk('E','B','출신 지역',`${r[0]} 출신 ${r[1]}명 · 해당 선수만`,3,2);x.only='reg:'+r[0];add(x)}}
   // 투타 조합(SJ 2026-11-27, 시뮬로 크기 맞춤): 타순 9명 중 우투좌타 6명 이상 B, 스위치히터 4명 이상 B(+ 투수 손 상관없이 플래툰 유리). 보너스는 해당 선수만 야수 +3
   {const B=st.filter(c=>c.type==='B'),rl=B.filter(c=>c.ph==='R'&&c.bh==='L').length,sw=B.filter(c=>c.bh==='S').length;
-   if(rl>=6){const x=mk('E','B','우투좌타',`우투좌타 ${rl}명 · 해당 선수만`,3,0);x.only='RL';add(x)}
-   if(sw>=4){const x=mk('E','B','스위치히터',`스위치 ${sw}명 · 해당 선수만 · 투수 손 무관 유리`,3,0);x.only='SW';add(x)}}
+   if(rl>=BQ.rl){const x=mk('E','B','우투좌타',`우투좌타 ${rl}명 · 해당 선수만`,2,0);x.only='RL';add(x)}
+   if(sw>=BQ.sw){const x=mk('E','B','스위치히터',`스위치 ${sw}명 · 해당 선수만 · 투수 손 무관 유리`,3,0);x.only='SW';add(x)}}
   // 묶음 계보(A): 여러 계보를 합쳐 20명 이상(각 계보 1명 이상)
   for(const [n,ls,mn,lb] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=25&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,lb||ls.map(lname).join('+'),5,4))}
   // 시대 세트는 S 칸(SJ 2026-11-25): 같은 구단이라 A 칸의 단일구단과 함께 켤 수 있게
@@ -265,15 +267,15 @@ function teamColor(cards,sel,bench){
   // 이름 세트: 지정 선수들을 계보 안에서 모으기
   for(const [n,l,names,na,ns,nb] of NAME_SETS){const k=new Set(st.filter(c=>(!l||c.line===l)&&names.some(e=>nsHit(c,e))).map(c=>c.name)).size;if(k>=ns)add(mk('E','S',n,`${k}/${names.length}명`,6,5));else if(k>=na)add(mk('E','A',n,`${k}/${names.length}명`,4,3));else if(nb&&k>=nb)add(mk('E','B',n,`${k}/${names.length}명`,2,1))}
   // 국가대표 우승: 15명 S · 10명 A · 6명 B
-  for(const [n,y,ls] of NAT_SETS){const L=ls.split(' '),k=new Set(st.filter(c=>L.some(x=>natHit(c,y,x))).map(c=>c.pk)).size;if(k>=15)add(mk('E','S',n,`국가대표 ${k}명`,6,5));else if(k>=10)add(mk('E','A',n,`국가대표 ${k}명`,4,3));else if(k>=6)add(mk('E','B',n,`국가대표 ${k}명`,2,2))}
+  for(const [n,y,ls] of NAT_SETS){const L=ls.split(' '),k=new Set(st.filter(c=>L.some(x=>natHit(c,y,x))).map(c=>c.pk)).size;if(k>=15)add(mk('E','S',n,`국가대표 ${k}명`,6,5));else if(k>=10)add(mk('E','A',n,`국가대표 ${k}명`,4,3));else if(k>=BQ.nat)add(mk('E','B',n,`국가대표 ${k}명`,1,1))}
   // 잠수함 군단(SJ 2026-11-25): 투수 중 언더·사이드 수
-  {const n=st.filter(c=>c.type==='P'&&c.arm).length;if(n>=6)add(mk('E','A','잠수함 군단',`언더·사이드 ${n}명`,1,6));else if(n>=4)add(mk('E','B','잠수함 군단',`언더·사이드 ${n}명`,0,3))}
+  {const n=st.filter(c=>c.type==='P'&&c.arm).length;if(n>=BQ.subA)add(mk('E','A','잠수함 군단',`언더·사이드 ${n}명`,1,4));else if(n>=BQ.sub)add(mk('E','B','잠수함 군단',`언더·사이드 ${n}명`,0,2))}
   // 좌완 왕국·좌타 라인업(SJ 2026-11-25): 투수 11명·타자 9명 중 왼손 수. 스위치히터는 좌타로 셈
   {const P=st.filter(c=>c.type==='P'),B=st.filter(c=>c.type==='B'),lp=P.filter(c=>c.ph==='L').length,lb=B.filter(c=>c.bh==='L'||c.bh==='S').length;
-   if(P.length>=11&&lp===P.length)add(mk('E','A','좌완 왕국',`좌투수 ${lp}명`,1,7));else if(lp>=8)add(mk('E','B','좌완 왕국',`좌투수 ${lp}명`,0,4));
-   if(B.length>=9&&lb===B.length)add(mk('E','A','좌타 라인업',`좌타자 ${lb}명`,7,1));else if(lb>=7)add(mk('E','B','좌타 라인업',`좌타자 ${lb}명`,4,0))}
-  if(hs[0]&&hs[0][1]>=6)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=4)add(mk('E','B','고교 동문',hs[0][0],2,1));
-  if(un[0]&&un[0][1]>=5)add(mk('E','B','대학 동문',un[0][0],2,1));
+   if(lp>=BQ.lpA)add(mk('E','A','좌완 왕국',`좌투수 ${lp}명`,1,6));else if(lp>=BQ.lp)add(mk('E','B','좌완 왕국',`좌투수 ${lp}명`,0,2));
+   if(B.length>=9&&lb===B.length)add(mk('E','A','좌타 라인업',`좌타자 ${lb}명`,7,1));else if(lb>=BQ.lb)add(mk('E','B','좌타 라인업',`좌타자 ${lb}명`,2,0))}
+  if(hs[0]&&hs[0][1]>=BQ.hsA)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=BQ.hs)add(mk('E','B','고교 동문',hs[0][0],1,1));
+  if(un[0]&&un[0][1]>=BQ.un)add(mk('E','B','대학 동문',un[0][0],1,1));
   // 2026-11-28(SJ): 못 채운 효과도 보여주기. near=[{g,name,d,k(부족 인원)}], 같은 이름이 그 등급에 이미 달성됐으면 뺌
   const near=[],nr=(g,name,d,k)=>{if(k>0&&!all.some(x=>x.g===g&&x.name===name))near.push({g,name,d,k})},sh=(a,b,ma,mb,tot)=>Math.max(Math.max(0,ma-a)+Math.max(0,mb-b),tot-a-b),best=(arr)=>arr.filter(x=>x.p!==0).sort((x,y)=>x.k-y.k)[0]; // p: 지금 해당 인원(0이면 아직 시작도 안 한 세트라 안 보여줌)
   {const yy=yk[0];if(yy){const n=yy[1],d=tname(yy[0]);nr('S','단일연도',d,25-n);nr('A','단일연도',d,20-n);nr('B','단일연도',d,12-n)}}
@@ -284,13 +286,13 @@ function teamColor(cards,sel,bench){
   {const r=best(LINE_UNIONS.map(([n,ls,mn,lb])=>({n,d:lb||ls.map(lname).join('+'),p:ls.filter(l=>lc[l]).length>=2?1:0,k:Math.max(25-ls.reduce((x,l)=>x+(lc[l]||0),0),ls.reduce((x,l)=>x+Math.max(0,(mn||1)-(lc[l]||0)),0))})));if(r)nr('A',r.n,r.d,r.k)}
   {const r=best(ERA_SETS.map(([n,l,y0,y1,need,lb])=>({n,d:`${y0}~${y1} ${lb||lname(l)}`,p:cards.filter(c=>c&&c.line===l&&c.year>=y0&&c.year<=y1).length,k:need-cards.filter(c=>c&&(any(c)||c.line===l&&(chW.has(c)||c.year>=y0&&c.year<=y1))).length})));if(r)nr('S',r.n,r.d,r.k)}
   {const r=best(AGAIN_SETS.map(a=>{const c=againCount(a,cards);return {n:againName(a[0],a[2]),p:c,k:AGAIN_NEED-c}}));if(r)nr('S',r.n,'우승년도',r.k)}
-  {const m={};for(const c of cards)if(c.reg)(m[c.reg]=m[c.reg]||new Set()).add(c.pk);const r=Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])[0];if(r)nr('B','출신 지역',r[0]+' 출신',6-r[1])}
+  {const m={};for(const c of cards)if(c.reg)(m[c.reg]=m[c.reg]||new Set()).add(c.pk);const r=Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])[0];if(r)nr('B','출신 지역',r[0]+' 출신',BQ.reg-r[1])}
   {const B=st.filter(c=>c.type==='B'),P=st.filter(c=>c.type==='P'),lp=P.filter(c=>c.ph==='L').length,lb=B.filter(c=>c.bh==='L'||c.bh==='S').length,ar=P.filter(c=>c.arm).length;
-   nr('B','우투좌타','타순 우투좌타',6-B.filter(c=>c.ph==='R'&&c.bh==='L').length);nr('B','스위치히터','타순 스위치',4-B.filter(c=>c.bh==='S').length);
-   nr('A','잠수함 군단','언더·사이드 투수',6-ar);nr('B','잠수함 군단','언더·사이드 투수',4-ar);nr('A','좌완 왕국','투수 11명 전원 좌투',11-lp);nr('B','좌완 왕국','좌투수',8-lp);nr('A','좌타 라인업','타자 9명 전원 좌타',9-lb);nr('B','좌타 라인업','좌타자',7-lb)}
+   nr('B','우투좌타','타순 우투좌타',BQ.rl-B.filter(c=>c.ph==='R'&&c.bh==='L').length);nr('B','스위치히터','타순 스위치',BQ.sw-B.filter(c=>c.bh==='S').length);
+   nr('A','잠수함 군단','언더·사이드 투수',BQ.subA-ar);nr('B','잠수함 군단','언더·사이드 투수',BQ.sub-ar);nr('A','좌완 왕국','좌투수',BQ.lpA-lp);nr('B','좌완 왕국','좌투수',BQ.lp-lp);nr('A','좌타 라인업','타자 9명 전원 좌타',9-lb);nr('B','좌타 라인업','좌타자',BQ.lb-lb)}
   {const w=nv('RN'),a=nv('AS')+w,g2=nv('GG')+w;if(a){nr('S','올스타덱','올스타',20-a);nr('A','올스타덱','올스타',12-a);nr('B','올스타덱','올스타',8-a)}if(g2){nr('S','골든글러브덱','골든글러브',20-g2);nr('A','골든글러브덱','골든글러브',8-g2);nr('B','골든글러브덱','골든글러브',5-g2)}}
-  if(hs[0]){nr('A','고교 동문',hs[0][0],6-hs[0][1]);nr('B','고교 동문',hs[0][0],4-hs[0][1])}if(un[0])nr('B','대학 동문',un[0][0],5-un[0][1]);
-  {const r=best(NAT_SETS.map(([n,y,ls])=>{const L=ls.split(' ');return {n,k:new Set(st.filter(c=>L.some(x=>natHit(c,y,x))).map(c=>c.pk)).size}}).map(x=>({...x,k0:x.k,p:x.k,k:15-x.k})));if(r){nr('S',r.n,'국가대표',15-r.k0);nr('A',r.n,'국가대표',10-r.k0);nr('B',r.n,'국가대표',6-r.k0)}}
+  if(hs[0]){nr('A','고교 동문',hs[0][0],BQ.hsA-hs[0][1]);nr('B','고교 동문',hs[0][0],BQ.hs-hs[0][1])}if(un[0])nr('B','대학 동문',un[0][0],BQ.un-un[0][1]);
+  {const r=best(NAT_SETS.map(([n,y,ls])=>{const L=ls.split(' ');return {n,k:new Set(st.filter(c=>L.some(x=>natHit(c,y,x))).map(c=>c.pk)).size}}).map(x=>({...x,k0:x.k,p:x.k,k:15-x.k})));if(r){nr('S',r.n,'국가대표',15-r.k0);nr('A',r.n,'국가대표',10-r.k0);nr('B',r.n,'국가대표',BQ.nat-r.k0)}}
   {const r=best(NAME_SETS.map(([n,l,names,na,ns])=>{const k=new Set(st.filter(c=>(!l||c.line===l)&&names.some(e=>nsHit(c,e))).map(c=>c.name)).size;return {n,k0:k,p:k,na,ns,k:ns-k}}));if(r){nr('S',r.n,'지정 선수',r.ns-r.k0);nr('A',r.n,'지정 선수',r.na-r.k0)}}
   near.sort((a,b)=>a.k-b.k);
   const S2=new Set(sel||[]);for(const g of ['S','A','B']){const c=all.filter(x=>x.g===g);if(!c.length)continue;fx.push(c.find(x=>S2.has(x.key))||c.sort((a,b)=>(b.b+b.p)-(a.b+a.p))[0])}
