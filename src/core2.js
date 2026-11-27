@@ -84,7 +84,7 @@ function loadCards(json){
     const name=c.n.replace(/#\d+$/,''),r={},keys=c.k==='B'?BK:PKEY;keys.forEach((k,i)=>r[k]=c.r[i]);
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
     const cost=Math.min(10,c.c+(mvp?1:0));
-    return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,pu:c.pu||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
+    return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,pu:c.pu||null,pe:c.pe||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
       tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),xb:c.k==='B'?xbhOf(c.x,c.y):null,bo:c.k==='B'?boOf(r,rates(c.x)):null}});
   // 선수 단위 키: 이름+출신고. 1군 중복 검사는 pkt(c)=pk+유형으로 함(투타 겸업 선수는 타자 1장+투수 1장 가능). 출신고가 없으면 같은 이름·같은 유형 카드에 출신고가 하나뿐일 때 그 값을, 아니면 유형을 씀
   const HS={};for(const c of CARDS)if(c.hs){const k=c.name+'|'+c.type;(HS[k]=HS[k]||new Set()).add(c.hs)}
@@ -141,14 +141,14 @@ const PTBA={'스위퍼':[.89,1.06,.89,1.06,.89,1.06]};;
 let PT_KC=.0015,PT_GB0=.47,PT_C=66,PT_HR0=.88;
 const muKey=(pc,bh)=>{const ph=pc.ph||'R',b=bh==='S'?(ph==='R'?'L':'R'):(bh||'R');return pc.arm?(b===ph?'US':'UX'):ph+b};
 function arsOf(pc,bh){const key=muKey(pc,bh);pc._ar=pc._ar||{};if(pc._ar[key])return pc._ar[key];const r=pc.r,A=r.ars||[['직구','C',68]],mi=MUK.indexOf(key);
-  const m=t=>(PTM[t]||[])[mi]||[1,1],fam={F:[],B:[]},PU=r.pu,si=key==='RR'||key==='LR'||(pc.arm&&((pc.ph||'R')==='R')===(key==='US'))?0:1; // 실제 구사율: 우타자 상대[0], 좌타자 상대[1]
-  for(const [t,,v] of A){const x=PTX[t]||PTX['커브'];fam[x[3]].push({t,v,x,u:PU?((PU[t]?PU[t][si]:1)+.5):m(t)[0]*Math.exp((v-78)/15),e:m(t)[1]})}
+  const m=t=>(PTM[t]||[])[mi]||[1,1],fam={F:[],B:[]},PU=r.pu,PE=r.pe,si=key==='RR'||key==='LR'||(pc.arm&&((pc.ph||'R')==='R')===(key==='US'))?0:1; // 실제 구사율: 우타자 상대[0], 좌타자 상대[1]
+  for(const [t,,v] of A){const x=PTX[t]||PTX['커브'];fam[x[3]].push({t,v,x,u:PU?((PU[t]?PU[t][si]:1)+.5):m(t)[0]*Math.exp((v-78)/15),e:m(t)[1]*(PE&&PE[t]?PE[t][si]:1)})} // PE: 투수별 실측 좌우 헛스윙 배수
   let fB=.5;if(PU&&fam.B.length){const sF=fam.F.reduce((s,p)=>s+p.u,0),sB=fam.B.reduce((s,p)=>s+p.u,0);fB=cl(sB/(sF+sB||1),.25,.75)}
   let ba=1,k=0,gb=PT_GB0+(pc.arm==='U'?.05:pc.arm==='S'?.03:0)-((r.vel!=null?r.vel:70)-70)*.0015,hr=1,wp=1;
   for(const f of ['F','B']){const L=fam[f],W=L.reduce((s,p)=>s+p.u,0)||1,tot=fam.B.length?(f==='B'?fB:1-fB):f==='F'?1:0;
     for(const p of L){const sh=tot*p.u/W;k+=sh*p.x[1]*p.e*(p.v-PT_C)*PT_KC;gb+=sh*p.x[0]*(p.x[0]>0?p.e*Math.max(.3,p.v/78):1);hr+=sh*p.x[2]*Math.max(0,72-p.v)/10;if(PTBA[p.t])ba+=sh*(PTBA[p.t][mi]-1);if(p.t==='너클볼')wp+=sh*1.6}}
   return pc._ar[key]={k,gb:cl(gb,.3,.66),hr:hr*PT_HR0,wp,ba}}
-function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45,ars:ptGrades(c,r.brk,r.vel),pu:c.pu||null,hv:r.stu,bk:r.brk,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men,ptT:ptTier(c,r)}}
+function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45,ars:ptGrades(c,r.brk,r.vel),pu:c.pu||null,pe:c.pe||null,hv:r.stu,bk:r.brk,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men,ptT:ptTier(c,r)}}
 // 타순 적성: T 테이블세터(1·2번), C 클린업(3~6번), L 하위 타선(7~9번, 누구나 가능). 적성 밖 타순이면 교타·장타·선구 -10%
 // 실제 기록 기준: 100타석 이상에서 출루율 .330 이상 → 테이블세터, OPS .700 이상 → 클린업(둘 다 가능). 기록이 없으면 능력치로 추정
 const pkt=c=>c.pk+'|'+c.type;
