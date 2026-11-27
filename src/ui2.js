@@ -384,8 +384,8 @@ function deckBar(){const d=deckFx();return `<div class="deck">
  </div>
  ${S.tcAll?fxPickHTML(starters(S.team),S.team.fxsel,'team'):''}`}
 // 덱 효과 고르기: 조건을 채운 효과 중 등급(S·A·B)마다 1개, 최대 3개. sel은 효과 key 배열
-function fxPickHTML(cards,sel,scope){const T=teamColor(cards,sel,scope==='bld'?(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean):(S.bench||[]).map(id=>byId[id]).filter(Boolean)),A=T.all||[],on=new Set(T.fx.map(x=>x.key));
- return `<div class="fxpick">${['S','A','B'].map(g=>{const o=A.filter(x=>x.g===g);return `<label class="fxg g-${g}"><i>${g}</i><select data-fxg="${g}" data-fxs="${scope}" ${o.length?'':'disabled'} aria-label="${g}등급 덱 효과">${o.length?o.map(x=>`<option value="${esc(x.key)}"${on.has(x.key)?' selected':''}>${esc(x.name)} · ${esc(x.d)} (야수 +${x.b} · 투수 +${x.p})</option>`).join(''):'<option>조건을 채운 효과 없음</option>'}</select></label>`}).join('')}</div>`}
+function fxPickHTML(cards,sel,scope){const T=teamColor(cards,sel,scope==='bld'?(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean):(S.bench||[]).map(id=>byId[id]).filter(Boolean)),A=T.all||[],on=new Set(T.fx.map(x=>x.key)),nz=g=>(T.near||[]).filter(x=>x.g===g).slice(0,6);
+ return `<div class="fxpick">${['S','A','B'].map(g=>{const o=A.filter(x=>x.g===g);return `<label class="fxg g-${g}"><i>${g}</i><select data-fxg="${g}" data-fxs="${scope}" ${o.length||nz(g).length?'':'disabled'} aria-label="${g}등급 덱 효과">${o.length?o.map(x=>`<option value="${esc(x.key)}"${on.has(x.key)?' selected':''}>${esc(x.name)} · ${esc(x.d)} (야수 +${x.b} · 투수 +${x.p})</option>`).join(''):'<option value="" selected>조건을 채운 효과 없음</option>'}${nz(g).length?`<optgroup label="조건 부족 (가까운 순)">${nz(g).map(x=>`<option value="" disabled>${esc(x.name)} · ${esc(x.d)} · ${x.k}명 더 필요</option>`).join('')}</optgroup>`:''}</select></label>`}).join('')}</div>`}
 function fxSet(scope,g,key){const tgt=scope==='bld'?S.bld:S.team,cards=scope==='bld'?bldStart():starters(S.team),A=teamColor(cards,tgt.fxsel,scope==='bld'?(bldInit().bench||[]).map(id=>byId[id]).filter(Boolean):(S.bench||[]).map(id=>byId[id]).filter(Boolean)).all||[];
  const keep=(tgt.fxsel||[]).filter(k=>{const x=A.find(y=>y.key===k);return x&&x.g!==g});tgt.fxsel=[...keep,key];save();render()}
 function field(){return `<div class="field"><svg viewBox="0 0 100 86" preserveAspectRatio="none" aria-hidden="true">
@@ -1292,7 +1292,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.id==='tn'){S.team.name=t.value.trim()||'내 구단';save();render();return}
   if(t.dataset.recnx||t.dataset.recbb||t.dataset.reclf){S.recF={...RF0,...(S.recF||{})};if(t.dataset.recnx)S.recF.nx={...(S.recF.nx||{}),[t.dataset.recnx]:!t.checked};else S.recF[t.dataset.recbb?'bb':'lf']=t.checked;render();return}
   if(t.id==='recy'||t.id==='rect'||t.id==='recx'){S.recF={...RF0,...(S.recF||{})};if(t.id==='recy'){S.recF.year=t.value;S.recF.team='all'}else if(t.id==='rect')S.recF.team=t.value;else S.recF.fx=t.value;render();return}
-  if(t.dataset.fxg){fxSet(t.dataset.fxs,t.dataset.fxg,t.value);return}
+  if(t.dataset.fxg){if(!t.value){render();return}fxSet(t.dataset.fxs,t.dataset.fxg,t.value);return}
   if(t.dataset.bf){S.bldF=S.bldF||{};S.bldF[t.dataset.bf]=t.type==='checkbox'?t.checked:t.value;if(t.dataset.bf==='y'||t.dataset.bf==='y2')S.bldF.t='';S.bldLim=40;render();return}
   if(t.dataset.lf){S.lf=S.lf||{};S.lf[t.dataset.lf]=t.value;render();return}
   if(t.dataset.sim){const B=bldInit(),id=S.bmodal;B.sim=B.sim||{};const x=B.sim[id]=B.sim[id]||{ab:{},sk:{},eq:{}};const g=t.dataset.sim,k=t.dataset.k;if(t.value&&t.value!=='0')x[g][k]=g==='eq'?t.value:+t.value;else delete x[g][k];if(!Object.keys(x.ab).length&&!Object.keys(x.sk).length&&!Object.keys(x.eq).length)delete B.sim[id];save();render();return}

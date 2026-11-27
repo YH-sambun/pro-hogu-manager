@@ -270,8 +270,27 @@ function teamColor(cards,sel,bench){
    if(B.length>=9&&lb===B.length)add(mk('E','A','좌타 라인업',`좌타자 ${lb}명`,7,1));else if(lb>=7)add(mk('E','B','좌타 라인업',`좌타자 ${lb}명`,4,0))}
   if(hs[0]&&hs[0][1]>=6)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=4)add(mk('E','B','고교 동문',hs[0][0],2,1));
   if(un[0]&&un[0][1]>=5)add(mk('E','B','대학 동문',un[0][0],2,1));
+  // 2026-11-28(SJ): 못 채운 효과도 보여주기. near=[{g,name,d,k(부족 인원)}], 같은 이름이 그 등급에 이미 달성됐으면 뺌
+  const near=[],nr=(g,name,d,k)=>{if(k>0&&!all.some(x=>x.g===g&&x.name===name))near.push({g,name,d,k})},sh=(a,b,ma,mb,tot)=>Math.max(Math.max(0,ma-a)+Math.max(0,mb-b),tot-a-b),best=(arr)=>arr.filter(x=>x.p!==0).sort((x,y)=>x.k-y.k)[0]; // p: 지금 해당 인원(0이면 아직 시작도 안 한 세트라 안 보여줌)
+  {const yy=yk[0];if(yy){const n=yy[1],d=tname(yy[0]);nr('S','단일연도',d,25-n);nr('A','단일연도',d,20-n);nr('B','단일연도',d,12-n)}}
+  if(l1){nr('A','단일구단',lname(l1),25-m1);nr('B','단일구단',lname(l1),15-m1)}
+  if(ln[1])nr('B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,sh(ln[0][1],ln[1][1],10,10,25));
+  if(l1&&byLine[l1]&&byLine[l1][1]){const a=byLine[l1];nr('A','연도 듀얼',`${a[0][0].split(' ')[0]}+${a[1][0].split(' ')[0]} ${lname(l1)}`,sh(a[0][1],a[1][1],9,9,25))}
+  {const r=best(RIVALS.map(([a,b,n])=>({n,d:`${lname(a)}+${lname(b)}`,p:Math.min(lc[a]||0,lc[b]||0),k:sh(lc[a]||0,lc[b]||0,10,10,25)})));if(r)nr('A',r.n,r.d,r.k)}
+  {const r=best(LINE_UNIONS.map(([n,ls,mn,lb])=>({n,d:lb||ls.map(lname).join('+'),p:ls.filter(l=>lc[l]).length>=2?1:0,k:Math.max(25-ls.reduce((x,l)=>x+(lc[l]||0),0),ls.reduce((x,l)=>x+Math.max(0,(mn||1)-(lc[l]||0)),0))})));if(r)nr('A',r.n,r.d,r.k)}
+  {const r=best(ERA_SETS.map(([n,l,y0,y1,need,lb])=>({n,d:`${y0}~${y1} ${lb||lname(l)}`,p:cards.filter(c=>c&&c.line===l&&c.year>=y0&&c.year<=y1).length,k:need-cards.filter(c=>c&&(any(c)||c.line===l&&(chW.has(c)||c.year>=y0&&c.year<=y1))).length})));if(r)nr('S',r.n,r.d,r.k)}
+  {const r=best(AGAIN_SETS.map(a=>{const c=againCount(a,cards);return {n:againName(a[0],a[2]),p:c,k:AGAIN_NEED-c}}));if(r)nr('S',r.n,'우승년도',r.k)}
+  {const m={};for(const c of cards)if(c.reg)(m[c.reg]=m[c.reg]||new Set()).add(c.pk);const r=Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])[0];if(r)nr('B','출신 지역',r[0]+' 출신',6-r[1])}
+  {const B=st.filter(c=>c.type==='B'),P=st.filter(c=>c.type==='P'),lp=P.filter(c=>c.ph==='L').length,lb=B.filter(c=>c.bh==='L'||c.bh==='S').length,ar=P.filter(c=>c.arm).length;
+   nr('B','우투좌타','타순 우투좌타',6-B.filter(c=>c.ph==='R'&&c.bh==='L').length);nr('B','스위치히터','타순 스위치',4-B.filter(c=>c.bh==='S').length);
+   nr('A','잠수함 군단','언더·사이드 투수',6-ar);nr('B','잠수함 군단','언더·사이드 투수',4-ar);nr('A','좌완 왕국','투수 11명 전원 좌투',11-lp);nr('B','좌완 왕국','좌투수',8-lp);nr('A','좌타 라인업','타자 9명 전원 좌타',9-lb);nr('B','좌타 라인업','좌타자',7-lb)}
+  {const w=nv('RN'),a=nv('AS')+w,g2=nv('GG')+w;if(a){nr('S','올스타덱','올스타',20-a);nr('A','올스타덱','올스타',12-a);nr('B','올스타덱','올스타',8-a)}if(g2){nr('S','골든글러브덱','골든글러브',20-g2);nr('A','골든글러브덱','골든글러브',8-g2);nr('B','골든글러브덱','골든글러브',5-g2)}}
+  if(hs[0]){nr('A','고교 동문',hs[0][0],6-hs[0][1]);nr('B','고교 동문',hs[0][0],4-hs[0][1])}if(un[0])nr('B','대학 동문',un[0][0],5-un[0][1]);
+  {const r=best(NAT_SETS.map(([n,y,ls])=>{const L=ls.split(' ');return {n,k:new Set(st.filter(c=>L.some(x=>natHit(c,y,x))).map(c=>c.pk)).size}}).map(x=>({...x,k0:x.k,p:x.k,k:15-x.k})));if(r){nr('S',r.n,'국가대표',15-r.k0);nr('A',r.n,'국가대표',10-r.k0);nr('B',r.n,'국가대표',6-r.k0)}}
+  {const r=best(NAME_SETS.map(([n,l,names,na,ns])=>{const k=new Set(st.filter(c=>(!l||c.line===l)&&names.some(e=>nsHit(c,e))).map(c=>c.name)).size;return {n,k0:k,p:k,na,ns,k:ns-k}}));if(r){nr('S',r.n,'지정 선수',r.ns-r.k0);nr('A',r.n,'지정 선수',r.na-r.k0)}}
+  near.sort((a,b)=>a.k-b.k);
   const S2=new Set(sel||[]);for(const g of ['S','A','B']){const c=all.filter(x=>x.g===g);if(!c.length)continue;fx.push(c.find(x=>S2.has(x.key))||c.sort((a,b)=>(b.b+b.p)-(a.b+a.p))[0])}
-  const only=fx.filter(x=>x.only).map(x=>({k:x.only,b:x.b,p:x.p}));return {fx,all,only,bat:fx.reduce((s,x)=>s+(x.only?0:x.b),0),pit:fx.reduce((s,x)=>s+(x.only?0:x.p),0),men:fx.reduce((s,x)=>s+(x.men||0),0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
+  const only=fx.filter(x=>x.only).map(x=>({k:x.only,b:x.b,p:x.p}));return {fx,all,near,only,bat:fx.reduce((s,x)=>s+(x.only?0:x.b),0),pit:fx.reduce((s,x)=>s+(x.only?0:x.p),0),men:fx.reduce((s,x)=>s+(x.men||0),0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
 // ===== 스킬 블록 =====
 const SHAPES={I2:[[0,0],[0,1]],I3:[[0,0],[0,1],[0,2]],V3:[[0,0],[1,0],[1,1]],O:[[0,0],[0,1],[1,0],[1,1]],I4:[[0,0],[0,1],[0,2],[0,3]],T:[[0,0],[0,1],[0,2],[1,1]],L:[[0,0],[1,0],[2,0],[2,1]],J:[[0,1],[1,1],[2,1],[2,0]],S:[[0,1],[0,2],[1,0],[1,1]],Z:[[0,0],[0,1],[1,1],[1,2]]};
 const GRADES={C:{m:.75,w:50},B:{m:1,w:30},A:{m:1.25,w:15},S:{m:1.5,w:5}};
