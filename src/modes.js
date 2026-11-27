@@ -33,6 +33,9 @@ const fatOf=(L,i)=>{L.fat=L.fat||{};return L.fat[i]=L.fat[i]||{}};
 // 투수 피로도: 경기가 끝나면 두 팀 투수에 쌓고(fatAdd), 라운드(하루)가 끝나면 모든 팀이 회복(fatRest)
 function fatGame(L,pr,g){fatAdd(fatOf(L,pr[0]),g,0);fatAdd(fatOf(L,pr[1]),g,1)}
 function fatDay(L){for(const k in L.fat||{})fatRest(L.fat[k])}
+// 요일(SJ 2026-11-27): 실제 리그처럼 화~일 6경기 뒤 월요일은 휴식일(경기 없이 피로만 하루 더 회복). L.day = 지금까지 치른 경기일 수
+const WDAY='화수목금토일',wdayOf=L=>WDAY[((L&&L.day)||0)%6]+'요일';
+function dayEnd(L){fatDay(L);L.day=(L.day||0)+1;if(L.day%6===0)fatDay(L)}
 // 리그 중 선발 교체 대책(SJ 2026-11-26): 시즌 중 새로 선발 로테이션에 들어온 투수는 피로도 75로 합류(약 3~4경기 등판 대기). 덱을 바꿔 쉰 에이스만 돌려 쓰는 걸 막음
 const ROT_JOIN=75;
 function rotJoin(L,T){const F=fatOf(L,0),R=(T.rot||[]).filter(Boolean);if(L.rot0)for(const id of R)if(!L.rot0.includes(id))F[id]=Math.max(F[id]||0,ROT_JOIN);L.rot0=R.slice()}
@@ -51,7 +54,7 @@ function lgPlay(L,g){let res=null;const out=[];
     const mine=p.includes(0),gg=mine&&g?g:simAll(mkGame(simT(L,p[0]),simT(L,p[1])));
     if(mine){const me=p.indexOf(0);res=gg.res<0?'d':gg.res===me?'w':'l';L.hl=hlOf(gg,p);recGame(L,gg,p);predDo(L,gg,me)}
     lgRec(L,p[0],p[1],gg);accStats(L,p,gg);fatGame(L,p,gg);out.push({a:p[0],h:p[1],sc:gg.sc,me:mine})}
-  L.last=out.sort((x,y)=>y.me-x.me);L.teams.forEach((t,i)=>{if(i)t.rotIdx=(t.rotIdx||0)+1});fatDay(L);L.round++;return res}
+  L.last=out.sort((x,y)=>y.me-x.me);L.teams.forEach((t,i)=>{if(i)t.rotIdx=(t.rotIdx||0)+1});dayEnd(L);L.round++;return res}
 // 리그 경기(주간·연도)에서는 작전 카드 1장 소모, 서포트 카드 남은 경기 1 감소. 단판 도전은 이 함수를 부르지 않는다(서포트 미적용·작전 무소모).
 function useCards(){const T=S.team,ts=T.tsel;if(ts&&(S.tq||{})[ts]>0){S.tq[ts]--;if(!S.tq[ts])T.tsel=null}T.sup=(T.sup||[]).map(x=>({...x,left:x.left-1})).filter(x=>x.left>0)}
 // --- 경기 예측: 목표 7개 중 1개를 직접 고름(L.pk, 다음 경기에도 유지). 달성하면 보너스(ECON.predSettle). 연도 리그는 하루 상한 적용 ---
@@ -149,7 +152,7 @@ const PO_NEED=2,PO_MAX=5;
 const lgPoSer=s=>s.po&&s.po.ser.find(x=>!x.done&&(x.a===0||x.b===0));
 // 포스트시즌 한 경기. x=시리즈, g=내가 직접 본 경기(없으면 시뮬). 무승부는 승수에 안 들어가고 5경기 안에 안 끝나면 상위 시드 진출
 function lgPoGame(s,x,g){const k=x.w[0]+x.w[1]+(x.d||0),pr=k%2===0?[x.b,x.a]:[x.a,x.b],mine=pr.includes(0);
-  const gg=g||simAll(mkGame(simT(s,pr[0]),simT(s,pr[1])));s.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});fatGame(s,pr,gg);fatDay(s);
+  const gg=g||simAll(mkGame(simT(s,pr[0]),simT(s,pr[1])));s.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});fatGame(s,pr,gg);dayEnd(s);
   s.last=[{a:pr[0],h:pr[1],sc:gg.sc,me:mine}];if(mine){s.hl=hlOf(gg,pr);recGame(s,gg,pr,s.po.st);predDo(s,gg,pr.indexOf(0))}
   let res=null;if(gg.res<0){x.d=(x.d||0)+1;res=mine?'d':null}else{const win=pr[gg.res];x.w[win===x.a?0:1]++;res=mine?(win===0?'w':'l'):null}
   if(x.w[0]>=PO_NEED||x.w[1]>=PO_NEED||x.w[0]+x.w[1]+x.d>=PO_MAX){x.done=1;x.win=x.w[1]>x.w[0]?x.b:x.a;
@@ -237,7 +240,7 @@ function ylStartPost(L){const R=lgStand(L).map(x=>x.i);L.rank=R.indexOf(0)+1;L.t
   const inP=[L.post.cur.lo,L.post.cur.hi,...L.post.q.map(x=>x.hi)].includes(0);
   return inP}
 function seriesGame(L,g){const c=L.post,s=c.cur,k=s.w[0]+s.w[1]+(s.d||0),pr=[0,1,4,5,6].includes(k)?[s.lo,s.hi]:[s.hi,s.lo];
-  const gg=g||simAll(mkGame(simT(L,pr[0]),simT(L,pr[1])));L.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});fatGame(L,pr,gg);fatDay(L);
+  const gg=g||simAll(mkGame(simT(L,pr[0]),simT(L,pr[1])));L.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});fatGame(L,pr,gg);dayEnd(L);
   L.last=[{a:pr[0],h:pr[1],sc:gg.sc,me:pr.includes(0)}];if(pr.includes(0)){L.hl=hlOf(gg,pr);recGame(L,gg,pr,L.post.cur.nm);predDo(L,gg,pr.indexOf(0))}
   if(gg.res<0){s.d=(s.d||0)+1;return pr.includes(0)?'d':null}const win=pr[gg.res];s.w[win===s.lo?0:1]++;return pr.includes(0)?(win===0?'w':'l'):null}
 function ylAdvance(L){let msg='';
@@ -324,13 +327,13 @@ function vSeason(){
   const state=s.over?`<p style="margin:8px 0 0"><b>${tierName(s.tier)} 시즌 종료</b> · 정규 ${s.rank}위 · 우승 <b>${esc(tname(s.champ,s))}</b></p><p>다음 시즌 <b>${md(nxt)} 0시</b> · ${up?`${tierName(s.tier+1)} 승급`:'재도전'}</p>`
     :s.regDone&&!poOpen(s)?`<p style="margin:8px 0 0">정규시즌 ${s.rank}위 마감 · ${s.rank<=4?`포스트시즌 <b>${md(s.wk+2*864e5)} 0시</b> 시작`:'포스트시즌 진출 실패 · 결과는 3일차에'}</p>`
     :s.regDone?`<p class="note" style="margin:8px 0 0">${mx&&!mx.done?'내 포스트시즌 진행 중':'내 포스트시즌 끝 · 나머지는 자동 진행'} · 3일차 24시에 남은 경기는 결과만 처리</p>`
-    :`<p class="note" style="margin:8px 0 0">정규시즌 남은 경기 ${s.sched.length-s.round} · ${md(s.wk+864e5)} 24시에 마감 · 상위 4팀 포스트시즌</p>`;
+    :`<p class="note" style="margin:8px 0 0">다음 경기 ${wdayOf(s)} · 정규시즌 남은 경기 ${s.sched.length-s.round} · ${md(s.wk+864e5)} 24시에 마감 · 상위 4팀 포스트시즌</p>`;
   const pr=s.over?null:curPair(s),six=head+poTxt+state;
   // SJ 2026-11-26: 리그 화면 첫머리 = 감독실 3×2 판, 나머지 상세는 접어 둠
   return lgPage('lg',[['ofc','감독실',tb=>ofcHTML(s,{right:tb,key:'lg',title:'주간 리그',pill:esc(tierName(s.tier)),prog:po&&mx?`${po.st} ${mx.a===0?mx.w[0]:mx.w[1]}승 ${mx.a===0?mx.w[1]:mx.w[0]}패`:undefined,sixT:'리그 진행',six,idle:s.over||s.regDone?poTxt+state:''})],['lu','라인업',()=>vLineup()],['sc','일정',()=>(pr?`<section class="hero">${muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto')}</section>`:'')+lastRes(s)+gamesHTML(s)],['st','기록실',()=>teamStatsHTML(s)+myTeamHTML(s,'lg')+(statsHTML(s)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(s)],['lg','리그 정보',()=>`<section class="band"><h3>리그 진행</h3>${six}</section>`+standFull(s)]],{L:s,title:'주간 리그',pill:esc(tierName(s.tier))})} // 구단 설정·백업·초기화는 홈 화면 아래(ui2 vHome)
 function vYears(){useMode('yl');const L=S.yl,won=S.ylWon||{};ranked();
   if(L&&!L.done){const pr=curPair(L),c=L.post&&L.post.cur,nx=ylNextAt(Date.now()),hm=t=>{const d=new Date(t+H9);return `${md(t)} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
-    const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`;
+    const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드 · ${wdayOf(L)}`;
     const six=`<p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p><p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p><div class="btns" style="margin-top:10px">${pr&&!L.post?`<button data-a="m-torest" title="휴식 라운드나 포스트시즌 직전, 최대 ${YL_RUN_MAX}경기까지 결과만 보기로 이어서 진행">다음 휴식일까지 자동</button>`:''}<button data-a="m-quit" class="ghost">이 리그 포기</button></div>`;
     return lgPage('yl',[['ofc','감독실',tb=>ofcHTML(L,{right:tb,key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 넘어가요">휴식 넘기기</button></div>`})],['lu','라인업',()=>vLineup()],['sc','일정',()=>`<section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
           ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}</section>`+lastRes(L)+gamesHTML(L)],['st','기록실',()=>teamStatsHTML(L)+myTeamHTML(L,'yl')+(statsHTML(L)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(L)+asHTML(L)],['lg','리그 정보',()=>`<section class="band"><h3>시즌 진행</h3>${six}</section>${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${standFull(L,L.post?'정규시즌 최종 순위':'순위표')}`]],{L,title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌'})}

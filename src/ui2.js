@@ -590,7 +590,7 @@ function recBenchC(r,t){const has=r.bench.findIndex(id=>id&&canPos(byId[id],'C')
  return r}
 function recommend(mode){const t=recFx();return recBenchC(recCap(recommend0(mode),t),t)}
 function recommend0(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)return r;let lo=0,hi=recFx()&&recFx().must?40:12,best=recommend1(mode,hi);for(let i=0;i<14;i++){const m=(lo+hi)/2,x=recommend1(mode,m);if(recCost(x)<=COST_CAP){hi=m;best=x}else lo=m}return best}
-const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||c.v==='EX'&&(!t.ls||t.ls.includes(c.line)))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
+const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||c.v==='EX'&&!!t.ls&&t.ls.includes(c.line))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
 // 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
 let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{let r=recommend('power');if(recCost(r)>COST_CAP){REC_ALL=2;r=recommend('power')}return recBenchC(recFix(recStar(r,recFx()),recFx()),recFx())}finally{S.recF=keep;REC_ALL=0}}
 // FA 이적 목표: 그 선수(t.s)가 주전에 없으면 같은 자리에 설 수 있는 가장 약한 주전과 바꿔 넣음(코스트 상한 안에서)
@@ -601,7 +601,7 @@ function recStar(r,t){if(t&&t.must){for(const e of t.must){const [n,y]=e.split('
  return r}
 // 계보별 최소 인원(t.q)이 모자라면 벤치 포함 25명 중(2026-11-26 SJ: 팀컬러 25명 기준) 남는 계보의 낮은 능력 선수를 같은 자리에 설 수 있는 부족 계보 선수로 바꿈(코스트 상한 안에서)
 function recFix(r,t){if(!t||!t.q)return r;const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i]),...r.bench.map((x,i)=>['bench',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
- for(let it=0;it<30;it++){const lc={};for(const s of sl){const c=byId[get(s)];if(c){const l=c.v==='RN'||c.v==='EX'?'*':c.line;lc[l]=(lc[l]||0)+1}}const lc2={...lc};delete lc2['*'];const top=Object.entries(lc2).sort((a,b)=>b[1]-a[1])[0];if(top&&lc['*'])lc2[top[0]]+=lc['*'];
+ for(let it=0;it<30;it++){const lc={};for(const s of sl){const c=byId[get(s)];if(c){const l=c.v==='RN'?'*':c.line; /* 2026-11-27: EX는 같은 계보 인원 */lc[l]=(lc[l]||0)+1}}const lc2={...lc};delete lc2['*'];const top=Object.entries(lc2).sort((a,b)=>b[1]-a[1])[0];if(top&&lc['*'])lc2[top[0]]+=lc['*'];
   const ql=Object.keys(t.q),need=ql.find(l=>(lc[l]||0)<t.q[l])||(ql.reduce((x,l)=>x+(lc2[l]||0),0)<25?ql.sort((a,b)=>(lc2[a]||0)-(lc2[b]||0))[0]:null);if(!need)break;
   const names=new Set([...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean).map(id=>byId[id].name)),room=COST_CAP-recCost(r);let ok=false;
   const dn=f=>sl.filter(s=>{const c=byId[get(s)];return c&&c.v!=='EX'&&!(c.name===t.s&&t.m(c))&&f(c)}).sort((a,b)=>byId[get(a)].ovr-byId[get(b)].ovr),don=dn(c=>c.v!=='RN'&&(!(c.line in t.q)||(lc[c.line]||0)>t.q[c.line]&&c.line!==need));

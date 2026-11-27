@@ -1106,7 +1106,8 @@ function teamColor(cards,sel,bench){
   // EX 카드는 같은 계보의 가장 많은 연도에 들어가 단일연도 인원으로 셈
   // 커리어하이(CH)는 CH_WILD장까지 같은 계보 최다 연도에 합류(EX와 같은 방식), 영구결번(RN)은 계보와 무관하게 최다 연도에 합류
   // 2026-11-25(SJ): EX도 영구결번처럼 어떤 덱이든 만족(계보·연도 무관하게 최다 연도·최다 구단에 합류). 커리어하이만 같은 계보 한정
-  const chW=new Set(cards.filter(c=>c.v==='CH').slice(0,CH_WILD)),wild=c=>chW.has(c),any=c=>c.v==='RN'||c.v==='EX';
+  // 2026-11-27(SJ): EX는 같은 계보 덱 인원으로만 셈(카드 설명대로). 같은 계보 최다 연도에 합류(커리어하이와 같은 방식, 장수 제한은 1군 EX 한도). 계보 무관 와일드는 영구결번만
+  const chW=new Set([...cards.filter(c=>c.v==='CH').slice(0,CH_WILD),...cards.filter(c=>c.v==='EX')]),wild=c=>chW.has(c),any=c=>c.v==='RN';
   const yk=(()=>{const m={};for(const c of cards)if(!wild(c)&&!any(c)){const k=yearKey(c);m[k]=(m[k]||0)+1}
     for(const c of cards)if(wild(c)){let b=null;for(const k in m)if(k.split(' ')[1]===c.line&&(!b||m[k]>m[b]))b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
     for(const c of cards)if(any(c)){let b=null;for(const k in m)if(!b||m[k]>m[b])b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
@@ -1138,7 +1139,7 @@ function teamColor(cards,sel,bench){
   for(const a of AGAIN_SETS){const k=againCount(a,cards);if(k>=AGAIN_NEED)add(mk('Y','S',againName(a[0],a[2]),`우승년도 ${k}명`,5,4))}
   // 올스타덱·골든글러브덱: 연도·구단이 섞여도 특별 카드 장수로
   // 2026-11-25(SJ): 주전 20명을 다 채우면 최고 등급(S). EX·영구결번도 와일드카드로 셈
-  {const w=nv('EX')+nv('RN');
+  {const w=nv('RN'); // 2026-11-27(SJ): EX는 계보 덱 전용이라 올스타·골든글러브덱 와일드에서 뺌
   {const n=nv('AS')+w;if(n>=20)add(mk('E','S','올스타덱',`올스타 ${n}명`,8,6));else if(n>=12)add(mk('E','A','올스타덱',`올스타 ${n}명`,5,4));else if(n>=8)add(mk('E','B','올스타덱',`올스타 ${n}명`,3,2))}
   {const n=nv('GG')+w;if(n>=20)add(mk('E','S','골든글러브덱',`골든글러브 ${n}명`,8,6));else if(n>=8)add(mk('E','A','골든글러브덱',`골든글러브 ${n}명`,5,4));else if(n>=5)add(mk('E','B','골든글러브덱',`골든글러브 ${n}명`,3,2))}}
   // 이름 세트: 지정 선수들을 계보 안에서 모으기
@@ -1227,7 +1228,8 @@ const TCARDS=[
  ['b7','대타 신공','야','특수','6회 이후 대타','대타 교타 +10, 대타 다음 타자 선구 +5',50,[],[]],['b8','4번 타자의 무게','야','황금','4번 타석','상대 투수 구위 –6',80,[],['p7']],
  ['c1','홈 응원단','공','일반','홈 경기','전원 정신력 +5',20,[],[]],['c2','승리의 각오','공','일반','동점 또는 1점 차','전원 능력 +2',30,[],[]],
  ['c3','데이터 분석','공','일반','같은 상대와 두 번째 경기','전원 선구·제구 +3',30,[],[]],['c4','견제 강화','공','특수','상대 1루 주자','상대 도루 –20%, 견제사 확률 +',40,['b6'],[]],
- ['c5','징크스 깨기','공','특수','연패 중','전원 컨디션 +1단계',50,[],[]]];
+ ['c5','징크스 깨기','공','특수','연패 중','전원 컨디션 +1단계',50,[],[]],
+ ['c6','원정 응원단','공','일반','원정 경기','전원 정신력 +5',20,[],[]]]; // 2026-11-27(SJ): 홈 응원단의 원정판
 const TC_BY=Object.fromEntries(TCARDS.map(x=>[x[0],x]));
 // 서포트 카드: [id,이름,대상(B/P/all),효과,경기 수,fx]. 합성 강화판은 id+'+' (효과 1.5배, 3경기)
 const SUPS=[['s1','특타 훈련','B','교타 +5',2,{con:5}],['s2','장타 특훈','B','장타 +5',2,{pow:5}],['s3','휴식','all','컨디션 +1단계',2,{cond:1}],
@@ -1306,9 +1308,10 @@ const batAdj=v=>v>=70?(v-60)/10:v<40?-1.5:0; // 궁합 → 제구 보정(구위�
 const condMin=id=>byId[id]&&byId[id].v==='RY'?3:1;
 // 투수 피로도(SJ 2026-11-25): 리그에서 경기 사이에 쌓이고(던진 타자 수 ÷ 투구 한계) 체력에 비례해 하루마다 회복. 0~100
 // 선발은 등판하면 60+(던진 비율×40), 피로 15 미만이어야 등판(아니면 다음 순번), 피로 20을 넘으면 구위·제구 최대 −30%·투구 한계 감소, 불펜은 피로 55 이상이면 그날 등판 불가
-const FAT={spOk:15,spFlex:20,rpOut:55,pen0:20,penMax:.3},fatCap=(c,st)=>st?16+c.r.sta*.16:3+c.r.sta/20,fatMul=f=>f>FAT.pen0?1-Math.min(FAT.penMax,(f-FAT.pen0)/80*FAT.penMax):1;
+// 2026-11-27(SJ): 선발은 하루 20씩 일정하게 회복 → 등판 뒤 5일 쉬면 완전 회복(5선발 돌고 월요일 휴식이 끼면 딱 5일). 4일만 쉬면 피로가 남고, 선발은 남은 피로만큼 바로 감점(pen0 없음)
+const FAT={spOk:15,spFlex:20,rpOut:55,pen0:20,penMax:.3,spRec:20},fatCap=(c,st)=>st?16+c.r.sta*.16:3+c.r.sta/20,fatMul=f=>f>FAT.pen0?1-Math.min(FAT.penMax,(f-FAT.pen0)/80*FAT.penMax):1;
 function fatAdd(fat,g,s){for(const p of g.px[s]){const add=p.starter?60+40*Math.min(1,p.bf/fatCap(p.c,1)):p.bf/fatCap(p.c,0)*30;fat[p.c.id]=Math.round(Math.min(100,(fat[p.c.id]||0)+add))}}
-function fatRest(fat){for(const id in fat){const c=byId[id];fat[id]=Math.round(Math.max(0,fat[id]-((c&&c.pos!=='SP'?15:12)+((c&&c.r.sta)||60)*.1)));if(!fat[id])delete fat[id]}}
+function fatRest(fat){for(const id in fat){const c=byId[id];fat[id]=Math.round(Math.max(0,fat[id]-(c&&c.pos==='SP'?FAT.spRec:15+((c&&c.r.sta)||60)*.1)));if(!fat[id])delete fat[id]}}
 function fatSP(T,fat){const R=(T.rot||[]).filter(Boolean),i=(T.rotIdx||0)%Math.max(1,R.length);if(T.rotMode==='flex'&&fat&&R.length){const ok=R.filter(id=>(fat[id]||0)<FAT.spFlex&&byId[id]);if(ok.length)return ok.sort((a,b)=>byId[b].ovr-byId[a].ovr)[0]} /* 2026-11-27 SJ: 선발 운용 '유연' = 체력 되는 선발 중 능력 높은 순(짧은 휴식은 피로 감점) */if(!fat||!R.length)return R[i];for(let k=0;k<R.length;k++){const id=R[(i+k)%R.length];if((fat[id]||0)<FAT.spOk)return id}return R.slice().sort((a,b)=>(fat[a]||0)-(fat[b]||0))[0]}
 function simTeam(T,cond,fat){
   const all=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);
@@ -1316,7 +1319,7 @@ function simTeam(T,cond,fat){
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
   const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel,(T.bench||[]).map(id=>byId[id]).filter(Boolean)),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(k==='men'&&tc.men)raw[k]+=tc.men;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(120,raw[k]+(sk[k]||0)) /* 2026-11-26: 화면 상한(120)과 통일 */}
     const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
-    const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+(raw.def!=null&&c.r.def!=null?raw.def-c.r.def:bon+(sk.def||0))])):null /* 2026-11-26: 유학·장비·특훈 수비 상승도 포지션 수비에 반영(전에는 덱 보너스·스킬만) */;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;const fv=fat&&fat[c.id]||0;if(c.type==='P'&&fv>FAT.pen0){const fm=fatMul(fv);r.stu*=fm;r.ctl*=fm;r.kv*=fm;r.hv*=fm;r.sta*=1-fv/250}return {...c,r,ps,rawr:raw,fat:fv}};
+    const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+(raw.def!=null&&c.r.def!=null?raw.def-c.r.def:bon+(sk.def||0))])):null /* 2026-11-26: 유학·장비·특훈 수비 상승도 포지션 수비에 반영(전에는 덱 보너스·스킬만) */;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;const fv=fat&&fat[c.id]||0,p0=c.pos==='SP'?0:FAT.pen0;if(c.type==='P'&&fv>p0){const fm=1-Math.min(FAT.penMax,(fv-p0)/80*FAT.penMax);r.stu*=fm;r.ctl*=fm;r.kv*=fm;r.hv*=fm;r.sta*=1-fv/250}return {...c,r,ps,rawr:raw,fat:fv}};
   const LC=T.lineup.map(x=>byId[x.id]);
   const lu=T.lineup.map((x,i)=>{const c=mod(byId[x.id]);let m=1;if(!boOk(c,i)){m*=BO_PEN;c.boBad=1}const a=adjBonus(LC,i);if(a){m*=1+a*ADJ_PCT/100;c.adj=a}
     if(m!==1)c.r={...c.r,con:c.r.con*m,pow:c.r.pow*m,eye:c.r.eye*m};return {c,pos:x.pos}});
@@ -1417,12 +1420,12 @@ function pa(g,manual){
     if(mv.length){if(pb){if(CAT){const o=g.bx[f][CAT.c.id];if(o)o.pb=(o.pb||0)+1}}else P.wp=(P.wp||0)+1;g.wpb=(g.wpb||0)+1;say(g,`${pb?'포일':'폭투'}${pb&&CAT?` (포수 ${CAT.c.name})`:''}: ${mv.join(', ')}`);
      if(g.half===1&&g.inn>=9&&g.sc[1]>g.sc[0]){g.line[1].push(g.hr);say(g,`끝내기! ${g.t[1].name} 승리`,'e');finish(g);return}}}}
   const onB=!!(B[0]||B[1]||B[2]);
-  const clutch=(g.inn>=7&&Math.abs(g.sc[0]-g.sc[1])<=2)||!!B[1]||!!B[2],press=clutch?1:onB?.5:0,L=lim(P),fat=cl((P.bf-L*.7)/(L*.6),0,1),pmen=pc.r.men+(P.starter?(dfx.smen||0):0)+(DA.has('c1')&&f===1?5:0)+(DA.has('p4')&&(B[1]||B[2])?8:0);
+  const clutch=(g.inn>=7&&Math.abs(g.sc[0]-g.sc[1])<=2)||!!B[1]||!!B[2],press=clutch?1:onB?.5:0,L=lim(P),fat=cl((P.bf-L*.7)/(L*.6),0,1),pmen=pc.r.men+(P.starter?(dfx.smen||0):0)+(DA.has('c1')&&f===1?5:0)+(DA.has('c6')&&f===0?5:0)+(DA.has('p4')&&(B[1]||B[2])?8:0);
   const close1=Math.abs(g.sc[0]-g.sc[1])<=1,dc2=DA.has('c2')&&close1?2:0,dc3=DA.has('c3')&&(DT.ctx||{}).rematch?3:0,svs=g.inn>=9&&P.c.id===(DT.pen[0]||{}).id&&g.sc[f]-g.sc[bat]>=1&&g.sc[f]-g.sc[bat]<=3;
   const p5=DA.has('p5')&&P.starter&&g.inn===1?6:0,stu=pc.r.stu-14*fat+(P.starter?0:(dfx.rstu||0)+(DA.has('p2')&&g.inn>=7?5:0))+P.badj*.6+p5+dc2+(DA.has('p6')&&svs?6:0)-(OA.has('b8')&&g.idx[bat]===3?6:0),ctl=pc.r.ctl-10*fat-(P.starter&&OA.has('b4')&&g.inn<=3?5:0)+(.2*(MEN_P-70)+MEN_K*(pmen-MEN_P))*press+P.badj+(P.lead||0)+p5+dc2+dc3+(DA.has('p3')&&b.bh==='L'?6:0),risp=!!(B[1]||B[2]);const vsSP=P.starter,home=bat===1;
   let b0=b.r;{const m={},ad=(k,v)=>{m[k]=(m[k]||0)+v},oc2=OA.has('c2')&&close1;
    if(vsSP&&OA.has('b1')&&pc.cost>=6)ad('con',5);if(OA.has('b2')&&risp)ad('con',6);if(OA.has('b3')&&pc.ph==='L')ad('pow',5);if(OA.has('b5')&&g.inn>=8&&g.sc[bat]<g.sc[f]){ad('con',6);ad('pow',6)}
-   if(OA.has('b7')&&g.inn>=6){if(g.phNow===b.id)ad('con',10);else if(g.phPrev===g.idx[bat])ad('eye',5)}if(OA.has('c1')&&home)ad('men',5);if(oc2){ad('con',2);ad('pow',2);ad('eye',2)}
+   if(OA.has('b7')&&g.inn>=6){if(g.phNow===b.id)ad('con',10);else if(g.phPrev===g.idx[bat])ad('eye',5)}if(OA.has('c1')&&home)ad('men',5);if(OA.has('c6')&&!home)ad('men',5);if(oc2){ad('con',2);ad('pow',2);ad('eye',2)}
    if(OA.has('c3')&&(OT.ctx||{}).rematch)ad('eye',3);if(DA.has('p7')&&!(DA.has('p6')&&svs&&false))ad('con',-4);
    if(Object.keys(m).length){b0={...b0};for(const k in m)b0[k]+=m[k]}}
   let br=press?{...b0,con:b0.con+(.2*(MEN_B-70)+MEN_K*(b0.men-MEN_B))*press+(risp?(ofx.clutch||0):0)}:b0;if(ofx.ace&&pc.ovr>=75)br={...br,con:br.con+ofx.ace};
@@ -2398,7 +2401,7 @@ function recBenchC(r,t){const has=r.bench.findIndex(id=>id&&canPos(byId[id],'C')
  return r}
 function recommend(mode){const t=recFx();return recBenchC(recCap(recommend0(mode),t),t)}
 function recommend0(mode){let r=recommend1(mode,0);if(recCost(r)<=COST_CAP)return r;let lo=0,hi=recFx()&&recFx().must?40:12,best=recommend1(mode,hi);for(let i=0;i<14;i++){const m=(lo+hi)/2,x=recommend1(mode,m);if(recCost(x)<=COST_CAP){hi=m;best=x}else lo=m}return best}
-const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||c.v==='EX'&&(!t.ls||t.ls.includes(c.line)))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
+const RF0={year:'all',team:'all',fx:''},recFx=()=>FX_T_BY[(S.recF||RF0).fx||''],recMatch=c=>{const f=S.recF||RF0,t=recFx();return (f.year==='all'||c.year===+f.year)&&(f.team==='all'||c.team===f.team)&&(!t||t.m(c)||c.v==='EX'&&!!t.ls&&t.ls.includes(c.line))},recOn=()=>{const f=S.recF||RF0;return f.year!=='all'||f.team!=='all'||!!recFx()};
 // 덱 짜보기 '전체 카드로 추천'(SJ 2026-11-25): 보유와 상관없이 전체 카드에서 같은 방식으로 추천
 let REC_ALL=0;function recommendAll(fx){const keep=S.recF;S.recF={...RF0,fx:fx||''};REC_ALL=1;try{let r=recommend('power');if(recCost(r)>COST_CAP){REC_ALL=2;r=recommend('power')}return recBenchC(recFix(recStar(r,recFx()),recFx()),recFx())}finally{S.recF=keep;REC_ALL=0}}
 // FA 이적 목표: 그 선수(t.s)가 주전에 없으면 같은 자리에 설 수 있는 가장 약한 주전과 바꿔 넣음(코스트 상한 안에서)
@@ -2409,7 +2412,7 @@ function recStar(r,t){if(t&&t.must){for(const e of t.must){const [n,y]=e.split('
  return r}
 // 계보별 최소 인원(t.q)이 모자라면 벤치 포함 25명 중(2026-11-26 SJ: 팀컬러 25명 기준) 남는 계보의 낮은 능력 선수를 같은 자리에 설 수 있는 부족 계보 선수로 바꿈(코스트 상한 안에서)
 function recFix(r,t){if(!t||!t.q)return r;const sl=[...r.lu.map((x,i)=>['lu',i]),...r.rot.map((x,i)=>['rot',i]),...r.pen.map((x,i)=>['pen',i]),...r.bench.map((x,i)=>['bench',i])],get=([k,i])=>k==='lu'?r.lu[i][1]:r[k][i],set=([k,i],id)=>{if(k==='lu')r.lu[i][1]=id;else r[k][i]=id};
- for(let it=0;it<30;it++){const lc={};for(const s of sl){const c=byId[get(s)];if(c){const l=c.v==='RN'||c.v==='EX'?'*':c.line;lc[l]=(lc[l]||0)+1}}const lc2={...lc};delete lc2['*'];const top=Object.entries(lc2).sort((a,b)=>b[1]-a[1])[0];if(top&&lc['*'])lc2[top[0]]+=lc['*'];
+ for(let it=0;it<30;it++){const lc={};for(const s of sl){const c=byId[get(s)];if(c){const l=c.v==='RN'?'*':c.line; /* 2026-11-27: EX는 같은 계보 인원 */lc[l]=(lc[l]||0)+1}}const lc2={...lc};delete lc2['*'];const top=Object.entries(lc2).sort((a,b)=>b[1]-a[1])[0];if(top&&lc['*'])lc2[top[0]]+=lc['*'];
   const ql=Object.keys(t.q),need=ql.find(l=>(lc[l]||0)<t.q[l])||(ql.reduce((x,l)=>x+(lc2[l]||0),0)<25?ql.sort((a,b)=>(lc2[a]||0)-(lc2[b]||0))[0]:null);if(!need)break;
   const names=new Set([...r.lu.map(x=>x[1]),...r.bench,...r.rot,...r.pen].filter(Boolean).map(id=>byId[id].name)),room=COST_CAP-recCost(r);let ok=false;
   const dn=f=>sl.filter(s=>{const c=byId[get(s)];return c&&c.v!=='EX'&&!(c.name===t.s&&t.m(c))&&f(c)}).sort((a,b)=>byId[get(a)].ovr-byId[get(b)].ovr),don=dn(c=>c.v!=='RN'&&(!(c.line in t.q)||(lc[c.line]||0)>t.q[c.line]&&c.line!==need));
@@ -2756,6 +2759,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1127e',d:'2026-11-27',t:'선발 로테이션 · 요일제 · 원정 응원단',b:['EX 카드는 같은 계보 덱 인원으로만 세요(올스타·골든글러브 덱 인원에는 안 들어가요).','선발 투수는 등판 후 5일을 쉬어야 완전히 회복돼요. 4일만 쉬면 피로가 남아 구위·제구가 깎여요.','리그 요일제: 화~일 6경기, 월요일은 휴식일이에요(주간·연도·친구 리그).','친구 리그 도전 상대도 컨디션이 무작위로 정해져요.','작전 카드 추가: 원정 응원단(원정 경기에서 전원 정신력 +5).'],rw:{tix:{pk_n:10}}},
  {id:'n1127d',d:'2026-11-27',t:'메뉴 개편 · 장비창고 · 선수단',b:['새 상위 메뉴 [장비창고]에서 스킬, 작전 카드, 서포트 카드, 장비를 한곳에서 관리해요. (작전·서포트 카드는 라인업 화면에서 옮겨 왔어요. 지금 편집 중인 리그 라인업에 적용돼요)','[카드] 메뉴 이름을 [선수단]으로 바꿨어요. (합성·유학·도감·미션)','팀 메뉴는 덱 · 저장 덱 · 보유 카드만 남았어요. Shift+숫자 단축키 순서: 홈1 경기2 팀3 장비창고4 선수단5 상점6'],rw:{tix:{pk_n:10,prem:1}}},
 {id:'n1127c',d:'2026-11-27',t:'팀 > 저장 덱 보기',b:['팀 > 저장 덱(F2)에서 저장한 덱을 드롭다운으로 골라 리그 라인업 화면과 같은 모양으로 볼 수 있어요. 보기 전용이라 지금 라인업은 바뀌지 않아요.','[이 덱을 지금 라인업으로 불러오기]로 바로 불러올 수도 있어요.'],rw:{tix:{pk_n:10}}},
 {id:'n1127b',d:'2026-11-27',t:'미션 ★3 보상 · 타순 이름',b:['구단 미션 ★3 보상은 EX 조각 1개예요. 조각 3개가 모이면 EX 확정권 1장(구단 지정 가능)으로 바뀌어요. 미션 목록에 지금 모은 조각 수(n/3)를 함께 표시합니다.','타순 적성 "테이블세터(테세)"를 "상위 타선(상위)"으로 바꿨어요.'],rw:{tix:{pk_n:10}}},
@@ -2988,6 +2992,9 @@ const fatOf=(L,i)=>{L.fat=L.fat||{};return L.fat[i]=L.fat[i]||{}};
 // 투수 피로도: 경기가 끝나면 두 팀 투수에 쌓고(fatAdd), 라운드(하루)가 끝나면 모든 팀이 회복(fatRest)
 function fatGame(L,pr,g){fatAdd(fatOf(L,pr[0]),g,0);fatAdd(fatOf(L,pr[1]),g,1)}
 function fatDay(L){for(const k in L.fat||{})fatRest(L.fat[k])}
+// 요일(SJ 2026-11-27): 실제 리그처럼 화~일 6경기 뒤 월요일은 휴식일(경기 없이 피로만 하루 더 회복). L.day = 지금까지 치른 경기일 수
+const WDAY='화수목금토일',wdayOf=L=>WDAY[((L&&L.day)||0)%6]+'요일';
+function dayEnd(L){fatDay(L);L.day=(L.day||0)+1;if(L.day%6===0)fatDay(L)}
 // 리그 중 선발 교체 대책(SJ 2026-11-26): 시즌 중 새로 선발 로테이션에 들어온 투수는 피로도 75로 합류(약 3~4경기 등판 대기). 덱을 바꿔 쉰 에이스만 돌려 쓰는 걸 막음
 const ROT_JOIN=75;
 function rotJoin(L,T){const F=fatOf(L,0),R=(T.rot||[]).filter(Boolean);if(L.rot0)for(const id of R)if(!L.rot0.includes(id))F[id]=Math.max(F[id]||0,ROT_JOIN);L.rot0=R.slice()}
@@ -3006,7 +3013,7 @@ function lgPlay(L,g){let res=null;const out=[];
     const mine=p.includes(0),gg=mine&&g?g:simAll(mkGame(simT(L,p[0]),simT(L,p[1])));
     if(mine){const me=p.indexOf(0);res=gg.res<0?'d':gg.res===me?'w':'l';L.hl=hlOf(gg,p);recGame(L,gg,p);predDo(L,gg,me)}
     lgRec(L,p[0],p[1],gg);accStats(L,p,gg);fatGame(L,p,gg);out.push({a:p[0],h:p[1],sc:gg.sc,me:mine})}
-  L.last=out.sort((x,y)=>y.me-x.me);L.teams.forEach((t,i)=>{if(i)t.rotIdx=(t.rotIdx||0)+1});fatDay(L);L.round++;return res}
+  L.last=out.sort((x,y)=>y.me-x.me);L.teams.forEach((t,i)=>{if(i)t.rotIdx=(t.rotIdx||0)+1});dayEnd(L);L.round++;return res}
 // 리그 경기(주간·연도)에서는 작전 카드 1장 소모, 서포트 카드 남은 경기 1 감소. 단판 도전은 이 함수를 부르지 않는다(서포트 미적용·작전 무소모).
 function useCards(){const T=S.team,ts=T.tsel;if(ts&&(S.tq||{})[ts]>0){S.tq[ts]--;if(!S.tq[ts])T.tsel=null}T.sup=(T.sup||[]).map(x=>({...x,left:x.left-1})).filter(x=>x.left>0)}
 // --- 경기 예측: 목표 7개 중 1개를 직접 고름(L.pk, 다음 경기에도 유지). 달성하면 보너스(ECON.predSettle). 연도 리그는 하루 상한 적용 ---
@@ -3104,7 +3111,7 @@ const PO_NEED=2,PO_MAX=5;
 const lgPoSer=s=>s.po&&s.po.ser.find(x=>!x.done&&(x.a===0||x.b===0));
 // 포스트시즌 한 경기. x=시리즈, g=내가 직접 본 경기(없으면 시뮬). 무승부는 승수에 안 들어가고 5경기 안에 안 끝나면 상위 시드 진출
 function lgPoGame(s,x,g){const k=x.w[0]+x.w[1]+(x.d||0),pr=k%2===0?[x.b,x.a]:[x.a,x.b],mine=pr.includes(0);
-  const gg=g||simAll(mkGame(simT(s,pr[0]),simT(s,pr[1])));s.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});fatGame(s,pr,gg);fatDay(s);
+  const gg=g||simAll(mkGame(simT(s,pr[0]),simT(s,pr[1])));s.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});fatGame(s,pr,gg);dayEnd(s);
   s.last=[{a:pr[0],h:pr[1],sc:gg.sc,me:mine}];if(mine){s.hl=hlOf(gg,pr);recGame(s,gg,pr,s.po.st);predDo(s,gg,pr.indexOf(0))}
   let res=null;if(gg.res<0){x.d=(x.d||0)+1;res=mine?'d':null}else{const win=pr[gg.res];x.w[win===x.a?0:1]++;res=mine?(win===0?'w':'l'):null}
   if(x.w[0]>=PO_NEED||x.w[1]>=PO_NEED||x.w[0]+x.w[1]+x.d>=PO_MAX){x.done=1;x.win=x.w[1]>x.w[0]?x.b:x.a;
@@ -3192,7 +3199,7 @@ function ylStartPost(L){const R=lgStand(L).map(x=>x.i);L.rank=R.indexOf(0)+1;L.t
   const inP=[L.post.cur.lo,L.post.cur.hi,...L.post.q.map(x=>x.hi)].includes(0);
   return inP}
 function seriesGame(L,g){const c=L.post,s=c.cur,k=s.w[0]+s.w[1]+(s.d||0),pr=[0,1,4,5,6].includes(k)?[s.lo,s.hi]:[s.hi,s.lo];
-  const gg=g||simAll(mkGame(simT(L,pr[0]),simT(L,pr[1])));L.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});fatGame(L,pr,gg);fatDay(L);
+  const gg=g||simAll(mkGame(simT(L,pr[0]),simT(L,pr[1])));L.teams.forEach((t,i)=>{if(i&&pr.includes(i))t.rotIdx=(t.rotIdx||0)+1});fatGame(L,pr,gg);dayEnd(L);
   L.last=[{a:pr[0],h:pr[1],sc:gg.sc,me:pr.includes(0)}];if(pr.includes(0)){L.hl=hlOf(gg,pr);recGame(L,gg,pr,L.post.cur.nm);predDo(L,gg,pr.indexOf(0))}
   if(gg.res<0){s.d=(s.d||0)+1;return pr.includes(0)?'d':null}const win=pr[gg.res];s.w[win===s.lo?0:1]++;return pr.includes(0)?(win===0?'w':'l'):null}
 function ylAdvance(L){let msg='';
@@ -3279,13 +3286,13 @@ function vSeason(){
   const state=s.over?`<p style="margin:8px 0 0"><b>${tierName(s.tier)} 시즌 종료</b> · 정규 ${s.rank}위 · 우승 <b>${esc(tname(s.champ,s))}</b></p><p>다음 시즌 <b>${md(nxt)} 0시</b> · ${up?`${tierName(s.tier+1)} 승급`:'재도전'}</p>`
     :s.regDone&&!poOpen(s)?`<p style="margin:8px 0 0">정규시즌 ${s.rank}위 마감 · ${s.rank<=4?`포스트시즌 <b>${md(s.wk+2*864e5)} 0시</b> 시작`:'포스트시즌 진출 실패 · 결과는 3일차에'}</p>`
     :s.regDone?`<p class="note" style="margin:8px 0 0">${mx&&!mx.done?'내 포스트시즌 진행 중':'내 포스트시즌 끝 · 나머지는 자동 진행'} · 3일차 24시에 남은 경기는 결과만 처리</p>`
-    :`<p class="note" style="margin:8px 0 0">정규시즌 남은 경기 ${s.sched.length-s.round} · ${md(s.wk+864e5)} 24시에 마감 · 상위 4팀 포스트시즌</p>`;
+    :`<p class="note" style="margin:8px 0 0">다음 경기 ${wdayOf(s)} · 정규시즌 남은 경기 ${s.sched.length-s.round} · ${md(s.wk+864e5)} 24시에 마감 · 상위 4팀 포스트시즌</p>`;
   const pr=s.over?null:curPair(s),six=head+poTxt+state;
   // SJ 2026-11-26: 리그 화면 첫머리 = 감독실 3×2 판, 나머지 상세는 접어 둠
   return lgPage('lg',[['ofc','감독실',tb=>ofcHTML(s,{right:tb,key:'lg',title:'주간 리그',pill:esc(tierName(s.tier)),prog:po&&mx?`${po.st} ${mx.a===0?mx.w[0]:mx.w[1]}승 ${mx.a===0?mx.w[1]:mx.w[0]}패`:undefined,sixT:'리그 진행',six,idle:s.over||s.regDone?poTxt+state:''})],['lu','라인업',()=>vLineup()],['sc','일정',()=>(pr?`<section class="hero">${muHTML(s,pr,`${s.round+1}/${s.sched.length}경기`,'start','auto')}</section>`:'')+lastRes(s)+gamesHTML(s)],['st','기록실',()=>teamStatsHTML(s)+myTeamHTML(s,'lg')+(statsHTML(s)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(s)],['lg','리그 정보',()=>`<section class="band"><h3>리그 진행</h3>${six}</section>`+standFull(s)]],{L:s,title:'주간 리그',pill:esc(tierName(s.tier))})} // 구단 설정·백업·초기화는 홈 화면 아래(ui2 vHome)
 function vYears(){useMode('yl');const L=S.yl,won=S.ylWon||{};ranked();
   if(L&&!L.done){const pr=curPair(L),c=L.post&&L.post.cur,nx=ylNextAt(Date.now()),hm=t=>{const d=new Date(t+H9);return `${md(t)} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
-    const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`;
+    const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드 · ${wdayOf(L)}`;
     const six=`<p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p><p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p><div class="btns" style="margin-top:10px">${pr&&!L.post?`<button data-a="m-torest" title="휴식 라운드나 포스트시즌 직전, 최대 ${YL_RUN_MAX}경기까지 결과만 보기로 이어서 진행">다음 휴식일까지 자동</button>`:''}<button data-a="m-quit" class="ghost">이 리그 포기</button></div>`;
     return lgPage('yl',[['ofc','감독실',tb=>ofcHTML(L,{right:tb,key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 넘어가요">휴식 넘기기</button></div>`})],['lu','라인업',()=>vLineup()],['sc','일정',()=>`<section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
           ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}</section>`+lastRes(L)+gamesHTML(L)],['st','기록실',()=>teamStatsHTML(L)+myTeamHTML(L,'yl')+(statsHTML(L)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(L)+asHTML(L)],['lg','리그 정보',()=>`<section class="band"><h3>시즌 진행</h3>${six}</section>${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${standFull(L,L.post?'정규시즌 최종 순위':'순위표')}`]],{L,title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌'})}
@@ -3579,8 +3586,8 @@ async function oAct(a,b){const F=fb(),u=ON.user;ON.msg='';
     const T=JSON.parse(t.json);T.color='#3d7fd1';
     const prev=ON.games.filter(x=>(x.a===ON.user.uid&&x.h===h)||(x.h===ON.user.uid&&x.a===h)).length;let st=0;for(const x of ON.games.filter(x=>x.a===ON.user.uid||x.h===ON.user.uid)){const me=x.a===ON.user.uid?0:1;if(x.res===1-me){if(st<=0)st--;else break}else break}
     // 5판 3선승(SJ 2026-11-26): 단판이면 1선발만 좋으면 돼서 선발진 깊이가 의미 없음 → 양쪽 다 1선발부터 로테이션 순서대로. 무승부 경기는 승수에 안 들어가고 최대 7경기, 그래도 안 끝나면 시리즈 무승부
-    const U=userT('on');U.ctx={rematch:prev>0,streak:st};const sw=[0,0],gl=[],rs=[0,0],F0={},F1={};let last=null; // 시리즈 피로: 경기마다 누적, 경기 사이 하루 휴식(선발 운용 '유연'일 때 에이스 재등판 판단에 씀)
-    for(let i=0;i<OBO_MAX&&sw[0]<3&&sw[1]<3;i++){U.rotIdx=i;T.rotIdx=i;const g=mkGame(simTeam(U,S.cond,F0),simTeam(T,undefined,F1));g.me=0;g.ctrl=null;g.pair=[0,1];simAll(g);fatAdd(F0,g,0);fatAdd(F1,g,1);fatRest(F0);fatRest(F1);
+    const U=userT('on');U.ctx={rematch:prev>0,streak:st};const TC={};for(const id of [...T.lineup.map(x=>x.id),...(T.bench||[]),...(T.rot||[]),...(T.pen||[])].filter(Boolean)){const u=Math.random();TC[id]=Math.max(condMin(id),u<.08?1:u<.25?2:u<.6?3:u<.88?4:5)} // 2026-11-27(SJ): 도전 상대도 컨디션 무작위(내 쪽과 같은 분포, 시리즈 동안 유지)const sw=[0,0],gl=[],rs=[0,0],F0={},F1={};let last=null; // 시리즈 피로: 경기마다 누적, 경기 사이 하루 휴식(선발 운용 '유연'일 때 에이스 재등판 판단에 씀)
+    for(let i=0;i<OBO_MAX&&sw[0]<3&&sw[1]<3;i++){U.rotIdx=i;T.rotIdx=i;const g=mkGame(simTeam(U,S.cond,F0),simTeam(T,TC,F1));g.me=0;g.ctrl=null;g.pair=[0,1];simAll(g);fatAdd(F0,g,0);fatAdd(F1,g,1);fatRest(F0);fatRest(F1);if(i===5){fatRest(F0);fatRest(F1)} /* 2026-11-27: 화~일 6경기 뒤 월요일 휴식 */
       if(g.res>=0)sw[g.res]++;rs[0]+=g.sc[0];rs[1]+=g.sc[1];gl.push({sc:g.sc,sp:[g.px[0][0]&&g.px[0][0].c.name,g.px[1][0]&&g.px[1][0].c.name]});last=g}
     G=last;G.friendly={lid:ON.cur,h,hn:t.name+' ('+t.owner+')',sw,gl,rs};if(a==='o-quick'){await oFinish();return}G.hl=1;location.hash='game'}
   }catch(e){ON.msg='오류: '+(e.code||e.message)}finally{render()}}
@@ -3699,7 +3706,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',gear:'장비창고',cards:'선수단',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='a6aed290c7';
+const BUILD='3911f719e8';
 const TABI={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 3h4V6h-4zM3 12h18v1.6H3z" fill="currentColor"/></svg>',home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>

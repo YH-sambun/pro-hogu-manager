@@ -176,7 +176,8 @@ function teamColor(cards,sel,bench){
   // EX 카드는 같은 계보의 가장 많은 연도에 들어가 단일연도 인원으로 셈
   // 커리어하이(CH)는 CH_WILD장까지 같은 계보 최다 연도에 합류(EX와 같은 방식), 영구결번(RN)은 계보와 무관하게 최다 연도에 합류
   // 2026-11-25(SJ): EX도 영구결번처럼 어떤 덱이든 만족(계보·연도 무관하게 최다 연도·최다 구단에 합류). 커리어하이만 같은 계보 한정
-  const chW=new Set(cards.filter(c=>c.v==='CH').slice(0,CH_WILD)),wild=c=>chW.has(c),any=c=>c.v==='RN'||c.v==='EX';
+  // 2026-11-27(SJ): EX는 같은 계보 덱 인원으로만 셈(카드 설명대로). 같은 계보 최다 연도에 합류(커리어하이와 같은 방식, 장수 제한은 1군 EX 한도). 계보 무관 와일드는 영구결번만
+  const chW=new Set([...cards.filter(c=>c.v==='CH').slice(0,CH_WILD),...cards.filter(c=>c.v==='EX')]),wild=c=>chW.has(c),any=c=>c.v==='RN';
   const yk=(()=>{const m={};for(const c of cards)if(!wild(c)&&!any(c)){const k=yearKey(c);m[k]=(m[k]||0)+1}
     for(const c of cards)if(wild(c)){let b=null;for(const k in m)if(k.split(' ')[1]===c.line&&(!b||m[k]>m[b]))b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
     for(const c of cards)if(any(c)){let b=null;for(const k in m)if(!b||m[k]>m[b])b=k;b=b||yearKey(c);m[b]=(m[b]||0)+1}
@@ -208,7 +209,7 @@ function teamColor(cards,sel,bench){
   for(const a of AGAIN_SETS){const k=againCount(a,cards);if(k>=AGAIN_NEED)add(mk('Y','S',againName(a[0],a[2]),`우승년도 ${k}명`,5,4))}
   // 올스타덱·골든글러브덱: 연도·구단이 섞여도 특별 카드 장수로
   // 2026-11-25(SJ): 주전 20명을 다 채우면 최고 등급(S). EX·영구결번도 와일드카드로 셈
-  {const w=nv('EX')+nv('RN');
+  {const w=nv('RN'); // 2026-11-27(SJ): EX는 계보 덱 전용이라 올스타·골든글러브덱 와일드에서 뺌
   {const n=nv('AS')+w;if(n>=20)add(mk('E','S','올스타덱',`올스타 ${n}명`,8,6));else if(n>=12)add(mk('E','A','올스타덱',`올스타 ${n}명`,5,4));else if(n>=8)add(mk('E','B','올스타덱',`올스타 ${n}명`,3,2))}
   {const n=nv('GG')+w;if(n>=20)add(mk('E','S','골든글러브덱',`골든글러브 ${n}명`,8,6));else if(n>=8)add(mk('E','A','골든글러브덱',`골든글러브 ${n}명`,5,4));else if(n>=5)add(mk('E','B','골든글러브덱',`골든글러브 ${n}명`,3,2))}}
   // 이름 세트: 지정 선수들을 계보 안에서 모으기
@@ -297,7 +298,8 @@ const TCARDS=[
  ['b7','대타 신공','야','특수','6회 이후 대타','대타 교타 +10, 대타 다음 타자 선구 +5',50,[],[]],['b8','4번 타자의 무게','야','황금','4번 타석','상대 투수 구위 –6',80,[],['p7']],
  ['c1','홈 응원단','공','일반','홈 경기','전원 정신력 +5',20,[],[]],['c2','승리의 각오','공','일반','동점 또는 1점 차','전원 능력 +2',30,[],[]],
  ['c3','데이터 분석','공','일반','같은 상대와 두 번째 경기','전원 선구·제구 +3',30,[],[]],['c4','견제 강화','공','특수','상대 1루 주자','상대 도루 –20%, 견제사 확률 +',40,['b6'],[]],
- ['c5','징크스 깨기','공','특수','연패 중','전원 컨디션 +1단계',50,[],[]]];
+ ['c5','징크스 깨기','공','특수','연패 중','전원 컨디션 +1단계',50,[],[]],
+ ['c6','원정 응원단','공','일반','원정 경기','전원 정신력 +5',20,[],[]]]; // 2026-11-27(SJ): 홈 응원단의 원정판
 const TC_BY=Object.fromEntries(TCARDS.map(x=>[x[0],x]));
 // 서포트 카드: [id,이름,대상(B/P/all),효과,경기 수,fx]. 합성 강화판은 id+'+' (효과 1.5배, 3경기)
 const SUPS=[['s1','특타 훈련','B','교타 +5',2,{con:5}],['s2','장타 특훈','B','장타 +5',2,{pow:5}],['s3','휴식','all','컨디션 +1단계',2,{cond:1}],
@@ -376,9 +378,10 @@ const batAdj=v=>v>=70?(v-60)/10:v<40?-1.5:0; // 궁합 → 제구 보정(구위�
 const condMin=id=>byId[id]&&byId[id].v==='RY'?3:1;
 // 투수 피로도(SJ 2026-11-25): 리그에서 경기 사이에 쌓이고(던진 타자 수 ÷ 투구 한계) 체력에 비례해 하루마다 회복. 0~100
 // 선발은 등판하면 60+(던진 비율×40), 피로 15 미만이어야 등판(아니면 다음 순번), 피로 20을 넘으면 구위·제구 최대 −30%·투구 한계 감소, 불펜은 피로 55 이상이면 그날 등판 불가
-const FAT={spOk:15,spFlex:20,rpOut:55,pen0:20,penMax:.3},fatCap=(c,st)=>st?16+c.r.sta*.16:3+c.r.sta/20,fatMul=f=>f>FAT.pen0?1-Math.min(FAT.penMax,(f-FAT.pen0)/80*FAT.penMax):1;
+// 2026-11-27(SJ): 선발은 하루 20씩 일정하게 회복 → 등판 뒤 5일 쉬면 완전 회복(5선발 돌고 월요일 휴식이 끼면 딱 5일). 4일만 쉬면 피로가 남고, 선발은 남은 피로만큼 바로 감점(pen0 없음)
+const FAT={spOk:15,spFlex:20,rpOut:55,pen0:20,penMax:.3,spRec:20},fatCap=(c,st)=>st?16+c.r.sta*.16:3+c.r.sta/20,fatMul=f=>f>FAT.pen0?1-Math.min(FAT.penMax,(f-FAT.pen0)/80*FAT.penMax):1;
 function fatAdd(fat,g,s){for(const p of g.px[s]){const add=p.starter?60+40*Math.min(1,p.bf/fatCap(p.c,1)):p.bf/fatCap(p.c,0)*30;fat[p.c.id]=Math.round(Math.min(100,(fat[p.c.id]||0)+add))}}
-function fatRest(fat){for(const id in fat){const c=byId[id];fat[id]=Math.round(Math.max(0,fat[id]-((c&&c.pos!=='SP'?15:12)+((c&&c.r.sta)||60)*.1)));if(!fat[id])delete fat[id]}}
+function fatRest(fat){for(const id in fat){const c=byId[id];fat[id]=Math.round(Math.max(0,fat[id]-(c&&c.pos==='SP'?FAT.spRec:15+((c&&c.r.sta)||60)*.1)));if(!fat[id])delete fat[id]}}
 function fatSP(T,fat){const R=(T.rot||[]).filter(Boolean),i=(T.rotIdx||0)%Math.max(1,R.length);if(T.rotMode==='flex'&&fat&&R.length){const ok=R.filter(id=>(fat[id]||0)<FAT.spFlex&&byId[id]);if(ok.length)return ok.sort((a,b)=>byId[b].ovr-byId[a].ovr)[0]} /* 2026-11-27 SJ: 선발 운용 '유연' = 체력 되는 선발 중 능력 높은 순(짧은 휴식은 피로 감점) */if(!fat||!R.length)return R[i];for(let k=0;k<R.length;k++){const id=R[(i+k)%R.length];if((fat[id]||0)<FAT.spOk)return id}return R.slice().sort((a,b)=>(fat[a]||0)-(fat[b]||0))[0]}
 function simTeam(T,cond,fat){
   const all=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);
@@ -386,7 +389,7 @@ function simTeam(T,cond,fat){
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
   const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel,(T.bench||[]).map(id=>byId[id]).filter(Boolean)),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(k==='men'&&tc.men)raw[k]+=tc.men;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(120,raw[k]+(sk[k]||0)) /* 2026-11-26: 화면 상한(120)과 통일 */}
     const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
-    const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+(raw.def!=null&&c.r.def!=null?raw.def-c.r.def:bon+(sk.def||0))])):null /* 2026-11-26: 유학·장비·특훈 수비 상승도 포지션 수비에 반영(전에는 덱 보너스·스킬만) */;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;const fv=fat&&fat[c.id]||0;if(c.type==='P'&&fv>FAT.pen0){const fm=fatMul(fv);r.stu*=fm;r.ctl*=fm;r.kv*=fm;r.hv*=fm;r.sta*=1-fv/250}return {...c,r,ps,rawr:raw,fat:fv}};
+    const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+(raw.def!=null&&c.r.def!=null?raw.def-c.r.def:bon+(sk.def||0))])):null /* 2026-11-26: 유학·장비·특훈 수비 상승도 포지션 수비에 반영(전에는 덱 보너스·스킬만) */;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;const fv=fat&&fat[c.id]||0,p0=c.pos==='SP'?0:FAT.pen0;if(c.type==='P'&&fv>p0){const fm=1-Math.min(FAT.penMax,(fv-p0)/80*FAT.penMax);r.stu*=fm;r.ctl*=fm;r.kv*=fm;r.hv*=fm;r.sta*=1-fv/250}return {...c,r,ps,rawr:raw,fat:fv}};
   const LC=T.lineup.map(x=>byId[x.id]);
   const lu=T.lineup.map((x,i)=>{const c=mod(byId[x.id]);let m=1;if(!boOk(c,i)){m*=BO_PEN;c.boBad=1}const a=adjBonus(LC,i);if(a){m*=1+a*ADJ_PCT/100;c.adj=a}
     if(m!==1)c.r={...c.r,con:c.r.con*m,pow:c.r.pow*m,eye:c.r.eye*m};return {c,pos:x.pos}});
@@ -487,12 +490,12 @@ function pa(g,manual){
     if(mv.length){if(pb){if(CAT){const o=g.bx[f][CAT.c.id];if(o)o.pb=(o.pb||0)+1}}else P.wp=(P.wp||0)+1;g.wpb=(g.wpb||0)+1;say(g,`${pb?'포일':'폭투'}${pb&&CAT?` (포수 ${CAT.c.name})`:''}: ${mv.join(', ')}`);
      if(g.half===1&&g.inn>=9&&g.sc[1]>g.sc[0]){g.line[1].push(g.hr);say(g,`끝내기! ${g.t[1].name} 승리`,'e');finish(g);return}}}}
   const onB=!!(B[0]||B[1]||B[2]);
-  const clutch=(g.inn>=7&&Math.abs(g.sc[0]-g.sc[1])<=2)||!!B[1]||!!B[2],press=clutch?1:onB?.5:0,L=lim(P),fat=cl((P.bf-L*.7)/(L*.6),0,1),pmen=pc.r.men+(P.starter?(dfx.smen||0):0)+(DA.has('c1')&&f===1?5:0)+(DA.has('p4')&&(B[1]||B[2])?8:0);
+  const clutch=(g.inn>=7&&Math.abs(g.sc[0]-g.sc[1])<=2)||!!B[1]||!!B[2],press=clutch?1:onB?.5:0,L=lim(P),fat=cl((P.bf-L*.7)/(L*.6),0,1),pmen=pc.r.men+(P.starter?(dfx.smen||0):0)+(DA.has('c1')&&f===1?5:0)+(DA.has('c6')&&f===0?5:0)+(DA.has('p4')&&(B[1]||B[2])?8:0);
   const close1=Math.abs(g.sc[0]-g.sc[1])<=1,dc2=DA.has('c2')&&close1?2:0,dc3=DA.has('c3')&&(DT.ctx||{}).rematch?3:0,svs=g.inn>=9&&P.c.id===(DT.pen[0]||{}).id&&g.sc[f]-g.sc[bat]>=1&&g.sc[f]-g.sc[bat]<=3;
   const p5=DA.has('p5')&&P.starter&&g.inn===1?6:0,stu=pc.r.stu-14*fat+(P.starter?0:(dfx.rstu||0)+(DA.has('p2')&&g.inn>=7?5:0))+P.badj*.6+p5+dc2+(DA.has('p6')&&svs?6:0)-(OA.has('b8')&&g.idx[bat]===3?6:0),ctl=pc.r.ctl-10*fat-(P.starter&&OA.has('b4')&&g.inn<=3?5:0)+(.2*(MEN_P-70)+MEN_K*(pmen-MEN_P))*press+P.badj+(P.lead||0)+p5+dc2+dc3+(DA.has('p3')&&b.bh==='L'?6:0),risp=!!(B[1]||B[2]);const vsSP=P.starter,home=bat===1;
   let b0=b.r;{const m={},ad=(k,v)=>{m[k]=(m[k]||0)+v},oc2=OA.has('c2')&&close1;
    if(vsSP&&OA.has('b1')&&pc.cost>=6)ad('con',5);if(OA.has('b2')&&risp)ad('con',6);if(OA.has('b3')&&pc.ph==='L')ad('pow',5);if(OA.has('b5')&&g.inn>=8&&g.sc[bat]<g.sc[f]){ad('con',6);ad('pow',6)}
-   if(OA.has('b7')&&g.inn>=6){if(g.phNow===b.id)ad('con',10);else if(g.phPrev===g.idx[bat])ad('eye',5)}if(OA.has('c1')&&home)ad('men',5);if(oc2){ad('con',2);ad('pow',2);ad('eye',2)}
+   if(OA.has('b7')&&g.inn>=6){if(g.phNow===b.id)ad('con',10);else if(g.phPrev===g.idx[bat])ad('eye',5)}if(OA.has('c1')&&home)ad('men',5);if(OA.has('c6')&&!home)ad('men',5);if(oc2){ad('con',2);ad('pow',2);ad('eye',2)}
    if(OA.has('c3')&&(OT.ctx||{}).rematch)ad('eye',3);if(DA.has('p7')&&!(DA.has('p6')&&svs&&false))ad('con',-4);
    if(Object.keys(m).length){b0={...b0};for(const k in m)b0[k]+=m[k]}}
   let br=press?{...b0,con:b0.con+(.2*(MEN_B-70)+MEN_K*(b0.men-MEN_B))*press+(risp?(ofx.clutch||0):0)}:b0;if(ofx.ace&&pc.ovr>=75)br={...br,con:br.con+ofx.ace};
