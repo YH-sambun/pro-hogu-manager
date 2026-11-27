@@ -182,7 +182,7 @@ function weekTick(){const s=S&&S.season;if(!s)return false;if(!s.tier){s.tier=1;
   S.lgHist=[...(S.lgHist||[]),{wk:s.wk,tier:s.tier,rank:s.rank,won:s.champ===0}].slice(-30);
   const nt=s.champ===0&&s.tier<10?s.tier+1:s.tier;newSeason(nt);
   S.toast=`지난 시즌 ${tierName(s.tier)} 정규 ${s.rank}위${s.champ===0?' · 포스트시즌 우승':''} 마감${msg?' ('+msg.replace(/^ · /,'')+')':''} · 이번 시즌은 ${tierName(nt)}예요`;return true}
-function startGame(auto,mode){mode=mode||'lg';useMode(mode==='yl'?'yl':'lg');const e=validate();if(e.length){location.hash='lineup';render();return}
+function startGame(auto,mode){mode=mode||'lg';useMode(mode==='yl'?'yl':'lg');const e=validate();if(e.length){S.msg='⚠ 경기 전에 고쳐 주세요: '+e.slice(0,4).join(' / ')+(e.length>4?' 외':'');location.hash='lineup';render();return}
   if(mode==='lg'&&weekTick()){render();return}
   const L=mode==='yl'?S.yl:S.season;if(!L||L.over||L.done)return;
   const pr=curPair(L);

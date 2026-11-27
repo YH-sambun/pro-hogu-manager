@@ -202,7 +202,11 @@ function teamColor(cards,sel,bench){
   if(ln.length>=2&&ln[0][1]>=10&&ln[1][1]>=10&&ln[0][1]+ln[1][1]>=25&&!all.some(x=>x.fam==='F'&&x.g==='A'&&x.name!=='단일구단'))add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
   // 2026-11-27(SJ): 지역 효과는 구단 연고지가 아니라 선수 출신 지역(c.reg, 고교 기준). 1군 25명 중 같은 출신 6명 이상이면 B, 보너스는 그 출신 선수에게만
   {const m={};for(const c of cards)if(c.reg){(m[c.reg]=m[c.reg]||new Set()).add(c.pk)}const r=Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])[0];
-   if(r&&r[1]>=6){const x=mk('E','B','출신 지역',`${r[0]} 출신 ${r[1]}명 · 해당 선수만`,3,2);x.reg=r[0];add(x)}}
+   if(r&&r[1]>=6){const x=mk('E','B','출신 지역',`${r[0]} 출신 ${r[1]}명 · 해당 선수만`,3,2);x.only='reg:'+r[0];add(x)}}
+  // 투타 조합(SJ 2026-11-27, 시뮬로 크기 맞춤): 타순 9명 중 우투좌타 6명 이상 B, 스위치히터 4명 이상 B(+ 투수 손 상관없이 플래툰 유리). 보너스는 해당 선수만 야수 +3
+  {const B=st.filter(c=>c.type==='B'),rl=B.filter(c=>c.ph==='R'&&c.bh==='L').length,sw=B.filter(c=>c.bh==='S').length;
+   if(rl>=6){const x=mk('E','B','우투좌타',`우투좌타 ${rl}명 · 해당 선수만`,3,0);x.only='RL';add(x)}
+   if(sw>=4){const x=mk('E','B','스위치히터',`스위치 ${sw}명 · 해당 선수만 · 투수 손 무관 유리`,3,0);x.only='SW';add(x)}}
   // 묶음 계보(A): 여러 계보를 합쳐 20명 이상(각 계보 1명 이상)
   for(const [n,ls,mn,lb] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=25&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,lb||ls.map(lname).join('+'),5,4))}
   // 시대 세트는 S 칸(SJ 2026-11-25): 같은 구단이라 A 칸의 단일구단과 함께 켤 수 있게
@@ -227,7 +231,7 @@ function teamColor(cards,sel,bench){
   if(hs[0]&&hs[0][1]>=6)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=4)add(mk('E','B','고교 동문',hs[0][0],2,1));
   if(un[0]&&un[0][1]>=5)add(mk('E','B','대학 동문',un[0][0],2,1));
   const S2=new Set(sel||[]);for(const g of ['S','A','B']){const c=all.filter(x=>x.g===g);if(!c.length)continue;fx.push(c.find(x=>S2.has(x.key))||c.sort((a,b)=>(b.b+b.p)-(a.b+a.p))[0])}
-  const rgx=fx.find(x=>x.reg);return {fx,all,rg:rgx?{r:rgx.reg,b:rgx.b,p:rgx.p}:null,bat:fx.reduce((s,x)=>s+(x.reg?0:x.b),0),pit:fx.reduce((s,x)=>s+(x.reg?0:x.p),0),men:fx.reduce((s,x)=>s+(x.men||0),0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
+  const only=fx.filter(x=>x.only).map(x=>({k:x.only,b:x.b,p:x.p}));return {fx,all,only,bat:fx.reduce((s,x)=>s+(x.only?0:x.b),0),pit:fx.reduce((s,x)=>s+(x.only?0:x.p),0),men:fx.reduce((s,x)=>s+(x.men||0),0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
 // ===== 스킬 블록 =====
 const SHAPES={I2:[[0,0],[0,1]],I3:[[0,0],[0,1],[0,2]],V3:[[0,0],[1,0],[1,1]],O:[[0,0],[0,1],[1,0],[1,1]],I4:[[0,0],[0,1],[0,2],[0,3]],T:[[0,0],[0,1],[0,2],[1,1]],L:[[0,0],[1,0],[2,0],[2,1]],J:[[0,1],[1,1],[2,1],[2,0]],S:[[0,1],[0,2],[1,0],[1,1]],Z:[[0,0],[0,1],[1,1],[1,2]]};
 const GRADES={C:{m:.75,w:50},B:{m:1,w:30},A:{m:1.25,w:15},S:{m:1.5,w:5}};
@@ -389,9 +393,9 @@ function simTeam(T,cond,fat){
   const all=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);
   const M=mgrOf(T),tac=M?{...M.t}:{...TAC_DEF},fx=M?M.fx:{};
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
-  const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel,(T.bench||[]).map(id=>byId[id]).filter(Boolean)),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=(c.type==='B'?tc.bat:tc.pit)+(tc.rg&&c.reg===tc.rg.r?(c.type==='B'?tc.rg.b:tc.rg.p):0);const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(k==='men'&&tc.men)raw[k]+=tc.men;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(120,raw[k]+(sk[k]||0)) /* 2026-11-26: 화면 상한(120)과 통일 */}
+  const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel,(T.bench||[]).map(id=>byId[id]).filter(Boolean)),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const onlyHit=k=>k==='RL'?c.type==='B'&&c.ph==='R'&&c.bh==='L':k==='SW'?c.type==='B'&&c.bh==='S':k.startsWith('reg:')&&c.reg===k.slice(4),bon=(c.type==='B'?tc.bat:tc.pit)+(tc.only||[]).reduce((s,o)=>s+(onlyHit(o.k)?(c.type==='B'?o.b:o.p):0),0);const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(k==='men'&&tc.men)raw[k]+=tc.men;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(120,raw[k]+(sk[k]||0)) /* 2026-11-26: 화면 상한(120)과 통일 */}
     const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
-    const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+(raw.def!=null&&c.r.def!=null?raw.def-c.r.def:bon+(sk.def||0))])):null /* 2026-11-26: 유학·장비·특훈 수비 상승도 포지션 수비에 반영(전에는 덱 보너스·스킬만) */;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;const fv=fat&&fat[c.id]||0,p0=c.pos==='SP'?0:FAT.pen0;if(c.type==='P'&&fv>p0){const fm=1-Math.min(FAT.penMax,(fv-p0)/80*FAT.penMax);r.stu*=fm;r.ctl*=fm;r.kv*=fm;r.hv*=fm;r.sta*=1-fv/250}return {...c,r,ps,rawr:raw,fat:fv}};
+    const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+(raw.def!=null&&c.r.def!=null?raw.def-c.r.def:bon+(sk.def||0))])):null /* 2026-11-26: 유학·장비·특훈 수비 상승도 포지션 수비에 반영(전에는 덱 보너스·스킬만) */;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;const fv=fat&&fat[c.id]||0,p0=c.pos==='SP'?0:FAT.pen0;if(c.type==='P'&&fv>p0){const fm=1-Math.min(FAT.penMax,(fv-p0)/80*FAT.penMax);r.stu*=fm;r.ctl*=fm;r.kv*=fm;r.hv*=fm;r.sta*=1-fv/250}return {...c,r,ps,rawr:raw,fat:fv,swx:c.bh==='S'&&(tc.only||[]).some(o=>o.k==='SW')?1:0}};
   const LC=T.lineup.map(x=>byId[x.id]);
   const lu=T.lineup.map((x,i)=>{const c=mod(byId[x.id]);let m=1;if(!boOk(c,i)){m*=BO_PEN;c.boBad=1}const a=adjBonus(LC,i);if(a){m*=1+a*ADJ_PCT/100;c.adj=a}
     if(m!==1)c.r={...c.r,con:c.r.con*m,pow:c.r.pow*m,eye:c.r.eye*m};return {c,pos:x.pos}});
@@ -504,7 +508,7 @@ function pa(g,manual){
   const def=g.t[f].def,sw=otac.power-2,sh=dtac.shift-2;
   // ── 타석 모델: 능력치 70 = 그 시즌 리그 평균(카드 변환식 기준). 타자·투수 각자의 비율을 log5로 합쳐 특징이 그대로 드러나게 ──
   const dS=stu-pc.r.stu,dV=onB?-cl(2-(pmen-70)*.05,.5,3)*.55:0 /* 주자 있으면 세트포지션: 구속 -2(정신력 높으면 덜) → 탈삼진 구성(kv)에 반영 */,kv=(pc.r.kv!=null?pc.r.kv:pc.r.stu)+dS+dV,hv=(pc.r.hv!=null?pc.r.hv:pc.r.stu)+dS,bk=(pc.r.bk!=null?pc.r.bk:70)+dS,pgb=pc.r.gb!=null?pc.r.gb:LG.gb;
-  const plat=(!b.bh||!pc.ph?0:b.bh==='S'?.5:b.bh===pc.ph?-1:1)*(pc.arm?1.8:1); // 같은 손 -1, 반대 손 +1, 스위치 +0.5. 언더·사이드는 좌우 차이가 1.8배
+  const plat=(!b.bh||!pc.ph?0:b.bh==='S'?(b.swx?1:.5):b.bh===pc.ph?-1:1)*(pc.arm?1.8:1); // 같은 손 -1, 반대 손 +1, 스위치 +0.5. 언더·사이드는 좌우 차이가 1.8배
   const tC=RTIER(b.r.con),tP=RTIER(b.r.pow),tE=RTIER(b.r.eye),tKV=RTIER(pc.r.kv!=null?pc.r.kv:pc.r.stu),tHV=RTIER(pc.r.hv!=null?pc.r.hv:pc.r.stu),tCT=RTIER(pc.r.ctl),tPT=pc.r.ptT||0,
     defT=DT.lu.reduce((s,x)=>s+(x.pos==='DH'?0:DTIER(effDef(x.c,x.pos))),0); // 구간 효과
   const bBB=cl(LG.bb+(br.eye-70)*.0032+.004*tE,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018-.003*tC,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0016+.002*tP,.002,.1),
