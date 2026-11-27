@@ -482,7 +482,7 @@ const ERA_SP=y=>{y=+y||2026;const k=[[1985,1.27],[1995,1.12],[2005,0.82]];if(y<=
 const lim=p=>p.L;
 // 리그 기준(능력치 70일 때 비율). 엔진 안에서만 쓰는 값
 const odd=(p,m)=>{const o=p/(1-p)*m;return o/(1+o)},SMX=b=>b.sm?cl((b.sm-1)*.08,-.06,.12):0; // 희생타 지수(리그 대비 희생번트+희생플라이 비율) → 주자 3루 땅볼·뜬공 득점, 진루타 확률
-const LG={bb:.085,k:.175,hr:.025,babip:.298,gb:.45} /* 2026-11-28: 로스터 25+불펜 8명으로 R/G 상승 → babip .300→.298 보정 */,log5=(b,p,l)=>{const o=b/(1-b)*p/(1-p)/(l/(1-l));return o/(1+o)};
+const LG={bb:.085,k:.175,hr:.025,babip:.297,gb:.45} /* 2026-11-28: 로스터 25+불펜 8명으로 R/G 상승 → babip .300→.297 보정 */,log5=(b,p,l)=>{const o=b/(1-b)*p/(1-p)/(l/(1-l));return o/(1+o)};
 function manage(g,f){
   const T=g.t[f],p=g.pit[f],lead=g.sc[f]-g.sc[1-f],closer=T.pen[0],tac=T.tac||TAC_DEF,cv=tac.relief,fx=T.fx||{},clean=g.outs===0&&!g.bases.some(Boolean);
   const lo=[1,1,1,0,-1][cv],hi=[3,3,4,4,4][cv],cfree=closer&&!g.used[f].has(closer.id)&&p.c.id!==closer.id;
