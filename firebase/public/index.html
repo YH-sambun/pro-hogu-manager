@@ -1130,7 +1130,9 @@ function teamColor(cards,sel,bench){
   {const nm=new Set(cards.map(c=>c.name));for(const [p,a,b] of FA_LINKS)if(nm.has(p)&&(lc[a]||0)>=10&&(lc[b]||0)>=10&&lc[a]+lc[b]>=25)add(mk('F','A','FA 이적: '+p,`${lname(a)}+${lname(b)}`,5,4))}
   for(const [a,b,n] of RIVALS)if((lc[a]||0)>=10&&(lc[b]||0)>=10&&lc[a]+lc[b]>=25)add(mk('F','A',n,`${lname(a)}+${lname(b)}`,5,4));
   if(ln.length>=2&&ln[0][1]>=10&&ln[1][1]>=10&&ln[0][1]+ln[1][1]>=25&&!all.some(x=>x.fam==='F'&&x.g==='A'&&x.name!=='단일구단'))add(mk('F','B','라이벌 듀얼',`${lname(ln[0][0])}+${lname(ln[1][0])}`,3,2));
-  if(rg[0]&&rg[0][1]>=25)add(mk('F','B','지역',rg[0][0],3,2));
+  // 2026-11-27(SJ): 지역 효과는 구단 연고지가 아니라 선수 출신 지역(c.reg, 고교 기준). 1군 25명 중 같은 출신 6명 이상이면 B, 보너스는 그 출신 선수에게만
+  {const m={};for(const c of cards)if(c.reg){(m[c.reg]=m[c.reg]||new Set()).add(c.pk)}const r=Object.entries(m).map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1])[0];
+   if(r&&r[1]>=6){const x=mk('E','B','출신 지역',`${r[0]} 출신 ${r[1]}명 · 해당 선수만`,3,2);x.reg=r[0];add(x)}}
   // 묶음 계보(A): 여러 계보를 합쳐 20명 이상(각 계보 1명 이상)
   for(const [n,ls,mn,lb] of LINE_UNIONS){const t=ls.reduce((x,l)=>x+(lc[l]||0),0);if(t>=25&&ls.every(l=>(lc[l]||0)>=(mn||1)))add(mk('F','A',n,lb||ls.map(lname).join('+'),5,4))}
   // 시대 세트는 S 칸(SJ 2026-11-25): 같은 구단이라 A 칸의 단일구단과 함께 켤 수 있게
@@ -1155,7 +1157,7 @@ function teamColor(cards,sel,bench){
   if(hs[0]&&hs[0][1]>=6)add(mk('E','A','고교 동문',hs[0][0],3,2));else if(hs[0]&&hs[0][1]>=4)add(mk('E','B','고교 동문',hs[0][0],2,1));
   if(un[0]&&un[0][1]>=5)add(mk('E','B','대학 동문',un[0][0],2,1));
   const S2=new Set(sel||[]);for(const g of ['S','A','B']){const c=all.filter(x=>x.g===g);if(!c.length)continue;fx.push(c.find(x=>S2.has(x.key))||c.sort((a,b)=>(b.b+b.p)-(a.b+a.p))[0])}
-  return {fx,all,bat:fx.reduce((s,x)=>s+x.b,0),pit:fx.reduce((s,x)=>s+x.p,0),men:fx.reduce((s,x)=>s+(x.men||0),0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
+  const rgx=fx.find(x=>x.reg);return {fx,all,rg:rgx?{r:rgx.reg,b:rgx.b,p:rgx.p}:null,bat:fx.reduce((s,x)=>s+(x.reg?0:x.b),0),pit:fx.reduce((s,x)=>s+(x.reg?0:x.p),0),men:fx.reduce((s,x)=>s+(x.men||0),0),top:{year:yk[0]&&[tname(yk[0][0]),yk[0][1]],line:ln[0]},cost}}
 // ===== 스킬 블록 =====
 const SHAPES={I2:[[0,0],[0,1]],I3:[[0,0],[0,1],[0,2]],V3:[[0,0],[1,0],[1,1]],O:[[0,0],[0,1],[1,0],[1,1]],I4:[[0,0],[0,1],[0,2],[0,3]],T:[[0,0],[0,1],[0,2],[1,1]],L:[[0,0],[1,0],[2,0],[2,1]],J:[[0,1],[1,1],[2,1],[2,0]],S:[[0,1],[0,2],[1,0],[1,1]],Z:[[0,0],[0,1],[1,1],[1,2]]};
 const GRADES={C:{m:.75,w:50},B:{m:1,w:30},A:{m:1.25,w:15},S:{m:1.5,w:5}};
@@ -1317,7 +1319,7 @@ function simTeam(T,cond,fat){
   const all=[...T.lineup.map(x=>x.id),...(T.bench||[]),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean);
   const M=mgrOf(T),tac=M?{...M.t}:{...TAC_DEF},fx=M?M.fx:{};
   const SP={};for(const x of (T.sup||[]).filter(x=>x.left>0&&SUP_BY[x.id]).slice(0,SUP_MAX))SP[x.cid]=SUP_BY[x.id][5];
-  const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel,(T.bench||[]).map(id=>byId[id]).filter(Boolean)),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=c.type==='B'?tc.bat:tc.pit;const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(k==='men'&&tc.men)raw[k]+=tc.men;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(120,raw[k]+(sk[k]||0)) /* 2026-11-26: 화면 상한(120)과 통일 */}
+  const AS=T.abSt||{},tc=teamColor([...T.lineup.map(x=>x.id),...T.rot,...T.pen].map(id=>byId[id]).filter(Boolean),T.fxsel,(T.bench||[]).map(id=>byId[id]).filter(Boolean)),mod=c=>{const raw={...c.r};for(const k in AS[c.id]||{})if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+AS[c.id][k]);sk=skillOf(c.id,T.blocks);const bon=(c.type==='B'?tc.bat:tc.pit)+(tc.rg&&c.reg===tc.rg.r?(c.type==='B'?tc.rg.b:tc.rg.p):0);const spx=SP[c.id]||{},eqx=(T.eq||{})[c.id]||{};for(const k in eqx)if(raw[k]!=null)raw[k]=Math.min(120,raw[k]+eqx[k]);for(const k in raw){if(k!=='sta')raw[k]+=bon;if(k==='men'&&tc.men)raw[k]+=tc.men;if(spx[k])raw[k]+=spx[k];if(c.type==='B'&&fx[k]&&k!=='def'&&k!=='men')raw[k]+=fx[k];raw[k]=Math.min(120,raw[k]+(sk[k]||0)) /* 2026-11-26: 화면 상한(120)과 통일 */}
     const c5=(T.tcards||[]).includes('c5')&&((T.ctx||{}).streak||0)<=-2?1:0,r=simR(c,raw),m=COND[Math.min(5,(l=>l<3?l+(fx.cond||0):l)(Math.max(condMin(c.id),(cond&&cond[c.id])||3))+c5+((SP[c.id]||{}).cond||0))].m;if(c.type==='B'){r.con*=1+m;r.eye*=1+m/2}else{r.ctl*=1+m;r.stu*=1+m/2;r.kv*=1+m/2;r.hv*=1+m/2}
     const ps=c.ps?Object.fromEntries(Object.entries(c.ps).map(([p,v])=>[p,v+(raw.def!=null&&c.r.def!=null?raw.def-c.r.def:bon+(sk.def||0))])):null /* 2026-11-26: 유학·장비·특훈 수비 상승도 포지션 수비에 반영(전에는 덱 보너스·스킬만) */;if(c.type==='P'&&fx.ssta&&c.pos==='SP')r.sta+=fx.ssta;const fv=fat&&fat[c.id]||0,p0=c.pos==='SP'?0:FAT.pen0;if(c.type==='P'&&fv>p0){const fm=1-Math.min(FAT.penMax,(fv-p0)/80*FAT.penMax);r.stu*=fm;r.ctl*=fm;r.kv*=fm;r.hv*=fm;r.sta*=1-fv/250}return {...c,r,ps,rawr:raw,fat:fv}};
   const LC=T.lineup.map(x=>byId[x.id]);
@@ -2759,6 +2761,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1127f',d:'2026-11-27',t:'지역 덱 효과 변경',b:['지역 덱 효과가 구단 연고지가 아니라 선수 출신 지역(고교 기준)으로 바뀌었어요.','1군 25명 중 같은 출신 선수가 6명 이상이면 \'출신 지역 B\'가 켜지고, 그 출신 선수에게만 야수 +3·투수 +2가 붙어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1127e',d:'2026-11-27',t:'선발 로테이션 · 요일제 · 원정 응원단',b:['EX 카드는 같은 계보 덱 인원으로만 세요(올스타·골든글러브 덱 인원에는 안 들어가요).','선발 투수는 등판 후 5일을 쉬어야 완전히 회복돼요. 4일만 쉬면 피로가 남아 구위·제구가 깎여요.','리그 요일제: 화~일 6경기, 월요일은 휴식일이에요(주간·연도·친구 리그).','친구 리그 도전 상대도 컨디션이 무작위로 정해져요.','작전 카드 추가: 원정 응원단(원정 경기에서 전원 정신력 +5).'],rw:{tix:{pk_n:10}}},
  {id:'n1127d',d:'2026-11-27',t:'메뉴 개편 · 장비창고 · 선수단',b:['새 상위 메뉴 [장비창고]에서 스킬, 작전 카드, 서포트 카드, 장비를 한곳에서 관리해요. (작전·서포트 카드는 라인업 화면에서 옮겨 왔어요. 지금 편집 중인 리그 라인업에 적용돼요)','[카드] 메뉴 이름을 [선수단]으로 바꿨어요. (합성·유학·도감·미션)','팀 메뉴는 덱 · 저장 덱 · 보유 카드만 남았어요. Shift+숫자 단축키 순서: 홈1 경기2 팀3 장비창고4 선수단5 상점6'],rw:{tix:{pk_n:10,prem:1}}},
 {id:'n1127c',d:'2026-11-27',t:'팀 > 저장 덱 보기',b:['팀 > 저장 덱(F2)에서 저장한 덱을 드롭다운으로 골라 리그 라인업 화면과 같은 모양으로 볼 수 있어요. 보기 전용이라 지금 라인업은 바뀌지 않아요.','[이 덱을 지금 라인업으로 불러오기]로 바로 불러올 수도 있어요.'],rw:{tix:{pk_n:10}}},
@@ -3706,7 +3709,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',gear:'장비창고',cards:'선수단',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='3911f719e8';
+const BUILD='506162358a';
 const TABI={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 3h4V6h-4zM3 12h18v1.6H3z" fill="currentColor"/></svg>',home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
