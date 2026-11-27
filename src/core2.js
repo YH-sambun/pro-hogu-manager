@@ -444,8 +444,8 @@ function simTeam(T,cond,fat){
   return {name:T.name,color:T.color,lu,bench:(T.bench||[]).map(id=>byId[id]).filter(Boolean).map(mod),sp:mod(byId[fatSP(T,fat)]),pen:T.pen.map(id=>mod(byId[id])),tired:fat?T.pen.filter(id=>(fat[id]||0)>=FAT.rpOut):[],def,tc,tac,fx,mgr:T.mgr||'',tcards:(T.tsel?[T.tsel]:(T.tcards||[])).slice(0,5),ctx:T.ctx||{}}}
 
 function newPit(g,s,c,starter){if(starter&&g.ta[s].has('p1'))c={...c,r:{...c.r,sta:c.r.sta+10,stu:c.r.stu+3,kv:c.r.kv+3,hv:c.r.hv+3}};const T=g.t[s],tac=T.tac||TAC_DEF,fx=T.fx||{},cat=(T.lu.find(x=>x.pos==='C')||{}).c,bt=battery(c,cat);
-  const L=starter?(16+c.r.sta*.16)*[1.2,1.1,1,.92,.85][tac.hook]*(fx.shook||1):(3+c.r.sta/20)*[1.2,1.1,1,.95,.9][tac.relief];
-  const ld=leadOf(cat),p={c,starter,bf:0,outs:0,h:0,r:0,bb:0,k:0,hr:0,L,bat:bt.v,lead:ld,badj:batAdj(bt.v)};g.px[s].push(p);g.used[s].add(c.id);return p}
+  const L=starter?(16+c.r.sta*.16)*ERA_SP(c.year)*[1.2,1.1,1,.92,.85][tac.hook]*(fx.shook||1):(3+c.r.sta/20)*[1.2,1.1,1,.95,.9][tac.relief];
+  const ld=leadOf(cat),p={c,starter,ent:g.sc[s]-g.sc[1-s],bf:0,outs:0,h:0,r:0,bb:0,k:0,hr:0,L,bat:bt.v,lead:ld,badj:batAdj(bt.v)};g.px[s].push(p);g.used[s].add(c.id);return p}
 function mkGame(A,H){
   const tcx=[clash(A.tcards,H.tcards),clash(H.tcards,A.tcards)];
   const g={tcx,ta:tcx.map(l=>new Set(l.filter(x=>x[1]==='발동').map(x=>x[0]))),ctrl:null,t:[A,H],inn:1,half:0,outs:0,bases:[null,null,null],sc:[0,0],line:[[],[]],hits:[0,0],idx:[0,0],hr:0,done:false,log:[],px:[[],[]],used:[new Set(),new Set()],bx:[{},{}],pit:[]};
@@ -454,6 +454,7 @@ function mkGame(A,H){
   for(const s of [0,1])if(tcx[s].length)say(g,`${g.t[s].name} 작전 카드: ${tcx[s].map(([id,st])=>TC_BY[id][1]+(st==='발동'?'':` (${st})`)).join(', ')}`,'h');
   say(g,'1회초','i');return g}
 function say(g,txt,k){g.log.push({inn:g.inn,half:g.half,txt,k:k||''})}
+const ERA_SP=y=>{y=+y||2026;const k=[[1985,1.27],[1995,1.12],[2005,0.82]];if(y<=k[0][0])return k[0][1];for(let i=1;i<k.length;i++)if(y<=k[i][0]){const [a,u]=k[i-1],[b,v]=k[i];return u+(v-u)*(y-a)/(b-a)}return k[k.length-1][1]}; // 2026-11-28 SJ: 시대별 선발 운용(실제 KBO 완투율·선발승 비율로 보정)
 const lim=p=>p.L;
 // 리그 기준(능력치 70일 때 비율). 엔진 안에서만 쓰는 값
 const odd=(p,m)=>{const o=p/(1-p)*m;return o/(1+o)},SMX=b=>b.sm?cl((b.sm-1)*.08,-.06,.12):0; // 희생타 지수(리그 대비 희생번트+희생플라이 비율) → 주자 3루 땅볼·뜬공 득점, 진루타 확률
@@ -461,14 +462,14 @@ const LG={bb:.085,k:.175,hr:.025,babip:.3,gb:.45},log5=(b,p,l)=>{const o=b/(1-b)
 function manage(g,f){
   const T=g.t[f],p=g.pit[f],lead=g.sc[f]-g.sc[1-f],closer=T.pen[0],tac=T.tac||TAC_DEF,cv=tac.relief,fx=T.fx||{},clean=g.outs===0&&!g.bases.some(Boolean);
   const lo=[1,1,1,0,-1][cv],hi=[3,3,4,4,4][cv],cfree=closer&&!g.used[f].has(closer.id)&&p.c.id!==closer.id;
-  if(cfree&&((g.inn>=9&&lead>=lo&&lead<=hi&&(clean||cv>=1)&&(lead>0||f===1||g.inn>9))||((cv>=4||fx.close8)&&g.inn===8&&(g.outs===2||fx.close8)&&lead>0&&lead<=(fx.close8?3:2)))){bring(g,f,closer,'마무리');return}
+  if(cfree&&!(p.starter&&ERA_SP(p.c.year)>1.05&&p.bf<lim(p)*.85)&&((g.inn>=9&&lead>=lo&&lead<=hi&&(clean||cv>=1)&&(lead>0||f===1||g.inn>9))||((cv>=4||fx.close8)&&g.inn===8&&(g.outs===2||fx.close8)&&lead>0&&lead<=(fx.close8?3:2)))){bring(g,f,closer,'마무리');return}
   const setup=T.pen[1];if(g.inn===8&&lead>0&&lead<=3&&g.outs===0&&setup&&!g.used[f].has(setup.id)&&!(p.starter&&p.bf<lim(p)*.8)){bring(g,f,setup,'셋업');return}
-  const need=p.bf>=lim(p)||(p.starter&&p.r>=[8,7,6,5,4][tac.hook])||(!p.starter&&p.r>=[4,3,3,2,2][tac.relief]&&p.bf>=3);
+  const need=p.bf>=lim(p)||(p.starter&&p.r>=[8,7,6,5,4][tac.hook]+Math.round(Math.max(0,ERA_SP(p.c.year)-0.82)*5))||(!p.starter&&p.r>=[4,3,3,2,2][tac.relief]&&p.bf>=3);
   if(!need)return;
   const nx=T.pen.slice(2).filter(c=>!g.used[f].has(c.id)).sort((a,b)=>((a.fat||0)>=30)-((b.fat||0)>=30))[0]||(T.pen[1]&&!g.used[f].has(T.pen[1].id)?T.pen[1]:null)||(closer&&!g.used[f].has(closer.id)&&g.inn>=8?closer:null);
   if(nx)bring(g,f,nx,'')}
 function bring(g,f,c,role){g.pit[f]=newPit(g,f,c,false);say(g,`투수 교체: ${g.t[f].name} ${role?role+' ':''}${c.name}`,'c')}
-function score(g,r){g.sc[g.half]++;g.hr++;r.p.r++;g.bx[g.half][r.c.id].r++}
+function score(g,r){g.sc[g.half]++;if(g.sc[g.half]===g.sc[1-g.half]+1){g.wrec=g.wrec||[null,null];g.wrec[g.half]=g.pit[g.half]} /* 2026-11-28 SJ: 승리 투수 = 마지막으로 리드를 잡을 때 그 팀 투수 */g.hr++;r.p.r++;g.bx[g.half][r.c.id].r++}
 function out(g,n){g.outs+=n;g.pit[1-g.half].outs+=n}
 const DIR=['좌','중','우'];
 function aiOff(g,bat){const T=g.t[bat],tac=T.tac||TAC_DEF,B=g.bases,b=T.lu[g.idx[bat]].c,d=g.sc[bat]-g.sc[1-bat],late=g.inn>=7;

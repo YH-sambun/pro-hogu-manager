@@ -77,8 +77,8 @@ function accStats(L,pr,g){const P=L.ps=L.ps||{},rec=(t,c)=>P[t+'|'+c.id]=P[t+'|'
   for(const s of [0,1]){const t=pr[s];for(const k in g.bx[s]){const b=g.bx[s][k],r=rec(t,b.c);r.pos=r.pos||{};r.pos[b.pos]=(r.pos[b.pos]||0)+1;r.ab+=b.ab;r.h+=b.h;r.hr+=b.hr;r.rbi+=b.rbi;r.bb+=b.bb;r.sb+=b.sb;r.e=(r.e||0)+(b.e||0);r.a=(r.a||0)+(b.a||0)}
     for(const x of g.px[s]){const r=rec(t,x.c);r.outs+=x.outs;r.er+=x.r;r.so+=x.k}}
   if(g.res<0)return;const ws=g.res,wp=g.px[ws],lead=g.sc[ws]-g.sc[1-ws];if(!wp.length)return;
-  const st=wp[0],win=st.outs>=15?st:wp.slice(1).sort((a,b)=>b.outs-a.outs)[0]||st;rec(pr[ws],win.c).w++;
-  const last=wp[wp.length-1];if(last!==win&&lead<=3&&last.outs>=3)rec(pr[ws],last.c).sv++}
+  const st=wp[0],pr0=g.wrec&&g.wrec[ws]||st,win=pr0===st&&st.outs<15?(wp.slice(1).sort((a,b)=>b.outs-a.outs)[0]||st):pr0;rec(pr[ws],win.c).w++; // 2026-11-28 SJ: 승리 투수 = 리드를 마지막으로 잡을 때 투수(선발은 5이닝 이상), 아니면 가장 오래 던진 구원
+  const last=wp[wp.length-1],e=last.ent!=null?last.ent:lead;if(last!==win&&e>=1&&((e<=3&&last.outs>=3)||last.outs>=9))rec(pr[ws],last.c).sv++}
 function titles(L){const P=Object.values(L.ps||{}),gp=L.st.map(x=>x.w+x.l+x.d),out={};
   const lead=(f,ok,low)=>{const Q=P.filter(ok);if(!Q.length)return null;const v=Q.map(f),best=low?Math.min(...v):Math.max(...v);if(!low&&best<=0)return null;return {v:best,who:Q.filter((_,i)=>v[i]===best)}};
   out.avg=lead(r=>r.ab?r.h/r.ab:0,r=>r.ab+r.bb>=gp[r.t]*3.1);out.hr=lead(r=>r.hr,()=>1);out.rbi=lead(r=>r.rbi,()=>1);out.sb=lead(r=>r.sb,()=>1);
