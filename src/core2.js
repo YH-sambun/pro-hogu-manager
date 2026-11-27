@@ -84,7 +84,7 @@ function loadCards(json){
     const name=c.n.replace(/#\d+$/,''),r={},keys=c.k==='B'?BK:PKEY;keys.forEach((k,i)=>r[k]=c.r[i]);
     const mvp=MK.has(c.y+'|'+c.t+'|'+c.n);if(mvp)for(const k in r)if(k!=='sta')r[k]=Math.min(99,r[k]+3);
     const cost=Math.min(10,c.c+(mvp?1:0));
-    return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
+    return {id:c.y+'-'+c.t+'-'+c.n+(c.v?'·'+c.v:''),v:c.v||null,gg:c.gg||null,name,year:c.y,team:c.t,line:c.l,type:c.k,pos:c.p,ps:c.ps||null,r,pt:c.pt||null,pu:c.pu||null,s:c.s,cost,ovr:c.o+(mvp?2:0),mvp,
       tier:cost>=9?'L':cost>=6?'S':'N',kmh:c.k==='P'?Math.round(128+c.r[0]*.27):null,img:c.img||null,hs:c.hs||null,reg:RGRP[c.rg]||c.rg||null,rg0:c.rg||null,pat:c.pat!=null?c.pat:null,b:c.b||null,un:c.un||null,mx:c.mx?1:null,sx:c.sx||null,pz:c.pz||0,h:c.h||null,ph:c.h?('def'.includes(c.h)?'L':'R'):null,bh:c.h?({a:'R',b:'L',c:'S',d:'R',e:'L',f:'S'})[c.h]:null,tw:c.tw?1:0,st:rates(c.x),xb:c.k==='B'?xbhOf(c.x,c.y):null,bo:c.k==='B'?boOf(r,rates(c.x)):null}});
   // 선수 단위 키: 이름+출신고. 1군 중복 검사는 pkt(c)=pk+유형으로 함(투타 겸업 선수는 타자 1장+투수 1장 가능). 출신고가 없으면 같은 이름·같은 유형 카드에 출신고가 하나뿐일 때 그 값을, 아니면 유형을 씀
   const HS={};for(const c of CARDS)if(c.hs){const k=c.name+'|'+c.type;(HS[k]=HS[k]||new Set()).add(c.hs)}
@@ -112,7 +112,41 @@ const ptAce=(c,r)=>{const v=Math.max(0,...ptGrades(c,r.brk,r.vel).filter(x=>x[0]
 const RTIER=v=>v>=100?3:v>=90?2:v>=80?1:0,DTIER=v=>v>=102?3:v>=97?2:v>=92?1:0;
 const TIER_FX={con:'안타 확률 +0.4%p·삼진 -0.3%p',pow:'홈런 확률 +0.2%p',eye:'볼넷 확률 +0.4%p',spd:'도루 성공률 +3%p',def:'팀 피안타(BABIP) -0.08%p',kv:'탈삼진 +1%p',hv:'피안타 -0.25%p·피홈런 -0.15%p',ctl:'볼넷 허용 -0.4%p',pt:'탈삼진 +0.8%p'}; // 구간 1단계당
 const ptTier=(c,r)=>{const v=Math.max(0,...ptGrades(c,r.brk,r.vel).filter(x=>x[0]!=='직구').map(x=>x[2]));return v>=106?3:v>=100?2:v>=95?1:0};
-function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45+ptAce(c,r),hv:r.stu,bk:r.brk,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men,ptT:ptTier(c,r)}}
+
+// ===== 구종 2.0 (SJ 2026-11-27) =====
+// 구종별 [땅볼, 헛스윙(탈삼진), 실투 피홈런, 계열 F=직구류 B=변화구]. 등급은 C→B→A→S 단계마다 고르게 효과(PT_KC), 낮은 등급(72 미만)은 실투 피홈런
+const PTX={'직구':[-.09,0,.15,'F'],'투심':[.10,.2,.08,'F'],'싱커':[.20,.3,.05,'B'],'포크':[.12,1.2,.1,'B'],'스플리터':[.12,1.15,.1,'B'],'체인지업':[.08,1,.12,'B'],'팜볼':[.10,.8,.08,'B'],'커브':[.05,1,.2,'B'],'커터':[.04,.6,.1,'B'],'슬라이더':[0,1.2,.25,'B'],'너클볼':[.03,1,.3,'B'],'스위퍼':[-.02,1.25,.25,'B']};
+// 투타 6조합: RR·RL·LL·LR(정통파 투수손+타자손), US·UX(언더·사이드 같은 손·반대 손). [구사 배율, 효과 배율] — MLB Statcast 공개 투타별 구사율·헛스윙률 경향 기준(KBO 자료 생기면 교체)
+const MUK=['RR','RL','LL','LR','US','UX'];
+// PTM[구종][케이스]=[구사 배수, 효과 배수]. 케이스 RR 우투-우타, RL 우투-좌타, LL 좌투-좌타, LR 좌투-우타, US 언더·사이드-같은손, UX 언더·사이드-반대손
+// 스위퍼(2026-11-27): Savant 2025 Sweeper — 우투 wOBA 같은손 .257/반대손 .337(슬라이더 .288/.314), 좌투 .222/.284. 구사도 같은손 쏠림이 슬라이더보다 큼
+// 구사 배수: Baseball Savant 2025 정규시즌 (투수손×타자손×팔각도 30도 미만=사이드·언더) 구종 비중 ÷ 6케이스 평균, 0.35~2.0으로 자름
+// 효과 배수: Savant 케이스 안 상대 효과(wOBA 60%+헛스윙 40%)와 아래 Cross 계수 기반 값을 반반
+// 효과 배수 근거(2026-11-27): Cross 'Forecasting Pitcher Platoon Splits'(THT) 구종 10%p당 wOBA 스플릿 계수
+//  우투: 슬라이더 +2.2, 싱커 +1.8, 커브 -5.1, 스플리터 -6.4, 체인지업 -4.0, 커터 -1.3, 너클 -18 / 좌투: 슬라이더 +4.9, 싱커 +2.3, 커브 0, 스플리터 -3.0, 체인지업 -9.1, 커터 -0.9
+//  Marchi 'Platoon splits 2.0': 싱커·슬라이더 스플릿 큼, 커브·체인지업은 중립~역스플릿. 너클은 좌우 차이 없음(표에 없음 = 1배)
+const PTM={'직구':[[0.96,1],[1.19,1],[0.91,0.95],[1.11,1],[0.79,1.07],[1.04,1.04]],
+ '싱커':[[1.04,1.04],[0.47,0.97],[1.3,1.08],[0.63,0.97],[1.65,1.02],[0.91,0.96]],
+ '투심':[[1.04,1.01],[0.47,1],[1.3,1.05],[0.63,1],[1.65,1],[0.91,0.96]],
+ '커터':[[1.1,1.02],[1.22,1],[0.84,1],[1.13,1],[0.7,0.98],[1.01,0.92]],
+ '슬라이더':[[1.26,1.06],[0.63,0.92],[1.4,1.13],[0.7,0.88],[1.26,1.09],[0.76,0.85]],
+ '커브':[[0.77,0.98],[1.38,1.03],[0.79,1.01],[1.33,1],[0.63,0.99],[1.09,1.02]],
+ '체인지업':[[0.47,0.91],[1.37,1.07],[0.35,0.89],[1.75,1.12],[0.55,0.9],[1.55,1.09]],
+ '팜볼':[[0.68,0.96],[1.22,1.04],[0.58,0.99],[1.45,1.05],[0.73,0.98],[1.33,1.01]],
+ '스플리터':[[1.26,0.96],[2.0,1.09],[0.35,0.93],[0.72,1],[0.5,0.92],[0.95,0.96]],
+ '포크':[[1.26,0.96],[2.0,1.09],[0.35,0.93],[0.72,1],[0.5,0.92],[0.95,0.96]],
+ '스위퍼':[[1.45,1.1],[0.55,0.85],[1.5,1.15],[0.6,0.88],[1.45,1.12],[0.55,0.82]]};
+let PT_KC=.0015,PT_GB0=.47,PT_C=66,PT_HR0=.88;
+const muKey=(pc,bh)=>{const ph=pc.ph||'R',b=bh==='S'?(ph==='R'?'L':'R'):(bh||'R');return pc.arm?(b===ph?'US':'UX'):ph+b};
+function arsOf(pc,bh){const key=muKey(pc,bh);pc._ar=pc._ar||{};if(pc._ar[key])return pc._ar[key];const r=pc.r,A=r.ars||[['직구','C',68]],mi=MUK.indexOf(key);
+  const m=t=>(PTM[t]||[])[mi]||[1,1],fam={F:[],B:[]},PU=r.pu,si=key==='RR'||key==='LR'||(pc.arm&&((pc.ph||'R')==='R')===(key==='US'))?0:1; // 실제 구사율: 우타자 상대[0], 좌타자 상대[1]
+  for(const [t,,v] of A){const x=PTX[t]||PTX['커브'];fam[x[3]].push({t,v,x,u:PU?((PU[t]?PU[t][si]:1)+.5):m(t)[0]*Math.exp((v-78)/15),e:m(t)[1]})}
+  let fB=.5;if(PU&&fam.B.length){const sF=fam.F.reduce((s,p)=>s+p.u,0),sB=fam.B.reduce((s,p)=>s+p.u,0);fB=cl(sB/(sF+sB||1),.25,.75)}
+  let k=0,gb=PT_GB0+(pc.arm==='U'?.05:pc.arm==='S'?.03:0)-((r.vel!=null?r.vel:70)-70)*.0015,hr=1,wp=1;
+  for(const f of ['F','B']){const L=fam[f],W=L.reduce((s,p)=>s+p.u,0)||1,tot=fam.B.length?(f==='B'?fB:1-fB):f==='F'?1:0;
+    for(const p of L){const sh=tot*p.u/W;k+=sh*p.x[1]*p.e*(p.v-PT_C)*PT_KC;gb+=sh*p.x[0]*(p.x[0]>0?p.e*Math.max(.3,p.v/78):1);hr+=sh*p.x[2]*Math.max(0,72-p.v)/10;if(p.t==='너클볼')wp+=sh*1.6}}
+  return pc._ar[key]={k,gb:cl(gb,.3,.66),hr:hr*PT_HR0,wp}}
+function simR(c,r){r=r||c.r;return c.type==='B'?{con:r.con,pow:r.pow,eye:r.eye,spd:r.spd,def:r.def,men:r.men,bun:r.bun}:{stu:r.vel*.3+r.stu*.35+r.brk*.35,kv:r.vel*.55+r.brk*.45,ars:ptGrades(c,r.brk,r.vel),pu:c.pu||null,hv:r.stu,bk:r.brk,gb:gbOf(c,r),ctl:r.ctl,sta:r.sta,men:r.men,ptT:ptTier(c,r)}}
 // 타순 적성: T 테이블세터(1·2번), C 클린업(3~6번), L 하위 타선(7~9번, 누구나 가능). 적성 밖 타순이면 교타·장타·선구 -10%
 // 실제 기록 기준: 100타석 이상에서 출루율 .330 이상 → 테이블세터, OPS .700 이상 → 클린업(둘 다 가능). 기록이 없으면 능력치로 추정
 const pkt=c=>c.pk+'|'+c.type;
@@ -490,7 +524,7 @@ function pa(g,manual){
     const s=B[0];if(rnd()<stealP(s)+.02){B[1]=s;B[0]=null;g.bx[bat][s.c.id].sb++;say(g,`${s.c.name} 2루 도루 성공`)}
     else{B[0]=null;out(g,1);if(CAT)cr(CAT);say(g,`${s.c.name} 2루 도루 실패${CAT?` (포수 ${CAT.c.name} 저지)`:''}`);if(g.outs>=3){endHalf(g);return}}}
   // 폭투·포일(2026-11-27 SJ): 주자 있을 때 원바운드 공 → 포수 블로킹 실패 → 주자는 주력·정신력으로 진루 판단. 제구 낮고 변화구 많을수록 잦고, 포수 수비가 막아 줌
-  if(B[0]||B[1]||B[2]){const pr=pc.r,cd=CAT?CAT.d:85,pD=cl(.024*(1+(70-pr.ctl)*.02+((pr.bk!=null?pr.bk:70)-70)*.01),.005,.05)*cl(1-.5*DX(cd),.4,1.8);
+  if(B[0]||B[1]||B[2]){const pr=pc.r,cd=CAT?CAT.d:85,pD=cl(.024*(1+(70-pr.ctl)*.02+((pr.bk!=null?pr.bk:70)-70)*.01),.005,.05)*arsOf(pc,b.bh).wp*cl(1-.5*DX(cd),.4,1.8);
    if(rnd()<pD){const pb=rnd()<cl(.15-.1*DX(cd),.05,.35),mv=[];for(let i=2;i>=0;i--){const s=B[i];if(!s)continue;if(i<2&&B[i+1])continue;
      if(rnd()<cl(.72+.25*X(s.c.r.spd)+.004*((s.c.r.men||70)-70)-(i===2?.1:0),.35,.97)){B[i]=null;if(i===2){score(g,s);mv.push(s.c.name+' 홈인')}else{B[i+1]=s;mv.push(`${s.c.name} ${i+2}루`)}}}
     if(mv.length){if(pb){if(CAT){const o=g.bx[f][CAT.c.id];if(o)o.pb=(o.pb||0)+1}}else P.wp=(P.wp||0)+1;g.wpb=(g.wpb||0)+1;say(g,`${pb?'포일':'폭투'}${pb&&CAT?` (포수 ${CAT.c.name})`:''}: ${mv.join(', ')}`);
@@ -507,13 +541,13 @@ function pa(g,manual){
   let br=press?{...b0,con:b0.con+(.2*(MEN_B-70)+MEN_K*(b0.men-MEN_B))*press+(risp?(ofx.clutch||0):0)}:b0;if(ofx.ace&&pc.ovr>=75)br={...br,con:br.con+ofx.ace};
   const def=g.t[f].def,sw=otac.power-2,sh=dtac.shift-2;
   // ── 타석 모델: 능력치 70 = 그 시즌 리그 평균(카드 변환식 기준). 타자·투수 각자의 비율을 log5로 합쳐 특징이 그대로 드러나게 ──
-  const dS=stu-pc.r.stu,dV=onB?-cl(2-(pmen-70)*.05,.5,3)*.55:0 /* 주자 있으면 세트포지션: 구속 -2(정신력 높으면 덜) → 탈삼진 구성(kv)에 반영 */,kv=(pc.r.kv!=null?pc.r.kv:pc.r.stu)+dS+dV,hv=(pc.r.hv!=null?pc.r.hv:pc.r.stu)+dS,bk=(pc.r.bk!=null?pc.r.bk:70)+dS,pgb=pc.r.gb!=null?pc.r.gb:LG.gb;
+  const dS=stu-pc.r.stu,dV=onB?-cl(2-(pmen-70)*.05,.5,3)*.55:0 /* 주자 있으면 세트포지션: 구속 -2(정신력 높으면 덜) → 탈삼진 구성(kv)에 반영 */,kv=(pc.r.kv!=null?pc.r.kv:pc.r.stu)+dS+dV,hv=(pc.r.hv!=null?pc.r.hv:pc.r.stu)+dS,bk=(pc.r.bk!=null?pc.r.bk:70)+dS,AR=arsOf(pc,b.bh),pgb=AR.gb;
   const plat=(!b.bh||!pc.ph?0:b.bh==='S'?(b.swx?1:.5):b.bh===pc.ph?-1:1)*(pc.arm?1.8:1); // 같은 손 -1, 반대 손 +1, 스위치 +0.5. 언더·사이드는 좌우 차이가 1.8배
   const tC=RTIER(b.r.con),tP=RTIER(b.r.pow),tE=RTIER(b.r.eye),tKV=RTIER(pc.r.kv!=null?pc.r.kv:pc.r.stu),tHV=RTIER(pc.r.hv!=null?pc.r.hv:pc.r.stu),tCT=RTIER(pc.r.ctl),tPT=pc.r.ptT||0,
     defT=DT.lu.reduce((s,x)=>s+(x.pos==='DH'?0:DTIER(effDef(x.c,x.pos))),0); // 구간 효과
   const bBB=cl(LG.bb+(br.eye-70)*.0032+.004*tE,.02,.22),bK=cl(LG.k-(br.con-70)*.0042-(br.eye-70)*.0015+(br.pow-70)*.0018-.003*tC,.04,.4),bHR=cl(LG.hr+(br.pow-70)*.0016+.002*tP,.002,.1),
     bBA=cl(LG.babip+(br.con-70)*.0028+.004*tC,.2,.42),bGB=cl(LG.gb-(br.pow-70)*.004+(br.spd-70)*.001,.28,.62);
-  const qBB=cl(LG.bb-(ctl-70)*.0045-.004*tCT,.015,.22),qK=cl(LG.k+(kv-70)*.011+.01*tKV+.008*tPT,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005-(ctl-PW_C)*PW_CH-.0015*tHV,.008,.05),qBA=cl(LG.babip-(hv-70)*PW_HB-(bk-PW_C)*PW_BB-(ctl-PW_C)*PW_CB-.0025*tHV,.24,.36); // 2026-11-26(SJ): 제구는 실투(피홈런·피안타), 변화구는 약한 타구에도
+  const qBB=cl(LG.bb-(ctl-70)*.0045-.004*tCT,.015,.22),qK=cl(LG.k+(kv-70)*.011+.01*tKV+AR.k,.04,.45),qHR=cl(LG.hr-(hv-70)*.0005-(ctl-PW_C)*PW_CH-.0015*tHV,.008,.05)*AR.hr,qBA=cl(LG.babip-(hv-70)*PW_HB-(bk-PW_C)*PW_BB-(ctl-PW_C)*PW_CB-.0025*tHV,.24,.36); // 2026-11-26(SJ): 제구는 실투(피홈런·피안타), 변화구는 약한 타구에도
   const pBB=cl(log5(bBB,qBB,LG.bb)-.003*sw+.002*po,.015,.25),pK=cl(log5(bK,qK,LG.k)*(1-.05*plat)+.006*sw+(g.hnr?.015:0)+(ofx.kp||0),.03,.45),
     pG=log5(bGB,pgb,LG.gb),pHR=cl(log5(bHR,qHR,LG.hr)*(1-pG)/(1-LG.gb)*(1+.07*plat)*(1+.12*sw)+(ofx.hrp||0),.001,.11),
     pBA=log5(bBA,qBA,LG.babip)+.01*plat-.04*X(def)-.0008*defT+(g.inf?.03:0)-.003*sw-.004*sh-(risp?(dfx.risp||0):0);

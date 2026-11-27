@@ -815,7 +815,7 @@ function place(id){const s=S.sel;if(!s)return;const c=by[id];if(c.type!==KIND(s.
  const w=s.k==='lu'&&!canPos(c,S.lu[s.i][0])?posWarn(c,S.lu[s.i][0])+` (가능: ${['DH',...Object.keys(c.ps||{})].map(p=>PFULL[p]).join(', ')})`:'';const cur=getS(s);for(const k of ['lu','bench','rot','pen']){const n=k==='lu'?S.lu.length:S[k].length;for(let i=0;i<n;i++)if(getS({k,i})===id)setS({k,i},cur)}setS(s,id);S.sel=null;if(w)S.msg=w}
 function setPos(i,p){const c=by[S.lu[i][1]];const j=S.lu.findIndex(x=>x[0]===p);let o=null;if(j>=0&&j!==i){o=by[S.lu[j][1]];S.lu[j][0]=S.lu[i][0]}S.lu[i][0]=p;S.msg=posWarn(c,p)||(o&&posWarn(o,S.lu[j][0]))||''}
 // 구종 그림: 공을 가운데 두고 휘는 방향에 구종을 놓음 (우투수, 투수 시점)
-const PDIR={직구:-90,포심:-90,투심:150,싱커:135,커터:-30,슬라이더:0,커브:45,파워커브:45,슬러브:20,체인지업:120,포크:90,스플리터:90,너클볼:-150,서클체인지업:120,SFF:90};
+const PDIR={직구:-90,포심:-90,투심:150,싱커:135,커터:-30,슬라이더:0,커브:45,파워커브:45,슬러브:20,체인지업:120,포크:90,스플리터:90,너클볼:-150,팜볼:100,스위퍼:10,서클체인지업:120,SFF:90};
 // 지금 등급: 카드 능력치 + 덱 효과(1군일 때) + 스킬 블록으로 오른 변화(직구는 구속)만큼 구종 등급이 올라감(SS·SSS·SSS+까지)
 function ptNow(c){if(c.type!=='P')return [];const d=deckFx(),bn=used().includes(c.id)?d.pit||0:0,sk=skillOf(c.id),t=k=>Math.min(120,c.r[k]+bn+(sk[k]||0));return ptGrades(c,t('brk'),t('vel'))}
 // 카드 상세 수비 위치: 구장 다이아몬드 위에 포지션별 적성·수비력 표시
