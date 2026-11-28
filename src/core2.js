@@ -371,7 +371,8 @@ const TCARDS=[
  ['c1','홈 응원단','공','일반','홈 경기','전원 정신력 +5',20,[],[]],['c2','승리의 각오','공','일반','동점 또는 1점 차','전원 능력 +2',30,[],[]],
  ['c3','데이터 분석','공','일반','같은 상대와 두 번째 경기','전원 선구·제구 +3',30,[],[]],['c4','견제 강화','공','특수','상대 1루 주자','상대 도루 –20%, 견제사 확률 +',40,['b6'],[]],
  ['c5','징크스 깨기','공','특수','연패 중','전원 컨디션 +1단계',50,[],[]],
- ['c6','원정 응원단','공','일반','원정 경기','전원 정신력 +5',20,[],[]]]; // 2026-11-27(SJ): 홈 응원단의 원정판
+ ['c6','원정 응원단','공','일반','원정 경기','전원 정신력 +5',20,[],[]],
+ ['c7','언더독의 반란','공','일반','상대 1군 코스트가 더 높음','전원 능력 +2',30,[],[]],['c8','젊은 피','공','일반','25세 이하 선수','해당 선수 능력 +3',30,[],['c9']],['c9','노장은 살아있다','공','일반','34세 이상 선수','해당 선수 능력 +3',30,[],['c8']]]; // c7~c9: 2026-11-28 원작 설명서 참고(이름·문구는 새로 지음); // 2026-11-27(SJ): 홈 응원단의 원정판
 const TC_BY=Object.fromEntries(TCARDS.map(x=>[x[0],x]));
 // 서포트 카드: [id,이름,대상(B/P/all),효과,경기 수,fx]. 합성 강화판은 id+'+' (효과 1.5배, 3경기)
 const SUPS=[['s1','특타 훈련','B','교타 +5',2,{con:5}],['s2','장타 특훈','B','장타 +5',2,{pow:5}],['s3','휴식','all','컨디션 +1단계',2,{cond:1}],
@@ -500,11 +501,12 @@ function manage(g,f){
 const PEN_RL=['필승조','접전','롱릴리프','패전처리','추격조','전천후']; // 중계1~4 보직 이름
 function bring(g,f,c,role){g.pit[f]=newPit(g,f,c,false);say(g,`투수 교체: ${g.t[f].name} ${role?role+' ':''}${c.name}`,'c')}
 function score(g,r){g.sc[g.half]++;if(g.sc[g.half]===g.sc[1-g.half]+1){g.wrec=g.wrec||[null,null];g.wrec[g.half]=g.pit[g.half]} /* 2026-11-28 SJ: 승리 투수 = 마지막으로 리드를 잡을 때 그 팀 투수 */g.hr++;r.p.r++;g.bx[g.half][r.c.id].r++}
+function tCost(g,s){g.tc=g.tc||[];if(g.tc[s]==null){const T=g.t[s];g.tc[s]=[...T.lu.map(x=>x.c),...(T.bench||[]),T.sp,...(T.pen||[])].filter(Boolean).reduce((a,c)=>a+(c.cost||0),0)}return g.tc[s]}
 function out(g,n){g.outs+=n;g.pit[1-g.half].outs+=n}
 const DIR=['좌','중','우'];
 function aiOff(g,bat){const T=g.t[bat],tac=T.tac||TAC_DEF,B=g.bases,b=T.lu[g.idx[bat]].c,d=g.sc[bat]-g.sc[1-bat],late=g.inn>=7;
   if(late&&Math.abs(d)<=2&&(B[1]||B[2])&&T.bench.length&&!(g.ta[1-bat].has('p6')&&g.inn>=9)){const best=T.bench.reduce((a,c)=>batVal(c)>batVal(a)?c:a);if(batVal(best)-batVal(b)>[999,12,5,1,-3][tac.ph])return {kind:'ph',arg:best.id}}
-  if((B[0]||B[1])&&!B[2]&&g.outs<2&&d>=-2&&d<=1&&b.r.pow<75&&rnd()<[0,.04,.1,.2,.35][tac.bunt]*(b.r.pow<65?1.5:1)*(late?1.5:1))return {kind:'bunt'};
+  if((B[0]||B[1])&&!B[2]&&g.outs<2&&d>=-2&&d<=1&&((b.r.bun||50)>=b.r.pow-5||b.r.pow<65)&&!(g.idx[bat]>=2&&g.idx[bat]<=4)&&rnd()<[0,.04,.1,.2,.35][tac.bunt]*(b.r.pow<65?1.5:1)*(late?1.5:1))return {kind:'bunt'};
   if(B[0]&&!B[1]&&g.outs<2&&rnd()<[0,.03,.07,.12,.2][tac.steal]*(tac.power>=3?.6:1))g.hnr=true;return null}
 function aiDef(g,f){const T=g.t[f],tac=T.tac||TAC_DEF,B=g.bases,b=g.t[1-f].lu[g.idx[1-f]].c,close=Math.abs(g.sc[0]-g.sc[1])<=2;
   if(B[2]&&g.outs<2&&close&&g.inn>=[99,9,7,5,1][tac.shift])g.inf=true;
@@ -558,7 +560,7 @@ function pa(g,manual){
     g.idx[bat]=(g.idx[bat]+1)%9;if(g.outs>=3)endHalf(g);return}
   if(DA.has('c4')&&B[0]&&rnd()<.012){const s=B[0];B[0]=null;out(g,1);say(g,`견제사: ${s.c.name}`);if(g.outs>=3){endHalf(g);return}}
   // 도루
-  if(!mine(bat)&&!g.hnr&&B[0]&&!B[1]&&g.outs<2&&B[0].c.r.spd>=[200,88,80,72,64][otac.steal]&&rnd()<(.03+.12*X(B[0].c.r.spd))*[0,.5,1,1.6,2.4][otac.steal]*(ofx.stry||1)){
+  if(!mine(bat)&&!g.hnr&&B[0]&&!B[1]&&g.outs<2&&B[0].c.r.spd>=[200,88,80,72,64][otac.steal]&&rnd()<(.03+.12*X(B[0].c.r.spd))*cl(1-.25*cArm,.6,1.4)*[0,.5,1,1.6,2.4][otac.steal]*(ofx.stry||1)){
     const s=B[0];if(rnd()<stealP(s)+.02){B[1]=s;B[0]=null;g.bx[bat][s.c.id].sb++;say(g,`${s.c.name} 2루 도루 성공`)}
     else{B[0]=null;out(g,1);if(CAT)cr(CAT);say(g,`${s.c.name} 2루 도루 실패${CAT?` (포수 ${CAT.c.name} 저지)`:''}`);if(g.outs>=3){endHalf(g);return}}}
   // 폭투·포일(2026-11-27 SJ): 주자 있을 때 원바운드 공 → 포수 블로킹 실패 → 주자는 주력·정신력으로 진루 판단. 제구 낮고 변화구 많을수록 잦고, 포수 수비가 막아 줌
@@ -569,14 +571,14 @@ function pa(g,manual){
      if(g.half===1&&g.inn>=9&&g.sc[1]>g.sc[0]){g.line[1].push(g.hr);say(g,`끝내기! ${g.t[1].name} 승리`,'e');finish(g);return}}}}
   const onB=!!(B[0]||B[1]||B[2]);
   const clutch=(g.inn>=7&&Math.abs(g.sc[0]-g.sc[1])<=2)||!!B[1]||!!B[2],press=clutch?1:onB?.5:0,L=lim(P),fat=cl((P.bf-L*.7)/(L*.6),0,1),pmen=pc.r.men+(P.starter?(dfx.smen||0):0)+(DA.has('c1')&&f===1?5:0)+(DA.has('c6')&&f===0?5:0)+(DA.has('p4')&&(B[1]||B[2])?8:0);
-  const close1=Math.abs(g.sc[0]-g.sc[1])<=1,dc2=DA.has('c2')&&close1?2:0,dc3=DA.has('c3')&&(DT.ctx||{}).rematch?3:0,svs=g.inn>=9&&P.c.id===(DT.pen[0]||{}).id&&g.sc[f]-g.sc[bat]>=1&&g.sc[f]-g.sc[bat]<=3;
+  const close1=Math.abs(g.sc[0]-g.sc[1])<=1,dc2=(DA.has('c2')&&close1?2:0)+(DA.has('c7')&&tCost(g,bat)>tCost(g,f)?2:0)+(DA.has('c8')&&ageOf(pc)!=null&&ageOf(pc)<=25?3:0)+(DA.has('c9')&&ageOf(pc)>=34?3:0),dc3=DA.has('c3')&&(DT.ctx||{}).rematch?3:0,svs=g.inn>=9&&P.c.id===(DT.pen[0]||{}).id&&g.sc[f]-g.sc[bat]>=1&&g.sc[f]-g.sc[bat]<=3;
   const p5=DA.has('p5')&&P.starter&&g.inn===1?6:0,stu=pc.r.stu-14*fat+(P.starter?0:(dfx.rstu||0)+(DA.has('p2')&&g.inn>=7?5:0))+P.badj*.6+p5+dc2+(DA.has('p6')&&svs?6:0)-(OA.has('b8')&&g.idx[bat]===3?6:0),ctl=pc.r.ctl-10*fat-(P.starter&&OA.has('b4')&&g.inn<=3?5:0)+(.2*(MEN_P-70)+MEN_K*(pmen-MEN_P))*press+P.badj+(P.lead||0)+p5+dc2+dc3+(DA.has('p3')&&b.bh==='L'?6:0),risp=!!(B[1]||B[2]);const vsSP=P.starter,home=bat===1;
   let b0=b.r;{const m={},ad=(k,v)=>{m[k]=(m[k]||0)+v},oc2=OA.has('c2')&&close1;
    if(vsSP&&OA.has('b1')&&pc.cost>=6)ad('con',5);if(OA.has('b2')&&risp)ad('con',6);if(OA.has('b3')&&pc.ph==='L')ad('pow',5);if(OA.has('b5')&&g.inn>=8&&g.sc[bat]<g.sc[f]){ad('con',6);ad('pow',6)}
-   if(OA.has('b7')&&g.inn>=6){if(g.phNow===b.id)ad('con',10);else if(g.phPrev===g.idx[bat])ad('eye',5)}if(OA.has('c1')&&home)ad('men',5);if(OA.has('c6')&&!home)ad('men',5);if(oc2){ad('con',2);ad('pow',2);ad('eye',2)}
+   if(OA.has('b7')&&g.inn>=6){if(g.phNow===b.id)ad('con',10);else if(g.phPrev===g.idx[bat])ad('eye',5)}if(OA.has('c1')&&home)ad('men',5);if(OA.has('c6')&&!home)ad('men',5);if(oc2){ad('con',2);ad('pow',2);ad('eye',2)}{const ab=ageOf(b),u=(OA.has('c7')&&tCost(g,f)>tCost(g,bat)?2:0)+(OA.has('c8')&&ab!=null&&ab<=25?3:0)+(OA.has('c9')&&ab>=34?3:0);if(u){ad('con',u);ad('pow',u);ad('eye',u)}}
    if(OA.has('c3')&&(OT.ctx||{}).rematch)ad('eye',3);if(DA.has('p7')&&!(DA.has('p6')&&svs&&false))ad('con',-4);
    if(Object.keys(m).length){b0={...b0};for(const k in m)b0[k]+=m[k]}}
-  let br=press?{...b0,con:b0.con+(.2*(MEN_B-70)+MEN_K*(b0.men-MEN_B))*press+(risp?(ofx.clutch||0):0)}:b0;if(ofx.ace&&pc.ovr>=75)br={...br,con:br.con+ofx.ace};
+  let br=press?{...b0,con:b0.con+(.2*(MEN_B-70)+MEN_K*(b0.men-MEN_B))*press+(risp?(ofx.clutch||0):0),pow:b0.pow+(risp?MEN_K*(b0.men-MEN_B)*.5:0)} /* 득점권: 정신력이 장타에도 절반 반영(원작 설명 참고) */:b0;if(ofx.ace&&pc.ovr>=75)br={...br,con:br.con+ofx.ace};
   const def=g.t[f].def,sw=otac.power-2,sh=dtac.shift-2;
   // ── 타석 모델: 능력치 70 = 그 시즌 리그 평균(카드 변환식 기준). 타자·투수 각자의 비율을 log5로 합쳐 특징이 그대로 드러나게 ──
   const dS=stu-pc.r.stu,dV=onB?-cl(2-(pmen-70)*.05,.5,3)*.55:0 /* 주자 있으면 세트포지션: 구속 -2(정신력 높으면 덜) → 탈삼진 구성(kv)에 반영 */,kv=(pc.r.kv!=null?pc.r.kv:pc.r.stu)+dS+dV,hv=(pc.r.hv!=null?pc.r.hv:pc.r.stu)+dS,bk=(pc.r.bk!=null?pc.r.bk:70)+dS,AR=arsOf(pc,b.bh),pgb=AR.gb;
