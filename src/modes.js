@@ -354,8 +354,8 @@ function mAct(a,b){
 // ── 능력치 가이드: 각 능력치가 경기 엔진(core2 pa)에서 어디에 쓰이는지. 엔진 식을 바꾸면 여기도 고칠 것 ──
 function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map((x,i)=>i?`<td>${x}</td>`:`<th scope="row" style="text-align:left;white-space:nowrap;padding-right:8px">${x}</th>`).join('')}</tr>`).join('')}</tbody></table>`,
   sec=(t,b)=>`<section class="band"><h3>${t}</h3>${b}</section>`,up='<b style="color:var(--good,#2e8b57)">▲</b>',dn='<b style="color:var(--bad,#c0392b)">▼</b>';
- return `<section class="band"><h2>능력치 가이드</h2><p class="note">모든 능력치는 <b>70이 리그 보통</b>이에요. 100이면 보통보다 한 단계(+1) 위, 40이면 한 단계 아래로 계산해요. 능력치 70은 그 선수가 뛴 시즌의 리그 평균과 같아요.</p></section>
- ${sec('타석 결과는 이렇게 정해져요',`<p class="note">타자와 투수가 각자 가진 비율(예: 이 타자의 삼진율, 이 투수의 삼진율)을 <b>log5</b>라는 야구 통계 공식으로 합쳐요. 그래서 삼진 많은 투수와 삼진 많은 타자가 만나면 삼진이 더 많이 나오고, 선수 특징이 경기 기록에 그대로 드러나요. 판정 순서는 볼넷 → 삼진 → 홈런 → 땅볼/뜬공 → 안타 여부예요.</p>`+T(['결과','타자 쪽 (능력치 +10)','투수 쪽 (능력치 +10)'],[
+ return `<section class="band"><h2>능력치 가이드</h2><p class="note">모든 능력치 평균 <b>70</b>(그 시즌 리그 평균). 100 = 한 단계 위, 40 = 한 단계 아래.</p></section>
+ ${sec('타석 결과는 이렇게 정해져요',`<p class="note">타자·투수 비율(삼진율 등)을 <b>log5</b>로 합산. 판정 순서: 볼넷 → 삼진 → 홈런 → 땅볼/뜬공 → 안타.</p>`+T(['결과','타자 쪽 (능력치 +10)','투수 쪽 (능력치 +10)'],[
   ['볼넷',`선구 ${up}3.2%p`,`제구 ${dn}4.5%p`],
   ['삼진',`교타 ${dn}4.2%p · 선구 ${dn}1.5%p · 장타 ${up}1.8%p`,`구속·변화구 ${up}11%p (구속×0.55 + 변화구×0.45)`],
   ['홈런',`장타 ${up}1.6%p`,`구위 ${dn}0.5%p · 땅볼 성향이면 더 적게`],
@@ -373,7 +373,7 @@ function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<
   ['구속','삼진(가장 큼), 뜬공 성향'],['변화구','삼진'],['구위','홈런·안타·2루타 억제'],['구종','땅볼/뜬공 성향(등급이 높을수록 강함). 변화구 등급은 변화, 직구 등급은 구속이 오른 만큼 올라가요(덱 효과·스킬·유학 포함). 기준값 D58·C68·B78·A87·S95에서 97 이상 SS, 103 이상 SSS, 109 이상 SSS+. 변화구가 S(95)를 넘으면 넘은 만큼 탈삼진도 늘어요'],['제구','볼넷 억제'],
   ['체력','투구 한계. 선발 16 + 체력×0.16타자, 불펜 3 + 체력÷20타자. 한계의 70%를 넘기면 구위 최대 −14, 제구 최대 −10'],
   ['멘탈','접전·득점권에서 제구 +(멘탈−70)×0.2']]))}
- ${sec('수비',`<p class="note">포지션마다 수비값이 따로 있어요(대개 80~100, 90이 보통). 포수·유격수·중견수는 1.3배 가중해서 팀 수비를 내요. 팀 수비 +10이면 경기당 실점이 약 0.3점 줄어요.</p>`+T(['항목','계산'],[
+ ${sec('수비',`<p class="note">포지션별 수비값(보통 90, 대개 80~100). 포수·유격수·중견수 1.3배 가중. 팀 수비 +10 → 경기당 실점 약 -0.3.</p>`+T(['항목','계산'],[
   ['실책','타구를 잡은 야수 기준 2.5%, 수비 +10마다 −1.2%p'],['외야 보살','추가 진루하던 주자를 잡을 확률. 외야 수비가 높고 주자가 느릴수록 높아요'],
   ['도루 저지','포수 수비 +10마다 도루 성공률 −4%p'],['못 맡는 포지션','수비값이 크게 깎여요. 대타·대주자는 다음 수비 때 자동 교체']]))}
  ${sec('그 밖의 보정',T(['항목','효과'],[
@@ -465,7 +465,7 @@ function dsPredGen(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8
   return {key:dsKey(),opts,pick:null}}
 function dsPredHTML(){if(dsDay().tr>=DS_TRY_DAY)return `<p class="note" style="text-align:center">오늘 예측 ${DS_TRY_DAY}번을 다 썼어요. 시뮬레이션은 계속 할 수 있어요.</p>`;let P=S.dsPred;if(!P||P.key!==dsKey()){P=S.dsPred=dsPredGen();if(!P)return ''}if(!P.opts.length)return '';
   return `<div class="btns pred" style="justify-content:center" aria-label="덱 대결 예측 고르기"><small>예측 (오늘 ${DS_TRY_DAY-S.dsIt.tr}번 남음)</small>${P.opts.map((x,i)=>`<button data-a="ds-pred" data-i="${i}" class="${P.pick===i?'big':'ghost'}" aria-pressed="${P.pick===i}">${esc(x.label)} · ${esc(dsRwTxt(x))}</button>`).join('')}<button class="ghost" data-a="ds-reroll" title="예측 선택지 다시 뽑기">새로 뽑기</button></div>
-   <p class="note" style="text-align:center;margin:4px 0 0">하나 골라 두고 시뮬레이션하면 결과로 판정해요. 어려운 예측일수록 보상이 커요. 포인트는 연도 리그 예측과 같은 하루 상한, 블록·서포트·작전 카드는 하루 ${DS_ITEM_DAY}개까지예요.</p>`}
+   <p class="note help" style="text-align:center;margin:4px 0 0">하나 골라 시뮬레이션 → 결과로 판정. 어려울수록 보상 큼. 포인트는 하루 상한, 아이템은 하루 ${DS_ITEM_DAY}개.</p>`}
 function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.decks[0].id:'m:yl',n:10},O=dsOpts(),R=S.dsRes,f3=v=>v.toFixed(3).replace(/^0/,'');
   const sel=(k)=>`<select data-ds="${k}" aria-label="${k==='a'?'내 덱':'상대 덱'}">${O.map(([v,nm])=>`<option value="${esc(v)}"${o[k]===v?' selected':''}>${esc(nm)}</option>`).join('')}</select>`;
   const side=d=>{const B=Object.values(R.bat[d]).sort((x,y)=>(y.h+y.bb)/Math.max(1,y.ab+y.bb)-(x.h+x.bb)/Math.max(1,x.ab+x.bb)),P=Object.values(R.pit[d]).sort((x,y)=>y.outs-x.outs);
@@ -476,7 +476,7 @@ function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.dec
   return `<section class="hero"><h1>덱 대결</h1><p class="mini">보유 덱, 덱 짜보기로 만든 가상 덱, 리그별 라인업끼리 붙여 봐요. 보상·기록·피로는 없어요.</p>
    <div class="tools" style="flex-wrap:wrap;gap:6px;justify-content:center">${sel('a')}<b style="align-self:center">VS</b>${sel('b')}
    <select data-ds="n" aria-label="경기 수">${DS_N.map(v=>`<option value="${v}"${+o.n===v?' selected':''}>${v}경기</option>`).join('')}</select><button class="big" data-a="ds-go">시뮬레이션</button></div>${dsPredHTML()}
-   <p class="note" style="text-align:center">홈·원정은 번갈아, 선발은 로테이션 순서대로 나와요. 스킬 블록·유학·장비는 양쪽 다 지금 내 것이 그대로 붙어요.</p></section>
+   <p class="note help" style="text-align:center">홈·원정 교대, 선발은 로테이션 순. 스킬·유학·장비는 양쪽 모두 현재 상태 적용.</p></section>
    ${R?R.err?`<section class="band"><p class="note" style="color:#ff8a7a">${esc(R.err)}</p></section>`:`<section class="band"><h2>${esc(R.names[0])} ${R.w[0]} : ${R.w[1]} ${esc(R.names[1])}${R.t?` <small>(무 ${R.t})</small>`:''}</h2>
    ${R.pred?`<p class="mini" style="color:${R.pred.hit?'#3fb950':'#ff8a7a'}">예측 「${esc(R.pred.label)}」 · ${esc(R.pred.msg)}</p>`:''}<p class="mini">${R.n}경기 · 승률 ${f3(R.w[0]/Math.max(1,R.w[0]+R.w[1]))} · 경기당 ${(R.rs[0]/R.n).toFixed(1)} : ${(R.rs[1]/R.n).toFixed(1)}</p>
    ${R.last?`<details><summary>마지막 경기 하이라이트 · ${esc(R.names[R.last.away])} ${R.last.sc[0]} : ${R.last.sc[1]} ${esc(R.names[1-R.last.away])}</summary><ol class="log">${R.last.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}
