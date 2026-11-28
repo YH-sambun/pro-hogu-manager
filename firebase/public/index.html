@@ -929,6 +929,7 @@ button.dkdel{background:transparent;border:1px solid #e05252;color:#ff8a8a}butto
 .mp{position:relative}.mpn{position:absolute;right:6px;bottom:6px;z-index:3;padding:1px 7px;border-radius:9px;background:#e8691b;color:#fff;font:800 12px var(--fb);font-style:normal;pointer-events:none}body.xl .mpn{background:#555!important}
 .rotb{font-size:16px;padding:8px 18px}.rotb kbd{font:700 11px var(--fb);background:rgba(255,255,255,.18);border-radius:4px;padding:1px 5px;margin-left:4px}.cell.selb{outline:3px solid #ffd54a;outline-offset:-3px;box-shadow:0 0 8px #ffd54a}body.xl .cell.selb{outline-color:#217346!important;box-shadow:none}
 .ylquit{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;margin-top:18px;padding-top:10px;border-top:1px dashed var(--line)}.ylquit .quitb{font-size:12px;min-height:30px;padding:4px 10px;color:var(--mute)}.ylquit button.danger{background:#c62828;color:#fff}
+.dkld{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.dkld small{color:var(--mute);margin-right:2px}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2874,7 +2875,8 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
- {id:'n1128p',d:'2026-11-28',t:'덱 효과 B 조건 완화',b:['덱 효과 B는 켜는 조건이 쉬워지고 효과는 조금 작아졌어요.','불펜 8명에 맞춰 덱 효과 A의 기준 인원도 조정했어요.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128q',d:'2026-11-28',t:'덱 불러오기: 리그 고르기',b:['팀 > 덱에서 저장한 덱을 주간 리그 · 연도별 리그 · 친구 리그 중 원하는 라인업으로 골라 불러올 수 있어요.'],rw:{tix:{pk_n:10}}},
+{id:'n1128p',d:'2026-11-28',t:'덱 효과 B 조건 완화',b:['덱 효과 B는 켜는 조건이 쉬워지고 효과는 조금 작아졌어요.','불펜 8명에 맞춰 덱 효과 A의 기준 인원도 조정했어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1128o',d:'2026-11-28',t:'리그 득점 보정',b:['로스터 25인 변경으로 늘어난 득점을 맞추려고 인플레이 타구 안타율을 조금 낮췄어요.'],rw:{tix:{pk_n:10}}},
  {id:'n1128n',d:'2026-11-28',t:'로스터 개편: 벤치 3 · 불펜 8',b:['1군 로스터가 벤치 3명, 불펜 8명으로 바뀌었어요. 저장된 라인업은 자동으로 새 구성에 맞춰 옮겨져요.','불펜에 중계5·중계6 역할이 생겼어요.','불펜이 모자라면 연습생(가상 구원투수)이 빈자리를 채워요.'],rw:{tix:{pk_n:10,prem:1}}},
  {id:'n1128m',d:'2026-11-28',t:'중간 계투 역할 추가',b:['불펜에 필승조·접전·롱릴리프·패전처리 역할이 생겼어요. 경기 상황에 맞는 투수가 올라와요.'],rw:{tix:{pk_n:10}}},
@@ -3805,7 +3807,7 @@ function vDecks(){const D=S.decks||[];if(!D.length)return `<section class="band"
  if(S.teamK!==key){if(String(S.teamK||'').startsWith('dk:'))dkLeave();else S.dkPrev=S.teamK||'lg';S.mt=S.mt||{};S.mt[key]=mtPick({...S.team,...JSON.parse(JSON.stringify(d.t))});useMode(key);S.sel=null}
  dkSync();const M=S.modeDeck||{},use=Object.keys(M).filter(k=>M[k]===d.id).map(k=>MODEN[k]).filter(Boolean),miss=deckIds(d.t).filter(id=>!S.owned[id]);
  return `<section class="band"><div class="tools"><h2 style="margin:0">덱</h2><select id="dkv" aria-label="저장한 덱 고르기">${D.map(x=>`<option value="${esc(x.id)}"${x.id===d.id?' selected':''}>${esc(x.name)}</option>`).join('')}</select>
- <span class="note" style="margin:0">${use.length?'사용 중 · '+use.join(', '):'모드에 지정 안 됨'}${miss.length?` · 없는 카드 ${miss.length}장`:''}</span><button class="ghost" data-a="dkvload" style="margin-left:auto">이 덱을 ${esc(MODEN[S.dkPrev||'lg']||'')} 라인업으로 불러오기</button><button class="dkdel${S.dkDel===d.id?' on':''}" data-a="dkdel">${S.dkDel===d.id?`정말 '${esc(d.name)}' 삭제? 한 번 더 누르기`:'🗑 이 덱 삭제'}</button>${S.dkDel===d.id?'<button class="ghost" data-a="dkdelx">취소</button>':''}</div>
+ <span class="note" style="margin:0">${use.length?'사용 중 · '+use.join(', '):'모드에 지정 안 됨'}${miss.length?` · 없는 카드 ${miss.length}장`:''}</span><span class="dkld" style="margin-left:auto"><small>이 덱을 불러올 라인업</small>${['lg','yl','on'].map(k=>`<button class="ghost" data-a="dkvload" data-k="${k}">${MODEN[k]}</button>`).join('')}</span><button class="dkdel${S.dkDel===d.id?' on':''}" data-a="dkdel">${S.dkDel===d.id?`정말 '${esc(d.name)}' 삭제? 한 번 더 누르기`:'🗑 이 덱 삭제'}</button>${S.dkDel===d.id?'<button class="ghost" data-a="dkdelx">취소</button>':''}</div>
  <p class="note" style="margin:4px 0 0">여기서 바꾸면 이 저장 덱에 바로 저장돼요. 리그에서 쓰는 라인업은 그대로예요.</p></section><div class="dked">${vLineup()}</div>`}
 // 보유 장비 전체(SJ 2026-11-27): 누가 착용했는지 · 바로 빼기 · 1군 선수에게 바로 끼우기
 function vEquip(){const K=ECON.EQ_KIND||{},EQ=S.eq||[],F=S.eqF||{},GO={전설:0,희귀:1,일반:2},U=used(),lines=[...new Set(EQ.map(x=>x.line).filter(Boolean))].sort();
@@ -3859,7 +3861,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='team';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'경기',team:'팀',gear:'장비창고',cards:'선수단',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='dd958dc342';
+const BUILD='e7b8b59400';
 const TABI={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 3h4V6h-4zM3 12h18v1.6H3z" fill="currentColor"/></svg>',home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
@@ -3901,7 +3903,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='dkdel'){const id=S.dkView;if(S.dkDel!==id){S.dkDel=id}else{dkLeave();S.decks=(S.decks||[]).filter(x=>x.id!==id);S.deckGone=[...(S.deckGone||[]),id].slice(-200);for(const k in S.modeDeck||{})if(S.modeDeck[k]===id)S.modeDeck[k]='';if(S.deckSel===id)S.deckSel='';S.dkView='';S.dkDel=0;S.toast='덱을 지웠어요';save()}render()}
   else if(a==='dkdelx'){S.dkDel=0;render()}
   else if(a==='slotout'){if(S.mslot){setS(S.mslot,null);S.msg='뺐어요 · 빈자리는 경기 전에 채워 주세요'}S.modal=null;S.mslot=null;save();render()}
-  else if(a==='dkvload'){dkLeave();S.deckSel=S.dkView;deckAct('deckload');save();location.hash='lineup';render()}
+  else if(a==='dkvload'){const k=b.dataset.k||S.dkPrev||'lg';dkLeave();useMode(k);S.deckSel=S.dkView;deckAct('deckload');S.toast=`${MODEN[k]} 라인업으로 불러왔어요`;save();location.hash='lineup';render()}
   else if(/^deck/.test(a))deckAct(a);
   else if(a==='phexp')phExport();
   else if(a==='abonly'){S.abOnly=S.abOnly===false;S.abLim=0;render()}

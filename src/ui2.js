@@ -1169,7 +1169,7 @@ function vDecks(){const D=S.decks||[];if(!D.length)return `<section class="band"
  if(S.teamK!==key){if(String(S.teamK||'').startsWith('dk:'))dkLeave();else S.dkPrev=S.teamK||'lg';S.mt=S.mt||{};S.mt[key]=mtPick({...S.team,...JSON.parse(JSON.stringify(d.t))});useMode(key);S.sel=null}
  dkSync();const M=S.modeDeck||{},use=Object.keys(M).filter(k=>M[k]===d.id).map(k=>MODEN[k]).filter(Boolean),miss=deckIds(d.t).filter(id=>!S.owned[id]);
  return `<section class="band"><div class="tools"><h2 style="margin:0">덱</h2><select id="dkv" aria-label="저장한 덱 고르기">${D.map(x=>`<option value="${esc(x.id)}"${x.id===d.id?' selected':''}>${esc(x.name)}</option>`).join('')}</select>
- <span class="note" style="margin:0">${use.length?'사용 중 · '+use.join(', '):'모드에 지정 안 됨'}${miss.length?` · 없는 카드 ${miss.length}장`:''}</span><button class="ghost" data-a="dkvload" style="margin-left:auto">이 덱을 ${esc(MODEN[S.dkPrev||'lg']||'')} 라인업으로 불러오기</button><button class="dkdel${S.dkDel===d.id?' on':''}" data-a="dkdel">${S.dkDel===d.id?`정말 '${esc(d.name)}' 삭제? 한 번 더 누르기`:'🗑 이 덱 삭제'}</button>${S.dkDel===d.id?'<button class="ghost" data-a="dkdelx">취소</button>':''}</div>
+ <span class="note" style="margin:0">${use.length?'사용 중 · '+use.join(', '):'모드에 지정 안 됨'}${miss.length?` · 없는 카드 ${miss.length}장`:''}</span><span class="dkld" style="margin-left:auto"><small>이 덱을 불러올 라인업</small>${['lg','yl','on'].map(k=>`<button class="ghost" data-a="dkvload" data-k="${k}">${MODEN[k]}</button>`).join('')}</span><button class="dkdel${S.dkDel===d.id?' on':''}" data-a="dkdel">${S.dkDel===d.id?`정말 '${esc(d.name)}' 삭제? 한 번 더 누르기`:'🗑 이 덱 삭제'}</button>${S.dkDel===d.id?'<button class="ghost" data-a="dkdelx">취소</button>':''}</div>
  <p class="note" style="margin:4px 0 0">여기서 바꾸면 이 저장 덱에 바로 저장돼요. 리그에서 쓰는 라인업은 그대로예요.</p></section><div class="dked">${vLineup()}</div>`}
 // 보유 장비 전체(SJ 2026-11-27): 누가 착용했는지 · 바로 빼기 · 1군 선수에게 바로 끼우기
 function vEquip(){const K=ECON.EQ_KIND||{},EQ=S.eq||[],F=S.eqF||{},GO={전설:0,희귀:1,일반:2},U=used(),lines=[...new Set(EQ.map(x=>x.line).filter(Boolean))].sort();
@@ -1265,7 +1265,7 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(a==='dkdel'){const id=S.dkView;if(S.dkDel!==id){S.dkDel=id}else{dkLeave();S.decks=(S.decks||[]).filter(x=>x.id!==id);S.deckGone=[...(S.deckGone||[]),id].slice(-200);for(const k in S.modeDeck||{})if(S.modeDeck[k]===id)S.modeDeck[k]='';if(S.deckSel===id)S.deckSel='';S.dkView='';S.dkDel=0;S.toast='덱을 지웠어요';save()}render()}
   else if(a==='dkdelx'){S.dkDel=0;render()}
   else if(a==='slotout'){if(S.mslot){setS(S.mslot,null);S.msg='뺐어요 · 빈자리는 경기 전에 채워 주세요'}S.modal=null;S.mslot=null;save();render()}
-  else if(a==='dkvload'){dkLeave();S.deckSel=S.dkView;deckAct('deckload');save();location.hash='lineup';render()}
+  else if(a==='dkvload'){const k=b.dataset.k||S.dkPrev||'lg';dkLeave();useMode(k);S.deckSel=S.dkView;deckAct('deckload');S.toast=`${MODEN[k]} 라인업으로 불러왔어요`;save();location.hash='lineup';render()}
   else if(/^deck/.test(a))deckAct(a);
   else if(a==='phexp')phExport();
   else if(a==='abonly'){S.abOnly=S.abOnly===false;S.abLim=0;render()}
