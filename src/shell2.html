@@ -735,7 +735,7 @@ body.xl .yly.won{background:#e6f2ea!important}body.xl .yly.todo{background:#fff!
 .dexfd{margin-top:8px}.dexfd>summary{cursor:pointer;display:inline-block;padding:6px 12px;border:1px solid var(--line);border-radius:10px;font-weight:700;font-size:14px;list-style:none}.dexfd>summary::-webkit-details-marker{display:none}.dexfd>summary::before{content:'▸ '}.dexfd[open]>summary::before{content:'▾ '}.dexfd>.dexf{margin-top:8px}
 .strip>.row.scroll,.row.scroll{overflow-x:auto;min-width:0;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 @media(max-width:600px){.strip.pit,.strip.tcr,.strip.cur{grid-template-columns:minmax(0,1fr)}.strip.pit>.sh,.strip.tcr>.sh{writing-mode:horizontal-tb;letter-spacing:0;padding:4px 10px}.tcrow{flex-wrap:wrap}.mgt{margin-left:auto}}
-.pkm{display:none}
+.pkm{display:block;margin:8px 0;max-width:520px}.pkm select{width:100%;min-height:44px;font-size:16px;font-weight:700}.shop .pkl{display:none}.shop{grid-template-columns:minmax(0,1fr)!important}
 @media(max-width:700px){.pkm{display:block;margin:8px 0}.pkm select{width:100%;min-height:44px;font-size:16px;font-weight:700}.shop .pkl{display:none}.shop{grid-template-columns:minmax(0,1fr)!important}}
 #tabbar{display:none}
 @media(max-width:700px){
@@ -930,6 +930,8 @@ button.dkdel{background:transparent;border:1px solid #e05252;color:#ff8a8a}butto
 .rotb{font-size:16px;padding:8px 18px}.rotb kbd{font:700 11px var(--fb);background:rgba(255,255,255,.18);border-radius:4px;padding:1px 5px;margin-left:4px}.cell.selb{outline:3px solid #ffd54a;outline-offset:-3px;box-shadow:0 0 8px #ffd54a}body.xl .cell.selb{outline-color:#217346!important;box-shadow:none}
 .ylquit{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;margin-top:18px;padding-top:10px;border-top:1px dashed var(--line)}.ylquit .quitb{font-size:12px;min-height:30px;padding:4px 10px;color:var(--mute)}.ylquit button.danger{background:#c62828;color:#fff}
 .dkld{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.dkld small{color:var(--mute);margin-right:2px}
+/* 페이지마다 세로 스크롤바가 생겼다 없어졌다 하며 화면이 좌우로 흔들리던 문제(SJ 2026-11-28) → 스크롤바 자리 항상 확보 */
+html{scrollbar-gutter:stable}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
