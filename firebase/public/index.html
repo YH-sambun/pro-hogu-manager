@@ -933,6 +933,8 @@ button.dkdel{background:transparent;border:1px solid #e05252;color:#ff8a8a}butto
 /* 페이지마다 세로 스크롤바가 생겼다 없어졌다 하며 화면이 좌우로 흔들리던 문제(SJ 2026-11-28) → 스크롤바 자리 항상 확보 */
 html{scrollbar-gutter:stable}
 .hq{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-height:0;padding:0;margin-left:8px;border-radius:50%;font:800 13px var(--fb);background:transparent;border:1px solid var(--line);color:var(--mute);vertical-align:middle}body.showhelp .hq{background:var(--gold);color:#222;border-color:var(--gold)}body.xl .hq{border-color:#999!important;color:#555!important;background:#fff!important}
+.ntcg{max-height:45vh;overflow:auto;border:1px solid var(--line,#ddd);border-radius:10px;padding:0 10px;margin-bottom:10px}.ntcg h3{margin:10px 0 4px;font-size:13px;color:var(--mute)}.ntcg details{border-bottom:1px solid var(--line,#ddd);padding:4px 0}.ntcg summary{cursor:pointer;font-weight:600}.ntcg .ntcb{margin:4px 0 6px}
+.cell.k-con,.skleg .k-con{background:#2f7fe0}.cell.k-pow,.skleg .k-pow{background:#2a3aa8}.cell.k-spd,.skleg .k-spd{background:#f2c81e}.cell.k-bun,.skleg .k-bun{background:#9bd13a}.cell.k-def,.skleg .k-def{background:#2e9e4f}.cell.k-men,.skleg .k-men{background:#8e44c4}.cell.k-eye,.skleg .k-eye{background:#3fc3d9}.cell.k-vel,.skleg .k-vel{background:#f2c81e}.cell.k-stu,.skleg .k-stu{background:#d63a35}.cell.k-brk,.skleg .k-brk{background:#ee8a1e}.cell.k-ctl,.skleg .k-ctl{background:#e5619e}.cell.k-sta,.skleg .k-sta{background:#8a5a2e}.cell.g-S[class*=k-]{box-shadow:inset 0 0 0 2px #f0c040}.cell.g-A[class*=k-]{box-shadow:inset 0 0 0 2px rgba(255,255,255,.75)}.skleg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--mute);margin:6px 0}.skleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -1003,7 +1005,7 @@ const FX_TARGETS=[...FX_LINES.map(l=>({k:'L:'+l,g:'단일구단',n:FX_LN[l]||l,m
 const FX_T_BY=Object.fromEntries(FX_TARGETS.map(t=>[t.k,t]));
 const CH_WILD=1; // 커리어하이: 연도 무관으로 단일연도 인원에 넣을 수 있는 장수
 const EX_MAX={B:1,P:1},exCount=ids=>{const n={B:0,P:0};for(const id of ids){const c=byId[baseId(id)];if(c&&c.v==='EX')n[c.type]++}return n},
-  exErr=ids=>{const n=exCount(ids),e=[];if(n.B>EX_MAX.B)e.push(`EX 타자는 ${EX_MAX.B}명까지 쓸 수 있어요(지금 ${n.B}명)`);if(n.P>EX_MAX.P)e.push(`EX 투수는 ${EX_MAX.P}명까지 쓸 수 있어요(지금 ${n.P}명)`);return e},
+  exErr=ids=>{const n=exCount(ids),e=[];if(n.B>EX_MAX.B)e.push(`EX 타자는 ${EX_MAX.B}명까지 가능(지금 ${n.B}명)`);if(n.P>EX_MAX.P)e.push(`EX 투수는 ${EX_MAX.P}명까지 가능(지금 ${n.P}명)`);return e},
   exTrim=cs=>{const keep=new Set();for(const t of ['B','P']){const x=cs.filter(c=>c&&c.v==='EX'&&c.type===t).sort((a,b)=>b.ovr-a.ovr).slice(0,EX_MAX[t]);x.forEach(c=>keep.add(c))}return cs.filter(c=>c&&(c.v!=='EX'||keep.has(c)))};
 const FILL_P=13,COST_CAP=150,ROSTER={bat:9,bench:3,sp:5,rp:8} // 2026-11-28 SJ: 벤치 3·불펜 8. 불펜: [마무리, 셋업, 중계1~6];
 // 투구폼(SJ 2026-11-25): 언더핸드(U)·사이드암(S) 투수. 공개 기사·위키 명단 기준(스포츠경향·OSEN·위키백과 '사이드암'), 나머지는 오버·스리쿼터로 봄
@@ -1699,7 +1701,7 @@ function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'&&c
 function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','c1','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩 아님'};
   opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개 선택'};
   if(k==='tl'&&!opt.line)return {err:'구단 선택'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개 · 연도 3개 선택'};
-  if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
+  if(S.pt<pk.p)return {err:'포인트 부족'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
   S.pt-=pk.p;const out=[];const sp=k==='sx'?pool.filter(isSp):null,nsp=sp&&pool.filter(c=>!c.v);
   for(let i=0;i<pk.cnt;i++)out.push(k==='ty'?pool[Math.floor(rnd()*pool.length)]:sp?wpick(rnd()<.25?sp:nsp):wpick(pool));
   if(sp&&!out.some(isSp))out[out.length-1]=wpick(sp);
@@ -1713,7 +1715,7 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
 function useTicket(S,CARDS,k,arg){const pickId=arg;if(!(S.tix&&S.tix[k]>0))return {err:'확정권 없음'};let c;
   if(k==='pick'){c=CARDS.find(x=>x.id===pickId&&x.cost>=9&&!x.mx);if(!c)return {err:'레전드(9+) 카드 선택'}}
   else if(tixPool[k]){const all=CARDS.filter(c=>tixPool[k](c)&&(arg==null||(k==='gg'&&c.year===+arg)||(k==='ex'&&c.line===arg)||(k==='ch'&&c.year===+arg)||!['gg','ex','ch'].includes(k))),nw=all.filter(x=>!dexHas(S,x.id));c=wpick(nw.length?nw:all)} // 도감에 없는 카드 우선
-  else return {err:'팩형 확정권은 팩 화면에서 써요'};
+  else return {err:'팩형 확정권은 팩 화면에서 사용'};
   if(!c)return {err:'조건에 맞는 카드 없음'};S.tix[k]--;return {cards:[c],dex:gain(S,[c.id])}}
 function dismantle(S,byId,id,n){n=n||1;const have=S.owned[id]|0;if(have-n<1)return {err:'1장은 남겨야 함'};
   S.owned[id]=have-n;if(byId[id].v==='EX'){S.exShard=(S.exShard|0)+n;let tk=0;while(S.exShard>=3){S.exShard-=3;tk++}if(tk){S.tix=S.tix||{};S.tix.ex=(S.tix.ex|0)+tk}return {shard:n,tix:tk,left:S.exShard}} // EX 중복 → EX 조각, 3개마다 EX 확정권(구단 지정 가능)
@@ -1787,7 +1789,7 @@ function studyRoll(d,cost){const x=STUDY_BY[d]||STUDY[0],N=['대성공','성공'
 const abResetFee=cost=>Math.round(3000*(1+(cost||0)/5)/100)*100; // 유학 초기화 비용(SJ 2026-11-25: 포인트나 초기화권으로 지우고 다시 보냄)
 const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 유학 불가'}:{ok:true};
 const rushFee=msLeft=>Math.max(0,Math.ceil(msLeft/36e5))*RUSH;
-function pay(S,p){if((S.pt||0)<p)return {err:'포인트가 모자라요'};S.pt-=p;return {pt:p}}
+function pay(S,p){if((S.pt||0)<p)return {err:'포인트 부족'};S.pt-=p;return {pt:p}}
 // 쿠폰: Firestore coupons/{코드} 문서를 읽어 data로 넘김. 같은 코드는 한 번만(S.coupons에 기록). exp(만료 시각, ms 또는 Timestamp) 지나면 거절
 function redeem(S,code,data){code=String(code||'').trim().toUpperCase();S.coupons=S.coupons||{};
   if(!data)return {err:'없는 쿠폰'};if(S.coupons[code])return {err:'이미 사용한 쿠폰'};
@@ -1812,7 +1814,7 @@ function eqBonus(it,c){const K=EQ_KIND[it.k];if(!c||c.type!==K[0])return null;le
   if(c.pz)v*=1+.25*c.pz; // 숨은 잠재력(세이버 지표 좋았던 선수) ×1.25/×1.5
   if(it.line&&it.line===c.line)v+=Math.max(1,v*.1);return {stat:K[3],v:Math.max(1,Math.round(v))}}
 function equip(S,u,cardId,byId){const it=(S.eq||[]).find(x=>x.u===u),c=byId[cardId];if(!it||!c)return {err:'없는 장비·카드'};const K=EQ_KIND[it.k];
-  if(c.type!==K[0])return {err:K[0]==='B'?'타자용 장비예요':'투수용 장비예요'};
+  if(c.type!==K[0])return {err:K[0]==='B'?'타자용 장비':'투수용 장비'};
   for(const x of S.eq)if(x.on===cardId&&EQ_KIND[x.k][1]===K[1]&&x!==it)x.on=null; // 같은 슬롯에 있던 장비는 빠짐
   it.on=cardId;return {ok:true,bonus:eqBonus(it,c)}}
 function unequip(S,u){const it=(S.eq||[]).find(x=>x.u===u);if(it)it.on=null;return {ok:!!it}}
@@ -1859,9 +1861,9 @@ function msDone(S,ch,mid,out){S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{}
 function missionCheck(S){const out=[];for(const ch of CHAPTERS)for(const mid of ['m1','m2','m5']){const p=msProg(S,ch,mid);if(!p.done&&p.have>=p.need)msDone(S,ch,mid,out)}return out.concat(natCheck(S))}
 // 제출(★3): ids = 낼 카드 id 배열(중복 허용). 그 구단 7코+만. 기본은 중복만, S.opt.submitLast면 마지막 장도
 function missionSubmit(S,line,ids){const ch=CHAPTERS.find(c=>c.line===line);if(!ch)return {err:'없는 챕터'};S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{};
-  if(st.m3)return {err:'이미 완료한 미션이에요'};const last=S.opt&&S.opt.submitLast,use={};
-  for(const id of ids){const c=CARDS_.find(x=>x.id===id);if(!c||c.line!==line||c.cost<7)return {err:'그 구단 7코스트 이상 카드만 낼 수 있어요'};use[id]=(use[id]|0)+1}
-  for(const id in use){const keep=last?0:1;if((S.owned[id]|0)-use[id]<keep)return {err:last?'가진 장수보다 많아요':'중복 카드만 낼 수 있어요 (옵션에서 마지막 1장 제출 허용 가능)'}}
+  if(st.m3)return {err:'이미 완료한 미션'};const last=S.opt&&S.opt.submitLast,use={};
+  for(const id of ids){const c=CARDS_.find(x=>x.id===id);if(!c||c.line!==line||c.cost<7)return {err:'그 구단 7코스트 이상 카드만 제출 가능'};use[id]=(use[id]|0)+1}
+  for(const id in use){const keep=last?0:1;if((S.owned[id]|0)-use[id]<keep)return {err:last?'보유 장수 초과':'중복 카드만 제출 가능 (옵션에서 마지막 1장 제출 허용 가능)'}}
   const room=msReq(st.cyc|0).m3-(st.sub|0);let n=0;for(const id in use){const k=Math.min(use[id],room-n);if(k<=0)break;S.owned[id]-=k;if(S.owned[id]<=0)delete S.owned[id];n+=k}
   st.sub=(st.sub|0)+n;const out=[];if(st.sub>=msReq(st.cyc|0).m3)msDone(S,ch,'m3',out);return {used:n,have:st.sub,out}}
 // ★4: 리그 우승 때 모드 쪽에서 호출(주간 리그 1위·연도별 리그 한국시리즈 우승). lineupCards = 1군 카드 객체 배열
@@ -1882,7 +1884,7 @@ function natCheck(S){const out=[];S.nat=S.nat||{};for(const n of NATS){if(S.nat[
 const isMissionOnly=c=>!!(c&&c.mx);
 // ── 4. 공통 ──────────────────────────────────────────────────
 function grant(S,rw){if(!rw)return S;S.pt=(S.pt||0)+(rw.pt||0);S.tix=S.tix||{};for(const k in rw.tix||{})S.tix[k]=(S.tix[k]|0)+rw.tix[k];return S}
-const rwText=rw=>[rw.pt?rw.pt.toLocaleString()+'P':'',...Object.entries(rw.tix||{}).filter(([,n])=>n).map(([k,n])=>TIX[k]+(n>1?' ×'+n:''))].filter(Boolean).join(' · ');
+const rwText=rw=>[rw.pt?rw.pt.toLocaleString()+'P':'',...Object.entries(rw.tix||{}).filter(([,n])=>n).map(([k,n])=>n>1?String(TIX[k]).replace(' 1개','')+' ×'+n:TIX[k])].filter(Boolean).join(' · ');
 // 저장 데이터 이전: coins → pt, 기존 보유 카드는 도감에 등록(완성 보상은 지급하지 않고 완성 표시만)
 function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{};S.pity=S.pity||{p:0};
   if(!S.dex){S.dex={};for(const id in S.owned||{})S.dex[id]=1;S.dexDone={};
@@ -1938,22 +1940,22 @@ const modeTeam=k=>{syncTeam();if(k===(S.teamK||'lg')||!(S.mt||{})[k]){if(k!==(S.
 const userT=m=>({...clean(modeTeam(m!==undefined?MODEK(m):(S.teamK||'lg'))),rotMode:S.rotMode||'strict',color:'#e07a45',blocks:S.blocks,abSt:S.abSt||{},eq:eqMap()});
 // SJ 2026-11-26: 라인업은 각 리그 화면의 라인업 탭에서. #lineup은 지금 리그(S.teamK)의 라인업을 바로 엶(친구 리그·홈 바로가기용)
 function luHead(){const k=S.teamK||'lg',H={lg:'season',yl:'years',on:'online'};return `<div class="tools mttabs" style="margin-bottom:8px"><b>${MODEN[k]} 라인업</b><a href="#${H[k]}" class="note">${MODEN[k]} 화면으로 →</a></div>`}
-function mtTabs(){const k=S.teamK||'lg';return `<div class="tools mttabs" style="margin-bottom:8px"><b>편집 중인 라인업</b><div class="tabs" role="tablist">${Object.entries(MODEN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-a="mt-k" data-k="${x}">${n}</button>`).join('')}</div><small>리그마다 라인업이 따로 저장돼요</small></div>`}
+function mtTabs(){const k=S.teamK||'lg';return `<div class="tools mttabs" style="margin-bottom:8px"><b>편집 중인 라인업</b><div class="tabs" role="tablist">${Object.entries(MODEN).map(([x,n])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-a="mt-k" data-k="${x}">${n}</button>`).join('')}</div><small>리그마다 라인업 따로 저장</small></div>`}
 const eqMap=()=>{const o={};if(typeof ECON!=='undefined'&&ECON.cardEq)for(const it of S.eq||[])if(it.on&&!o[it.on])o[it.on]=ECON.cardEq(S,it.on,byId);return o}; // 장착 장비 보너스(카드id→{능력:+n}), 경기 능력치에 더함
 const starters=T=>{T=clean(T);return [...T.lineup.map(x=>x.id),...T.rot,...T.pen].filter(Boolean).map(id=>byId[id])};
 const regCards=T=>{T=clean(T);return [...starters(T),...T.bench.map(id=>byId[id])].filter(Boolean)};
 function validate(){syncTeam();
   const T=S.team,e=[],ps=T.lineup.map(x=>x.pos);
   if(T.lineup.length!==9||T.lineup.some(x=>!x.id))e.push('타순 9자리 필요');
-  for(const p of POS)if(!ps.includes(p))e.push(`${PFULL[p]} 자리가 없습니다`);
+  for(const p of POS)if(!ps.includes(p))e.push(`${PFULL[p]} 없음`);
   for(const x of T.lineup){const c=byId[x.id];if(c&&!canPlay(c,x.pos))e.push(`${c.name}은(는) ${PFULL[x.pos]}을(를) 수비 불가`)}
   if(T.rot.filter(Boolean).length<5)e.push('선발 5명 필요');
-  if(!T.pen.filter(Boolean).length)e.push('불펜에 최소 1명이 필요합니다');
-  const nm={};for(const c of regCards(T))nm[pkt(c)]=(nm[pkt(c)]||0)+1;for(const k in nm)if(nm[k]>1)e.push(`${k.split('|')[0]} 선수가 중복 등록됐습니다`);
+  if(!T.pen.filter(Boolean).length)e.push('불펜 최소 1명 필요');
+  const nm={};for(const c of regCards(T))nm[pkt(c)]=(nm[pkt(c)]||0)+1;for(const k in nm)if(nm[k]>1)e.push(`${k.split('|')[0]} 선수 중복 등록`);
   for(const c of regCards(T))if((S.ab||[]).some(a=>a.id===c.id&&!a.got))e.push(`${c.name}은(는) 유학 중`);
   e.push(...exErr(regCards(T).map(c=>c.id)));
   const cost=regCards(T).reduce((s,c)=>s+c.cost,0);if(cost>COST_CAP)e.push(`1군 코스트 ${cost} / 상한 ${COST_CAP} 초과`);
-  {const bn=T.bench.map(id=>byId[id]).filter(Boolean);if(!bn.some(c=>c.type==='B'&&canPlay(c,'C'))){const rn=new Set(regCards(T).map(pkt)),mx=bn.length<ROSTER.bench?0:Math.max(...bn.map(c=>c.cost)),spare=OWN.some(c=>c.type==='B'&&!c.dup&&canPlay(c,'C')&&!rn.has(pkt(c))&&!abOf(c.id)&&cost-mx+c.cost<=COST_CAP);if(spare)e.push('벤치에 백업 포수 1명이 필요합니다')}}
+  {const bn=T.bench.map(id=>byId[id]).filter(Boolean);if(!bn.some(c=>c.type==='B'&&canPlay(c,'C'))){const rn=new Set(regCards(T).map(pkt)),mx=bn.length<ROSTER.bench?0:Math.max(...bn.map(c=>c.cost)),spare=OWN.some(c=>c.type==='B'&&!c.dup&&canPlay(c,'C')&&!rn.has(pkt(c))&&!abOf(c.id)&&cost-mx+c.cost<=COST_CAP);if(spare)e.push('벤치 백업 포수 1명 필요')}}
   return e}
 // 화면용 라인업 사본(S.lu=[[포지션,id]], S.bench/rot/pen 고정 칸) ↔ S.team
 function pullTeam(){const T=S.team,pad=(a,n)=>{a=[...(a||[])];while(a.length<n)a.push(null);return a.slice(0,n)};
@@ -2028,6 +2030,8 @@ function abSend(){const d=abd(S.abSel),c=byId[S.abPick];if(!c||used().includes(c
   const fee=studyFee(d[0],c.cost);if(ECON.pay(S,fee).err){S.msg='포인트 부족';return}
   S.ab.push({id:c.id,d:d[0],start:Date.now(),end:Date.now()+d[3]*36e5,res:null});S.abPick=null}
 // 도감 (econ.js 세트)
+// 스킬 블록 색은 주 능력치 기준(SJ 2026-11-28): 교타 파랑 · 장타 군청 · 주력 주황 · 번트 연두 · 수비 초록 · 정신 보라. 등급은 S 금테·A 흰테
+const bkey=b=>{const e=Object.entries(b.st||{}).sort((x,y)=>y[1]-x[1])[0];return e?e[0]:'x'};
 const TIXN=ECON.TIX,rwText=ECON.rwText,dexHas=id=>ECON.dexHas(S,id),dexCard=id=>byId[id];
 // SJ 2026-11-26: 도감 = 전체 카드 보기(전체 선수·국가대표), 모으면 보상 주는 세트는 미션 > 수집 세트(vDex('set'))로
 function vDex(mode){if(!S.dexAll1){S.dexAll1=1;S.dexK='all'}const SET=mode==='set',KN=SET?{team:'팀 세트',gg:'골든글러브',ch:'커리어하이',ex:'EX',meta:'누적 목표'}:{all:'전체 선수',nat:'국가대표'},k=S.dexK in KN?S.dexK:SET?'team':'all',q=(S.dexQ||'').trim(),lim=S.dexLim||(S.dexK==='gg'?50:24),F=S.dexF||(S.dexF={y:'',t:'',st:'',h:''});
@@ -2089,14 +2093,14 @@ function vShop(){const SC=SHOPC[view()]||SHOPC.shop,PK=PACKS.filter(x=>SC.ks?SC.
   ${pk==='ty'?(()=>{const ys=YEARS_OF(pick.ty.line),a=pick.ty.years;return `<div class="lbl">연도 3개 고르기 <small>(${a.length}/3)</small></div><div class="chips">${ys.map(v=>{const on=a.includes(v),full=!on&&a.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${v}</button>`}).join('')}</div>`})():''}
   <div class="tools" style="margin-top:12px"><button data-a="pkbuy" data-hk="1" ${ok&&afford?'':'disabled'}>${P[2].toLocaleString()}P로 열기 <kbd class="kb">R</kbd></button>${multi&&sel.length<3?`<span class="note">${3-sel.length}개 더 선택</span>`:''}${!afford?'<span class="note" style="color:var(--bad)">포인트 부족</span>':''}${S.pkMsg?`<span class="note">${esc(S.pkMsg)}</span>`:''}</div>
   ${pkOutHTML()}<!-- 개봉 결과는 열기 버튼 바로 아래(오른쪽 상자)에: 목록 아래에 두면 화면 밖이라 안 보임 -->
-  ${tix.length?`<p class="note" style="margin-top:16px">확정권 ${tix.reduce((a,[,n])=>a+n,0)}장은 <a href="#tix">장비창고 › 확정권</a>에서 열어요.</p>`:''}
+  ${tix.length?`<p class="note" style="margin-top:16px">확정권 ${tix.reduce((a,[,n])=>a+n,0)}장은 <a href="#tix">장비창고 › 확정권</a>에서 열기.</p>`:''}
   </div></div></section>`}
 function vTix(){const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),legends=tix.some(([k])=>k==='pick')?CARDS.filter(c=>c.cost>=9).sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.year-b.year):[];
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">확정권</h2><span class="pill">${tix.reduce((a,[,n])=>a+n,0)}장</span></div><p class="note help">길게 누르면 연속 개봉.</p>
   ${tix.length?`<div class="tools">${tix.map(([k,n])=>`<button class="ghost" data-tix="${k}">${esc(TIXN[k]||k)} ×${n}</button>${k.startsWith('pk_')&&n>1?`<button class="ghost" data-tix="${k}" data-tixall="1">${n}개 전부 열기</button>`:''}`).join('')}
    ${tix.filter(([k])=>k==='gg'||k==='ch'||k==='ex').map(([k])=>{const v=k==='gg'?'GG':k==='ch'?'CH':'EX',o=k==='ex'?[...new Set(CARDS.filter(c=>c.v==='EX').map(c=>c.line))].sort():[...new Set(CARDS.filter(c=>c.v===v).map(c=>c.year))].sort((a,b)=>b-a);return o.length?`<select id="tixarg-${k}" aria-label="${esc(TIXN[k]||k)} 조건"><option value="">${k==='ex'?'구단':'연도'} 무작위</option>${o.map(x=>`<option value="${esc(x)}"${String((S.tixArg||{})[k]||'')===String(x)?' selected':''}>${k==='ex'?esc(msLn(x)):x}</option>`).join('')}</select>`:''}).join('')}
    ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}"${S.tixPick===c.id?' selected':''}>${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+vnm(c):''}</option>`).join('')}</select>`:''}</div>`:''}
-  ${tix.length?'':'<p class="note">보유한 확정권이 없어요.</p>'}${pkOutHTML()}</section>`}
+  ${tix.length?'':'<p class="note">보유 확정권 없음.</p>'}${pkOutHTML()}</section>`}
 function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
   if(D.pkv){const k=S.pk,v=k==='y'||k==='ty'?+D.pkv:D.pkv,a=k==='ty'?S.pkSel.ty.years:S.pkSel[k],i=a.indexOf(v);if(i>=0)a.splice(i,1);else if(a.length<3)a.push(v);return 1}
   if(D.tix&&String(D.tix).startsWith('pk_')){const k=D.tix,pk=k.slice(3),P=PACKS.find(x=>x[0]===pk),n=D.tixall?(S.tix[k]|0):1,cards=[],txt=[],dex=[],o=S.pk;S.pkOut=null;S.pkMsg='';if(!P)return 1;
@@ -2150,7 +2154,7 @@ function ofcHTML(L,cfg){if(!L||!L.teams)return '';cfg=cfg||{};const f3=v=>v.toFi
  const R5=Object.values(rec5).filter(o=>o.ab>=3),hot=R5.slice().sort((a,b)=>b.h/b.ab-a.h/a.ab||b.hr-a.hr).slice(0,3),cold=R5.slice().sort((a,b)=>a.h/a.ab-b.h/b.ab).filter(o=>!hot.includes(o)).slice(0,3);
  const regs=[...new Set([...S.lu.map(x=>x[1]),...S.bench,...S.rot,...S.pen].filter(Boolean))].map(id=>byId[id]).filter(Boolean),cHot=regs.filter(c=>condOf(c)>=5).slice(0,3),cCold=regs.filter(c=>condOf(c)<=1).slice(0,3);
  const hc=(t,cls,arr,ca)=>`<div class="ofhc ${cls}"><b>${t}</b>${arr.map(o=>`<span>${esc(o.n)}${o.hr?` <small>${o.hr}홈런</small>`:''} <em>${f3(o.h/o.ab)}</em></span>`).join('')||'<span class="note">-</span>'}${ca.length?`<small class="note">컨디션 ${cls==='hot'?'최상':'최악'}: ${ca.map(c=>esc(c.name)).join(', ')}</small>`:''}</div>`;
- const hotcold=R5.length||cHot.length||cCold.length?`<div class="ofhc2">${hc('🔥 Hot','hot',hot,cHot)+hc('🧊 Cold','cold',cold,cCold)}</div>`:'<p class="note">최근 경기 기록이 쌓이면 보여요</p>';
+ const hotcold=R5.length||cHot.length||cCold.length?`<div class="ofhc2">${hc('🔥 Hot','hot',hot,cHot)+hc('🧊 Cold','cold',cold,cCold)}</div>`:'<p class="note">최근 경기 기록이 쌓이면 표시</p>';
  const key=cfg.key||'lg';
  return `<section class="ofc"><div class="ofhead"><h2>${esc(cfg.title||'감독실')}</h2><span class="pill">${cfg.pill?cfg.pill+' · ':''}${me}위 · ${my.w||0}승 ${my.l||0}패</span>${cfg.right||''}</div>
  ${ofGrid(key,[['g','경기'],['r','기록'],['s','순위']],[['g','최근 경기',last],['g','다음 경기',next],['r','기록 순위 <small>우리 팀 1·2위</small>',lead],['s','순위',stand],['r','Hot &amp; Cold <small>최근 5경기</small>',hotcold],['s',cfg.sixT||'리그 진행',cfg.six||'']])}</section>`}
@@ -2166,8 +2170,8 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   const sR=s&&s.teams?lgStand(s):[],sMe=sR.findIndex(x=>x.i===0)+1,sMy=sR.find(x=>x.i===0)||{},yR=Y&&Y.teams?lgStand(Y):[],yMe=yR.findIndex(x=>x.i===0)+1,yMy=yR.find(x=>x.i===0)||{};
   const lgs=`<a class="ofli" href="#season"><b>주간 리그</b><span>${s&&s.teams?`${esc(tierName(s.tier))} · ${sMe}위 · ${sMy.w||0}승 ${sMy.l||0}패 · ${s.over?'이번 시즌 종료':`${Math.min(s.round+1,s.sched.length)}/${s.sched.length}경기`}`:'시작 전'}</span></a>
   <a class="ofli" href="#years"><b>연도별 리그</b><span>${Y&&Y.teams&&!Y.done?`${Y.year} · ${yMe}위 · ${yMy.w||0}승 ${yMy.l||0}패${Y.post?' · 포스트시즌':''}`:Y&&Y.done?`${Y.year} 리그 끝 · 새 리그 고르기`:'참가 중인 리그 없음'}</span></a>
-  <a class="ofli" href="#online"><b>친구 리그</b><span>${FBMODE()?(ON.user?'친구와 라인업 대전':'로그인하면 참가'):'배포본에서 열려요'}</span></a>`;
-  const ntc=`<div class="ntcl">${NOTICES.slice(0,4).map(n=>`<button class="ghost ntci" data-ntc="${n.id}"><small>${n.d.slice(5).replace('-','.')}</small> ${esc(n.t)}${!(S.ntc||{})[n.id]&&n.rw?' <b class="ntcn">보상</b>':''}</button>`).join('')}</div>
+  <a class="ofli" href="#online"><b>친구 리그</b><span>${FBMODE()?(ON.user?'친구와 라인업 대전':'로그인하면 참가'):'배포본에서 열림'}</span></a>`;
+  const ntc=`<div class="ntcl">${ntcDays().slice(0,4).map(([d,L])=>`<button class="ghost ntci" data-ntc="${L.length>1?'d:'+d:L[0].id}"><small>${d.slice(5).replace('-','.')}</small> ${esc(L[0].t)}${L.length>1?` 외 ${L.length-1}건`:''}${L.some(n=>n.rw&&!(S.ntc||{})[n.id])?' <b class="ntcn">보상</b>':''}</button>`).join('')}</div>
   <div class="tools" style="margin-top:8px;flex-wrap:nowrap"><input id="cpn" aria-label="쿠폰 코드" placeholder="쿠폰 코드" autocomplete="off" style="flex:1;min-width:0;text-transform:uppercase"><button class="ghost" data-a="coupon">받기</button><button class="ghost" data-a="vercheck">새 버전 확인</button></div>${S.cpMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.cpMsg)}</p>`:''}${S.verMsg?`<p class="note" style="margin:4px 0 0">${esc(S.verMsg)}</p>`:''}`;
   const tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),own=Object.keys(S.owned||{}).length;
   const col=`<table class="oft"><tr><td>포인트</td><td><b>${(S.pt||0).toLocaleString()} P</b></td></tr><tr><td>보유 카드</td><td>${own.toLocaleString()}종</td></tr><tr><td>확정권</td><td>${tx}장</td></tr><tr><td>스킬 블록</td><td>${(S.blocks||[]).length}개</td></tr><tr><td>도감</td><td>완성 ${dexDone()}세트</td></tr></table>
@@ -2180,7 +2184,7 @@ function vHome(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr),s=S.season,D=S.dail
   <div class="tools"><button class="ghost" data-a="work">업무 모드 ${S.work?'끄기':'켜기'}</button><span class="note" style="margin:0">PC에서는 \` 키</span></div>
   <p class="note">브라우저 자동 저장${FBMODE()&&ON.user?' · 계정 동기화':''}. 다른 기기: 코드 복사 후 붙여넣기.</p>
   <textarea id="sv" rows="3" style="width:100%"></textarea><div class="tools"><button class="ghost" data-a="copy">코드 복사</button><button class="ghost" data-a="load">붙여 넣은 코드 불러오기</button><button class="ghost danger" data-a="reset" style="margin-left:auto">처음부터 다시</button></div>
-  <div class="lbl">사진 묶음</div><p class="note" style="margin:0 0 6px">내가 올린 사진 ${Object.keys(S.photos||{}).length}장을 파일 하나로 내보내거나, 받은 파일을 불러와요. 다른 사람에게 넘길 때는 <b>직접 찍은 사진이나 CC 라이선스 사진만</b> 넣어 주세요(기자·구단 사진은 저작권 문제).</p>
+  <div class="lbl">사진 묶음</div><p class="note" style="margin:0 0 6px">내가 올린 사진 ${Object.keys(S.photos||{}).length}장을 파일 하나로 내보내거나, 받은 파일 불러오기. 다른 사람에게 넘길 때는 <b>직접 찍은 사진이나 CC 라이선스 사진만</b> 넣을 것(기자·구단 사진은 저작권 문제).</p>
   <div class="tools"><button class="ghost" data-a="phexp" ${Object.keys(S.photos||{}).length?'':'disabled'}>사진 묶음 내보내기</button><label class="ghost phup" style="cursor:pointer">사진 묶음 불러오기<input type="file" id="phimp" accept=".json,application/json" hidden></label><label class="mdk"><input type="checkbox" id="phover"${S.phOver?' checked':''}> 이미 있는 사진도 덮어쓰기</label></div>${S.phMsg?`<p class="note" aria-live="polite" style="margin:4px 0 0">${esc(S.phMsg)}</p>`:''}</details></section>`}
 // 사진 묶음(SJ 2026-11-26): S.photos만 JSON 파일로 내보내고 불러옴. 카드 id 기준이라 받는 쪽 게임에도 같은 카드에 들어감
 function phExport(){const P=S.photos||{},n=Object.keys(P).length;if(!n)return;const blob=new Blob([JSON.stringify({kind:'phm-photos',v:1,n,at:new Date().toISOString().slice(0,10),photos:P})],{type:'application/json'}),name=`프로호구-사진묶음-${n}장.json`,file=new File([blob],name,{type:'application/json'});
@@ -2188,7 +2192,7 @@ function phExport(){const P=S.photos||{},n=Object.keys(P).length;if(!n)return;co
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);S.phMsg=`${n}장 내보냄 · ${name}`;render()}
 function phImport(f){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result),P=d&&d.kind==='phm-photos'&&d.photos;if(!P||typeof P!=='object')throw 0;S.photos=S.photos||{};let add=0,skip=0,bad=0;
   for(const [id,u] of Object.entries(P)){if(!byId[baseId(id)]||typeof u!=='string'||!/^data:image\/(jpeg|png|webp);base64,/.test(u)||u.length>400000){bad++;continue}if(S.photos[id]&&!S.phOver){skip++;continue}S.photos[id]=u;add++}
-  try{save()}catch(e){S.phMsg='저장 공간 부족 · 일부만 들어갔을 수 있어요'}S.phMsg=`사진 ${add}장 불러옴${skip?` · 이미 있어서 건너뜀 ${skip}`:''}${bad?` · 맞지 않는 항목 ${bad}`:''}`}catch(e){S.phMsg='사진 묶음 파일이 아니에요'}render()};r.readAsText(f)}
+  try{save()}catch(e){S.phMsg='저장 공간 부족 · 일부만 들어갔을 수 있음'}S.phMsg=`사진 ${add}장 불러옴${skip?` · 이미 있어서 건너뜀 ${skip}`:''}${bad?` · 맞지 않는 항목 ${bad}`:''}`}catch(e){S.phMsg='사진 묶음 파일 아님'}render()};r.readAsText(f)}
 async function redeemCoupon(){const el=document.getElementById('cpn'),code=((el&&el.value)||'').trim().toUpperCase();if(!code){S.cpMsg='코드 입력';render();return}
   const F=window.FB;if(!F){S.cpMsg='쿠폰은 온라인 전용';render();return}
   if((S.coupons||{})[code]){S.cpMsg='이미 사용한 쿠폰';render();return}
@@ -2282,7 +2286,7 @@ function posSel(i){const [p,id]=S.lu[i],c=by[id];return `<select class="psel fit
 function used(){return [...S.lu.map(x=>x[1]),...S.bench,...S.rot,...S.pen].filter(Boolean)}
 const tcChip=x=>`<span class="tcc g-${x.g}${x.on?' on':''}"><i>${x.g}</i><b>${esc(x.n)}</b><small>${esc(x.sub)}</small><em>${x.on?`야수 +${x.b} · 투수 +${x.p}`:`${x.cur}/${x.need}`}</em></span>`;
 function meter(t,v,max,sub,over,cls){return `<div class="meter${over?' over':''}${cls?' '+cls:''}"><b>${t}</b><span class="v">${v}</span><div class="track"><i style="width:${Math.min(100,parseFloat(v)/max*100)}%"></i></div><small>${sub}</small></div>`}
-function rotmRow(){const m=S.rotMode||'strict',b=(v,t,d)=>`<button class="${m===v?'on':''}" aria-pressed="${m===v}" data-rotm="${v}" title="${d}">${t}</button>`;return `<div class="tools rotm"><b>선발 운용</b>${b('strict','1~5번 순서대로','로테이션 순서를 그대로 지켜요')}${b('flex','체력 되면 에이스 우선','체력이 회복된 선발 중 로테이션 앞 번호부터 나와요. 남은 피로만큼 구위가 조금 떨어져요')}<small>${m==='flex'?'회복된 선발 중 앞 번호가 먼저 나와요. 에이스가 자주 나오고 뒷번호 선발은 덜 나와요':'1번부터 5번까지 차례로 나와요'}</small></div>`}
+function rotmRow(){const m=S.rotMode||'strict',b=(v,t,d)=>`<button class="${m===v?'on':''}" aria-pressed="${m===v}" data-rotm="${v}" title="${d}">${t}</button>`;return `<div class="tools rotm"><b>선발 운용</b>${b('strict','1~5번 순서대로','로테이션 순서 그대로')}${b('flex','체력 되면 에이스 우선','체력이 회복된 선발 중 로테이션 앞 번호부터 등판. 남은 피로만큼 구위 소폭 하락')}<small>${m==='flex'?'회복된 선발 중 앞 번호 우선. 에이스 자주, 뒷번호는 덜 등판':'1번부터 5번까지 차례로 등판'}</small></div>`}
 function tcRow(){const d=deckFx(),m=MG.find(x=>x.id===S.mgr)||MG[0];return `<div class="strip tcr"><div class="sh">팀컬러</div><div class="tcrow"><div class="tcl"><span class="tcsum">야수 +${d.bat} · 투수 +${d.pit}</span>${d.fx.map(tcChip).join('')||'<span class="note">아직 없음</span>'}<button class="ghost tcall" data-a="tcall" aria-pressed="${!!S.tcAll}">${S.tcAll?'접기':'고르기'}</button></div><button class="mgt" data-sub="mgr" title="감독 바꾸기"><span class="mface">${mface(m)}</span><b>${esc(m.n)}</b><small>감독</small></button></div></div>`}
 function deckBar(){const d=deckFx();return `<div class="deck">
  ${meter('1군 등록',`${d.cnt} / 25`,25,(()=>{const n=exCount(used());return `야수 9 · 벤치 ${ROSTER.bench} · 선발 5 · 불펜 ${ROSTER.rp} · EX 타자 ${n.B}/${EX_MAX.B} · 투수 ${n.P}/${EX_MAX.P} · ${wildTxt(starters(S.team))}`})(),false,'reg')}
@@ -2317,7 +2321,7 @@ function vMgr(){const m=MG.find(x=>x.id===S.mgr),fl=S.mf||'all',list=MG.filter(x
  <div class="box mdet"><div class="tools"><span class="mface big">${mface(m)}</span><div><h2 style="margin:0">${esc(m.n)} 감독</h2><p style="margin:0">${MSTY[m.st]} · ${{L:'레전드',S:'스타',N:'노멀'}[m.g]}</p></div></div>
  <div class="skill"><b>[${esc(m.sn)}]</b> ${esc(m.se)}</div><p class="note help" style="margin:6px 0 0">지금 라인업의 감독. 저장 덱마다 감독이 따로 묶여 있음. 덱을 고르면 그 감독으로 바뀜.</p>
  <div class="lbl">작전 경향 (감독이 정함)</div>${MT.map(([k,n,l,r])=>`<div class="tq"><span>${n}</span><span class="tl">${l}</span><span class="tbar" aria-label="${n}: ${l} ${m.tac[k]} / 4 ${r}"><i style="left:${m.tac[k]*25}%"></i></span><span class="tl">${r}</span></div>`).join('')}
- <p class="note help">감독 이름은 KBO 역대 감독 별명, 성향은 게임용 해석. 모든 경기는 고른 감독의 경향대로 작전이 나와요.</p></div></div>`}
+ <p class="note help">감독 이름은 KBO 역대 감독 별명, 성향은 게임용 해석. 모든 경기는 고른 감독의 경향대로 작전 선택.</p></div></div>`}
 // 감독 일러스트(SJ 제공, 2026-11-26). 없으면 아래 SVG 얼굴
 const MGR_IMG={"m7": "img/mgr-130d94c41c.jpg", "m1": "img/mgr-211a6a0417.jpg", "m12": "img/mgr-b9b00c68da.jpg", "m5": "img/mgr-060aa2e4ce.jpg", "m4": "img/mgr-20ac2e1151.jpg", "m2": "img/mgr-5b564f49cf.jpg", "m17": "img/mgr-3b14c4ecf4.jpg", "m16": "img/mgr-74fcb6feb9.jpg", "m14": "img/mgr-4dbafdd078.jpg", "m13": "img/mgr-ea5ced71f7.jpg", "m19": "img/mgr-9cbfca3305.jpg", "m20": "img/mgr-c78d22c321.jpg", "m11": "img/mgr-4f8712b23f.jpg", "m3": "img/mgr-66a32d69e6.jpg", "m9": "img/mgr-5464755c16.jpg", "m8": "img/mgr-62529fd76a.jpg", "m15": "img/mgr-dcbd8e6e93.jpg", "m6": "img/mgr-0882eb3f06.jpg", "m18": "img/mgr-fcb9de41d6.jpg", "m10": "img/mgr-f7b3c64dca.jpg"};
 function mface(m){if(MGR_IMG[m.id])return `<img src="${MGR_IMG[m.id]}" alt="" loading="lazy">`;const hue={small:'#2f7d6d',big:'#c22a2a',speed:'#e8691b',trust:'#23214f',pen:'#0a5fb4',data:'#7b1530'}[m.st];
@@ -2340,7 +2344,7 @@ function vTcard(){const f=S.tf||'all',list=TCARDS.filter(x=>(S.tq[x[0]]||0)>0&&(
  <div class="tdrawbox"><div class="lbl" style="margin-top:0">작전 카드 뽑기</div><button data-a="tdraw">한 장 뽑기 · 100P</button><p class="note">보유 작전 포인트 1,240P</p>${S.tdraw?`<div class="drawn">${tcard(tc(S.tdraw),{})}<p class="note">NEW</p></div>`:''}</div></div>
  <div class="tools" style="margin-top:16px"><h3 style="margin:0">보유 작전 카드</h3><div class="tabs">${[['all','전체'],['투','투수'],['야','야수'],['공','공통'],['황금','황금']].map(([k,n])=>`<button class="${f===k?'on':''}" data-tf="${k}">${n}</button>`).join('')}</div></div>
  <div class="tpool">${list.map(x=>tcard(x,{on:S.tsel===x[0],rel:1,cnt:S.tq[x[0]],attr:`data-tsel="${x[0]}"`})).join('')||'<p class="note">보유 카드 없음</p>'}</div>
- <p class="note help">작전 카드는 뽑기로 모으고, 대전(친구 리그) 경기마다 한 장을 골라 씁니다. 대전 사용 시 1장 소모, AI 연습경기는 소모 없음. 조건이 맞으면 경기 내내 자동으로 발동하고, 상대가 고른 카드와 우열 관계면 한쪽이 무효화, 대립 관계면 둘 다 상쇄됩니다. 분류: 투수·야수·전원 / 등급: 일반·특수·황금.</p>`}
+ <p class="note help">작전 카드는 뽑기로 모으고, 대전(친구 리그) 경기마다 한 장 선택. 대전 사용 시 1장 소모, AI 연습경기는 소모 없음. 조건이 맞으면 경기 내내 자동으로 발동하고, 상대가 고른 카드와 우열 관계면 한쪽이 무효화, 대립 관계면 둘 다 상쇄. 분류: 투수·야수·전원 / 등급: 일반·특수·황금.</p>`}
 function supOn(cid){return S.sup.find(x=>x.cid===cid)}
 function scard(x,o={}){const [id,n,t,fx,g]=x;return `<button class="scd${o.on?' on':''}" ${o.attr||''}><span class="stg">${t==='B'?'타자용':t==='P'?'투수용':'공용'}</span><b>${esc(n)}</b><span>${esc(fx)}</span><small>${g}경기 지속</small>${o.cnt!=null?`<i class="cnt">×${o.cnt}</i>`:''}</button>`}
 function vSup(){const ss=S.ssel&&sp(S.ssel),roster=used().map(id=>by[id]).filter(c=>!ss||ss[2]==='all'||ss[2]===c.type);
@@ -2352,12 +2356,12 @@ function vSup(){const ss=S.ssel&&sp(S.ssel),roster=used().map(id=>by[id]).filter
  <p class="note help">1군 선수 1명에게 사용 · 그 선수 출전 2경기 지속. 경기당 서포트 대상 최대 2명. 준 카드 1장 소모, 남은 경기 수는 대전에서만 차감. AI 연습경기: 카드·경기 수 소모 없음.</p>`}
 // 합성: 재료 3개 → 상위 결과. 규칙은 제안안이며 엔진에서 확정
 const SYN={p:{n:'선수',rule:'1군에 없는 선수 카드 3장 → 재료 평균 코스트보다 높은 선수 1장 (평균 +1: 70%, +2: 25%, +3: 5%)'},
- b:{n:'스킬 블록',rule:'보관 중인 같은 종류(타자용·투수용) 블록 2개 → 같은 등급이면 한 단계 위 60% · 같은 등급 40%, 등급이 다르면 높은 쪽 등급. 모양은 새로 정해지고, 오르는 능력치 합은 칸 수 × 등급 배율(C 0.75 · B 1 · A 1.25 · S 1.5)이에요. C·B·A는 능력치 하나, S는 두 가지를 올려요.'},
+ b:{n:'스킬 블록',rule:'보관 중인 같은 종류(타자용·투수용) 블록 2개 → 같은 등급이면 한 단계 위 60% · 같은 등급 40%, 등급이 다르면 높은 쪽 등급. 모양은 새로 정해지고, 오르는 능력치 합은 칸 수 × 등급 배율(C 0.75 · B 1 · A 1.25 · S 1.5). C·B·A는 능력치 1개, S는 2개 상승.'},
  s:{n:'서포트 카드',rule:'같은 서포트 카드 3장 → 강화판 1장 (효과 1.5배, 3경기 지속)'},
  t:{n:'작전 카드',rule:'같은 등급 작전 카드 3장 → 한 등급 위 카드 1장 (일반 3장: 특수 80% · 황금 20%, 특수 3장: 황금 100%)'}};
 const GUP={C:'B',B:'A',A:'S',S:'S'},TUP={일반:'특수',특수:'황금',황금:'황금'};
 function synPool(k){if(k==='p'){const u=new Set(used());return OWN.filter(c=>!u.has(c.id)&&c.v!=='FL').map(c=>({key:c.id,html:card(c,{}),c}))}
- if(k==='b')return S.blocks.filter(b=>!b.on).map(b=>({key:'b'+b.u,b,html:`<span class="blk"><span class="mini" style="grid-template-columns:repeat(4,12px)">${cells(b).map(()=>`<i class="cell g-${b.g}"></i>`).join('')}</span><small><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))} · ${b.t==='B'?'타자용':'투수용'}</small><small>${Object.entries(b.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')}</small></span>`}));
+ if(k==='b')return S.blocks.filter(b=>!b.on).map(b=>({key:'b'+b.u,b,html:`<span class="blk"><span class="mini" style="grid-template-columns:repeat(4,12px)">${cells(b).map(()=>`<i class="cell g-${b.g} k-${bkey(b)}"></i>`).join('')}</span><small><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))} · ${b.t==='B'?'타자용':'투수용'}</small><small>${Object.entries(b.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')}</small></span>`}));
  if(k==='s')return SUPS.flatMap(x=>Array.from({length:S.sq[x[0]]||0},(_,i)=>({key:x[0]+'#'+i,x,html:scard(x,{})})));
  return TCARDS.flatMap(x=>Array.from({length:S.tq[x[0]]||0},(_,i)=>({key:x[0]+'#'+i,x,html:tcard(x,{})})))}
 const SF0={ty:'all',team:'all',year:'all',cost:'all',pos:'all',sort:'cost',dup:0};
@@ -2426,10 +2430,10 @@ const hm=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floo
 function vAbroad(){const now=Date.now(),d=abd(S.abSel)||ABD[0],U=new Set(used()),aq=(S.abQ||'').trim(),only=S.abOnly!==false,alim=S.abLim||48,okC=c=>abAge(c)&&!U.has(c.id),cand=OWN.filter(c=>!c.dup&&!c.v&&!abOf(c.id)&&ageOf(c)!=null&&(!aq||c.name.includes(aq))&&(!only||okC(c))),pick=by[S.abPick];
  const fee=pick?studyFee(d[0],pick.cost):0,ok=abOpen(d)&&pick&&!U.has(pick.id)&&abAge(pick)&&S.pt>=fee,rf=pick?ECON.abResetFee(pick.cost):0,rt=(S.tix||{}).abr|0;
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">유학</h2><span class="pill">진행 중 ${S.ab.filter(a=>!a.got).length}명</span></div>
- <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군 미등록 선수만 · 유학 중 사용 불가. 끝나면 능력치 상승. 포인트만 소모. 특수 카드(올스타·골든글러브·EX 등)는 못 가요. 유학 결과는 카드마다 하나만 남아요. 다시 보내면 이전 결과는 지워지고 새 결과로 바뀌어요(초기화하면 결과 없이 원래 능력치로). 코스트 낮을수록 효율↑: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 한 번에 오르는 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4예요. 기록은 평범했지만 세부 지표가 좋았던 선수(잠재력↑)는 유학 상승치·한도와 장비 보너스가 25~50% 더 붙어요. </p>
+ <p class="note" style="margin:6px 0 0">25세 이하 · 35세 이상만</p><p class="note help">1군 미등록 선수만 · 유학 중 사용 불가. 끝나면 능력치 상승. 포인트만 소모. 특수 카드(올스타·골든글러브·EX 등) 불가. 유학 결과는 카드당 1개. 다시 보내면 이전 결과 삭제 후 새 결과(초기화하면 결과 없이 원래 능력치로). 코스트 낮을수록 효율↑: 상승치는 1코 ×1.6 ~ 5코 ×1 ~ 10코 ×0.2, 한 번에 오르는 한도는 1코 +30 ~ 5코 +20 ~ 10코 +4. 기록은 평범했지만 세부 지표가 좋았던 선수(잠재력↑)는 유학 상승치·한도와 장비 보너스가 25~50% 추가. </p>
  ${abMapHTML(d)}<div class="abl"><div class="box"><h3 style="margin-top:0">${d[1]}</h3>${abOpen(d)?`<p class="abm" title="${ABR[d[0]][0].map((p,i)=>ABGN[i]+' '+p+'%'+(i<3?' (+'+ABR[d[0]][1][i]+')':'')).join(' · ')}"><span>${d[3]}시간</span><span>대성공 +${ABR[d[0]][1][0]}</span><span${ABR[d[0]][0][3]?' class="risk"':''}>실패 ${ABR[d[0]][0][3]}%</span><span>${d[5].map(k=>SKN[k]).filter((v,i,a)=>a.indexOf(v)===i).join('·')}</span></p>
-  <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">${abUsed(pick)?`현재 유학 결과 <b>+${abUsed(pick)}</b> · 다시 보내면 새 결과로 바뀌어요 · `:''}한 번에 최대 +${abCapC(pick)} · 효율 ×${+(abMul(pick.cost)*potMul(pick)).toFixed(2)}${pick.pz?` · <b style="color:var(--gold)">숨은 잠재력 +${pick.pz*25}%</b>`:''}</p>${(()=>{const o=ECON.studyOdds?ECON.studyOdds(d[0],pick.cost):null;return o?`<p class="note" style="margin:0 0 6px">이 선수 확률 · 대성공 ${o[0]}% · 성공 ${o[1]}% · 보통 ${o[2]}% · 실패 ${o[3]}%${pick.cost<=5?' <b style="color:var(--gold)">(저코스트 보정)</b>':''}</p>`:''})()}
-   <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${U.has(pick.id)?'<p class="note" style="color:var(--bad);margin:6px 0 0">1군 등록 선수 · 라인업에서 빼야 보낼 수 있음</p>':''}${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트 부족</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드 유학 불가':ageOf(pick)+'세 · 유학 불가 (25세 이하 또는 35세 이상)'}</p>`:''}${abUsed(pick)?`<div class="tools" style="margin-top:8px"><button class="ghost" data-abreset="pt" ${S.pt<rf?'disabled':''}>유학 초기화 · ${rf.toLocaleString()}P</button><button class="ghost" data-abreset="tix" ${rt?'':'disabled'}>초기화권 사용 (${rt}장)</button></div><p class="note" style="margin:4px 0 0">유학으로 오른 능력치 +${abUsed(pick)}을 모두 지워요</p>`:''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수 선택</p>'}</div>
+  <div class="abpick">${pick?`<div>${card(pick,{stats:1})}</div><div><p style="margin:0 0 6px"><b>${esc(pick.name)}</b> ${pick.year} ${esc(pick.team)}</p><p class="note" style="margin:0 0 6px">${abUsed(pick)?`현재 유학 결과 <b>+${abUsed(pick)}</b> · 다시 보내면 새 결과로 교체 · `:''}한 번에 최대 +${abCapC(pick)} · 효율 ×${+(abMul(pick.cost)*potMul(pick)).toFixed(2)}${pick.pz?` · <b style="color:var(--gold)">숨은 잠재력 +${pick.pz*25}%</b>`:''}</p>${(()=>{const o=ECON.studyOdds?ECON.studyOdds(d[0],pick.cost):null;return o?`<p class="note" style="margin:0 0 6px">이 선수 확률 · 대성공 ${o[0]}% · 성공 ${o[1]}% · 보통 ${o[2]}% · 실패 ${o[3]}%${pick.cost<=5?' <b style="color:var(--gold)">(저코스트 보정)</b>':''}</p>`:''})()}
+   <button data-a="absend" ${ok?'':'disabled'}>${d[3]}시간 유학 보내기 · ${fee.toLocaleString()}P</button>${U.has(pick.id)?'<p class="note" style="color:var(--bad);margin:6px 0 0">1군 등록 선수 · 라인업에서 빼야 보낼 수 있음</p>':''}${S.pt<fee?'<p class="note" style="color:var(--bad);margin:6px 0 0">포인트 부족</p>':''}${!abAge(pick)?`<p class="note" style="color:var(--bad);margin:6px 0 0">${pick.v?'특수 카드 유학 불가':ageOf(pick)+'세 · 유학 불가 (25세 이하 또는 35세 이상)'}</p>`:''}${abUsed(pick)?`<div class="tools" style="margin-top:8px"><button class="ghost" data-abreset="pt" ${S.pt<rf?'disabled':''}>유학 초기화 · ${rf.toLocaleString()}P</button><button class="ghost" data-abreset="tix" ${rt?'':'disabled'}>초기화권 사용 (${rt}장)</button></div><p class="note" style="margin:4px 0 0">유학으로 오른 능력치 +${abUsed(pick)}을 모두 삭제</p>`:''}</div>`:'<p class="note" style="grid-column:1/-1;margin:0">선수 선택</p>'}</div>
   <div class="tools" style="margin:14px 0 6px"><h3 style="margin:0">보낼 선수</h3><input id="abq" value="${esc(aq)}" placeholder="선수 이름" aria-label="선수 검색" style="max-width:12em"><span class="hvt"><button class="ghost${only?' on':''}" data-a="abonly" aria-pressed="${only}">보낼 수 있는 선수만</button></span><span class="note" style="margin:0">${cand.length.toLocaleString()}명</span></div><div class="abc">${cand.sort((a,b)=>okC(b)-okC(a)||abAge(b)-abAge(a)||b.ovr-a.ovr).slice(0,alim).map(c=>`<button class="abr${c.id===S.abPick?' on':''}${okC(c)?'':' no'}" data-abpick="${esc(c.id)}"><span class="oart" style="--tc:${c.col}">${photo(c,0,0)}</span><span><b>${esc(c.name)}</b><small>${c.year} · ${ageOf(c)}세${abAge(c)?'':' · 유학 불가'}${U.has(c.id)?' · 1군 등록 중':''}${abUsed(c)?` · 현재 +${abUsed(c)}`:''}${c.pz?' · 잠재력↑':''}</small></span></button>`).join('')||'<p class="note">해당 선수 없음</p>'}</div>${cand.length>alim?`<div class="tools" style="justify-content:center;margin-top:8px"><button class="ghost" data-a="abmore">더 보기 (${(cand.length-alim).toLocaleString()})</button></div>`:''}`
   :`<p class="note">잠김. 여는 조건: <b>${d[6]}</b></p>`}</div></div>
  <h3>유학 중</h3><div class="abq">${S.ab.filter(a=>!a.got).map(a=>{const c=by[a.id],x=abd(a.d),done=now>=a.end,pc=Math.min(100,(now-a.start)/(a.end-a.start)*100);
@@ -2455,7 +2459,7 @@ const bauHit=(b,o)=>b.t===o.t&&GO.indexOf(b.g)>=GO.indexOf(o.g)&&(b.st[o.key]||0
 function bauWhy(o){const L=new Set(S.locks||[]),n={t:0,on:0,lk:0,g:0,hit:0};for(const b of S.blocks){if(b.t!==o.t)n.t++;else if(b.on)n.on++;else if(L.has('b'+b.u))n.lk++;else if(GO.indexOf(b.g)>GO.indexOf(o.max))n.g++;else if(bauHit(b,o))n.hit++}
   return `전체 ${S.blocks.length}개 중 제외: ${o.t==='B'?'투수용':'타자용'} ${n.t} · 장착 중 ${n.on} · 잠금 ${n.lk} · ${o.max}등급 초과 ${n.g} · 이미 목표 ${n.hit}`}
 function bauPool(o){const L=new Set(S.locks||[]);return S.blocks.filter(b=>!b.on&&b.t===o.t&&!L.has('b'+b.u)&&GO.indexOf(b.g)<=GO.indexOf(o.max)&&!bauHit(b,o))}
-function bauRun(){const o={...BAU0,...(S.bau||{})};if(GO.indexOf(o.max)<GO.indexOf(o.g)-1){S.bauRes={err:`재료를 ${o.max}등급까지만 쓰면 ${o.g}등급이 나올 수 없어요. 같은 등급 2개를 합쳐야 한 단계 올라가요.`};return}
+function bauRun(){const o={...BAU0,...(S.bau||{})};if(GO.indexOf(o.max)<GO.indexOf(o.g)-1){S.bauRes={err:`재료를 ${o.max}등급까지만 쓰면 ${o.g}등급 불가. 같은 등급 2개를 합쳐야 한 단계 상승.`};return}
   let n=0,used=0,hit=null;const made={};
   while(n<BAU_MAX){const P=bauPool(o),by={};for(const b of P)(by[b.g]=by[b.g]||[]).push(b);
     let pair=null;for(const g of GO)if((by[g]||[]).length>=2&&GO.indexOf(g)<GO.indexOf(o.g)+(o.max===o.g?1:0)){pair=by[g].slice(0,2);break}
@@ -2466,9 +2470,9 @@ function bauRun(){const o={...BAU0,...(S.bau||{})};if(GO.indexOf(o.max)<GO.index
   S.bauRes={n,used,hit,made,left:bauPool(o).length};S.synRes=null;S.mat=[];if(n)save()}
 function bauHTML(){const o={...BAU0,...(S.bau||{})},K=o.t==='B'?BK:PKEY,P=bauPool(o),cnt=GO.split('').map(g=>`${g} ${P.filter(b=>b.g===g).length}`).join(' · '),R=S.bauRes,sel=(k,opts)=>`<select data-bau="${k}" aria-label="${k}">${opts.map(([v,n])=>`<option value="${v}"${String(o[k])===v?' selected':''}>${esc(n)}</option>`).join('')}</select>`;
   return `<div class="box bau" style="margin-top:12px"><h3 style="margin:0 0 6px">자동 합성 <small>원하는 블록이 나올 때까지</small></h3>
-  <div class="tools" style="flex-wrap:wrap;gap:6px">${sel('t',[['B','타자용'],['P','투수용']])}${sel('key',K.map(x=>[x,SKN[x]||x]))}${sel('g',[['B','B등급 이상'],['A','A등급 이상'],['S','S등급']])}<small style="align-self:center">재료는</small>${sel('max',[['C','C등급까지'],['B','B등급까지'],['A','A등급까지'],['S','S등급까지']])}<button data-a="bau-go" ${P.length<2||GO.indexOf(o.max)<GO.indexOf(o.g)-1?'disabled':''}>자동 합성 시작</button></div>${GO.indexOf(o.max)<GO.indexOf(o.g)-1?`<p class="note" style="color:#ff8a7a;margin:6px 0 0">재료를 ${o.max}등급까지만 쓰면 ${o.g}등급이 나올 수 없어요. 합성은 같은 등급 2개일 때만 한 단계 올라가요.</p>`:''}
-  <p class="note" style="margin:6px 0 0">쓸 수 있는 재료 ${P.length}개 (${cnt}) · ${bauWhy(o)} · 장착·잠금 블록과 이미 목표에 맞는 블록은 안 써요. 같은 등급 2개는 60%로 한 단계 올라가고, 능력치는 무작위(${o.t==='B'?'타자 7종':'투수 6종'} 중 하나)예요.</p>
-  ${R?R.err?`<p class="note" style="color:#ff8a7a">${esc(R.err)}</p>`:`<p class="note" aria-live="polite">${R.hit?`<b>성공!</b> ${R.n}번 합성 만에 <b>${R.hit.g}등급 ${esc(bname(R.hit))}</b> (${Object.entries(R.hit.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')})`:`<b>재료가 떨어져 멈췄어요.</b> ${R.n}번 합성`} · 재료 ${R.used}개 사용 · 만들어진 등급 ${Object.entries(R.made).map(([g,v])=>g+' '+v).join(', ')||'-'} · 남은 재료 ${R.left}개</p>`:''}</div>`}
+  <div class="tools" style="flex-wrap:wrap;gap:6px">${sel('t',[['B','타자용'],['P','투수용']])}${sel('key',K.map(x=>[x,SKN[x]||x]))}${sel('g',[['B','B등급 이상'],['A','A등급 이상'],['S','S등급']])}<small style="align-self:center">재료는</small>${sel('max',[['C','C등급까지'],['B','B등급까지'],['A','A등급까지'],['S','S등급까지']])}<button data-a="bau-go" ${P.length<2||GO.indexOf(o.max)<GO.indexOf(o.g)-1?'disabled':''}>자동 합성 시작</button></div>${GO.indexOf(o.max)<GO.indexOf(o.g)-1?`<p class="note" style="color:#ff8a7a;margin:6px 0 0">재료를 ${o.max}등급까지만 쓰면 ${o.g}등급 불가. 같은 등급 2개일 때만 한 단계 상승.</p>`:''}
+  <p class="note" style="margin:6px 0 0">쓸 수 있는 재료 ${P.length}개 (${cnt}) · ${bauWhy(o)} · 장착·잠금 블록과 이미 목표에 맞는 블록은 제외. 같은 등급 2개는 60%로 한 단계 상승, 능력치는 무작위(${o.t==='B'?'타자 7종':'투수 6종'} 중 하나).</p>
+  ${R?R.err?`<p class="note" style="color:#ff8a7a">${esc(R.err)}</p>`:`<p class="note" aria-live="polite">${R.hit?`<b>성공!</b> ${R.n}번 합성 만에 <b>${R.hit.g}등급 ${esc(bname(R.hit))}</b> (${Object.entries(R.hit.st).map(([x,v])=>SKN[x]+'+'+v).join(' ')})`:`<b>재료 소진으로 중단.</b> ${R.n}번 합성`} · 재료 ${R.used}개 사용 · 만들어진 등급 ${Object.entries(R.made).map(([g,v])=>g+' '+v).join(', ')||'-'} · 남은 재료 ${R.left}개</p>`:''}</div>`}
 function vSynth(){const GK=view()==='gsyn'?['b','s','t']:['p'];if(!GK.includes(S.sk)){S.sk=GK[0];S.mat=[];S.synRes=null}const k=S.sk,pool=synPoolF(k),mk=new Set(S.mat),m=pool.filter(x=>mk.has(x.key)),err=synCheck(k,m);
  return `<section class="band"><h2>합성</h2><div class="subnav" role="tablist"${GK.length<2?' hidden':''}>${Object.entries(SYN).filter(([x])=>GK.includes(x)).map(([x,v])=>`<button role="tab" aria-selected="${k===x}" class="${k===x?'on':''}" data-sk="${x}">${v.n}</button>`).join('')}</div>
  <div class="syn${k==='p'?' sticky':''}"><div class="sslots">${[...Array(NEED(k)).keys()].map(i=>m[i]?`<div class="ss${k==='p'?' sm':''}" data-mat="${esc(m[i].key)}" title="빼기">${k==='p'?`<span class="oart" style="--tc:${m[i].c.col}">${photo(m[i].c,0,0)}</span><b>${esc(m[i].c.name)}</b><small>${String(m[i].c.year).slice(2)}' ${esc(m[i].c.team)} · 코스트 ${m[i].c.cost}</small>`:m[i].html}</div>`:'<div class="ss empty">재료</div>').join('<span class="plus">+</span>')}<span class="plus">→</span>
@@ -2574,7 +2578,7 @@ function vSkill(){const tb=S.sktb||'B',F=S.skF||{},src=F.src||'lu',U=new Set(use
  const skf=`<div class="tools skf"><select id="skf-src" aria-label="선수 범위">${o('lu',`편집 중 1군 (${MODEN[S.teamK||'lg']||'라인업'})`,src)}${o('all','보유 선수 전체',src)}${o('sk','스킬 끼운 선수',src)}</select><select id="skf-team" aria-label="구단">${o('','전체 구단',F.team)}${teams.map(t=>o(t,t,F.team)).join('')}</select><input id="skf-q" placeholder="이름" value="${esc(F.q||'')}" aria-label="이름 검색" style="max-width:110px"><span class="note" style="margin:0">${list.length}명</span></div>`;
  return `<section class="band"><h2>스킬</h2><div class="tools"><div class="tabs">${[['B','야수'],['P','투수']].map(([k,n])=>`<button class="${tb===k?'on':''}" data-sktb="${k}">${n}</button>`).join('')}</div><a href="#gsyn" data-sk2="b"><button class="ghost">스킬 블록 합성</button></a></div>${skf}
  <div class="skl"><div class="skp">${list.map(x=>{const n=S.blocks.filter(b=>b.on===x.id).length;return `<button class="skr${x.id===S.skc?' on':''}" data-skc="${esc(x.id)}"><span class="oart" style="--tc:${x.col}">${photo(x,0,0)}</span><span><b>${esc(x.name)}</b><small>${x.year} ${esc(x.team)} · ${PFULL[x.pos]}${U.has(x.id)?' · 1군':''}</small></span><i>${n?n+'개':''}</i></button>`}).join('')}</div>
- <div class="skface" data-skflip="1" title="카드를 누르면 앞/뒷면이 바뀝니다">${c?`<div class="tools skft"><div class="tabs">${[[0,'뒷면 (스킬 칸)'],[1,'앞면 (능력치)']].map(([v,n])=>`<button class="${(S.skf|0)===v?'on':''}" data-skflip="${v?'f':'b'}">${n}</button>`).join('')}</div></div>${S.skf?skFront(c):backFace(c,1)}`:''}</div><div>${c?`<h3>${esc(c.name)}에게 넣을 블록</h3>${blkInv(c)}`:''}</div></div></section>`}
+ <div class="skface" data-skflip="1" title="카드를 누르면 앞/뒷면 전환">${c?`<div class="tools skft"><div class="tabs">${[[0,'뒷면 (스킬 칸)'],[1,'앞면 (능력치)']].map(([v,n])=>`<button class="${(S.skf|0)===v?'on':''}" data-skflip="${v?'f':'b'}">${n}</button>`).join('')}</div></div>${S.skf?skFront(c):backFace(c,1)}`:''}</div><div>${c?`<h3>${esc(c.name)}에게 넣을 블록</h3>${blkInv(c)}`:''}</div></div></section>`}
 // 타선 분석: 타순별 공격력과 그 자리 수비 적성
 // 인접 궁합: 타순에서 바로 앞뒤 타자(9번-1번도 이어짐)와
 //  팀: 같은 팀·연도 +2, 연도는 달라도 같은 계보 +1 / 출신: 같은 고교 +3, 같은 대학 +2, 같은 지역 +1 (가장 큰 것) → 팀 + 출신 합산
@@ -2617,14 +2621,14 @@ function luDeckHTML(){const cur=S.deckSel&&(S.decks||[]).find(x=>x.id===S.deckSe
 function presetBar(){const D=S.decks||[],M=S.modeDeck||{},cur=S.deckSel&&D.find(x=>x.id===S.deckSel);
  const opt=(v,n,sel)=>`<option value="${esc(v)}"${String(sel||'')===String(v)?' selected':''}>${esc(n)}</option>`;
  return `<div class="box presets"><div class="tools"><b style="margin-right:4px">덱 저장</b><select id="decksel" aria-label="저장한 덱">${opt('','저장한 덱 고르기',S.deckSel)}${D.map(d=>opt(d.id,d.name+' · '+deckMgr(d)+deckTag(d),S.deckSel)).join('')}</select>${cur?`<label class="mdk">감독 <select id="deckmgr" aria-label="이 덱의 감독">${MG.map(m=>opt(m.id,m.n,cur.t.mgr||S.team.mgr)).join('')}</select></label>`:''}
- <button data-a="deckload" ${cur?'':'disabled'}>불러오기</button><button class="ghost" data-a="decksave" ${cur?'':'disabled'}>덮어쓰기</button><button class="ghost" data-a="deckren" ${cur?'':'disabled'} title="오른쪽 이름 칸에 쓴 이름으로 바꿔요">이름 바꾸기</button><button class="ghost" data-a="deckdel" ${cur?'':'disabled'}>${S.deckDel?'한 번 더 누르면 삭제':'삭제'}</button>
+ <button data-a="deckload" ${cur?'':'disabled'}>불러오기</button><button class="ghost" data-a="decksave" ${cur?'':'disabled'}>덮어쓰기</button><button class="ghost" data-a="deckren" ${cur?'':'disabled'} title="오른쪽 이름 칸에 쓴 이름으로 변경">이름 바꾸기</button><button class="ghost" data-a="deckdel" ${cur?'':'disabled'}>${S.deckDel?'한 번 더 누르면 삭제':'삭제'}</button>
  <span style="flex:1"></span><input id="deckname" placeholder="덱 이름 (새 덱/이름 바꾸기)" maxlength="14" style="max-width:190px" value="${esc(S.deckName||'')}"><button data-a="decknew">지금 라인업을 새 덱으로</button></div>
  </div>`}
 function deckAct(a){const D=S.decks=S.decks||[],d=D.find(x=>x.id===S.deckSel);
  if(a==='decknew'){S.pdetOpen=1;const n=(S.deckName||'').trim()||`덱 ${D.length+1}`;const id='d'+Date.now().toString(36);D.push({id,name:n,t:snapT()});S.deckSel=id;S.deckName='';S.msg=`'${n}' 저장 완료`;{const e=validate();if(e.length)S.msg+=` · ⚠ 고칠 점: ${e.slice(0,3).join(' / ')}${e.length>3?' 외':''}`}}
- else if(a==='deckren'&&d){const n=(S.deckName||'').trim();if(!n){S.msg='오른쪽 이름 칸에 새 이름을 쓰고 눌러 주세요';document.getElementById('deckname')?.focus()}else{const o=d.name;d.name=n;S.deckName='';S.msg=`'${o}' → '${n}' 이름 변경`}}
+ else if(a==='deckren'&&d){const n=(S.deckName||'').trim();if(!n){S.msg='오른쪽 이름 칸에 새 이름 입력 후 누르기';document.getElementById('deckname')?.focus()}else{const o=d.name;d.name=n;S.deckName='';S.msg=`'${o}' → '${n}' 이름 변경`}}
  else if(a==='decksave'&&d){d.t=snapT();S.msg=`'${d.name}' 덮어쓰기 완료`;const e=validate();if(e.length)S.msg+=` · ⚠ 고칠 점: ${e.slice(0,3).join(' / ')}${e.length>3?' 외':''}`}
- else if(a==='deckload'&&d){const xe=exErr(deckIds(d.t));if(!deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))){const B=bldInit(),t=d.t,L=t.lineup||[],pad=(x,n)=>[...(x||[]),...Array(n).fill(null)].slice(0,n);B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=pad(t.bench,ROSTER.bench);B.rot=pad(t.rot,5);B.pen=pad(t.pen,ROSTER.rp);B.fxsel=[...(t.fxsel||[])];B.mgr=t.mgr||'';S.bldSel=null;S.msg=`'${d.name}'에 없는 카드가 있어 덱 화면에서 열었어요`;save();location.hash='builder';render();return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}' 불러오기 완료`+(xe.length?` · ${xe.join(' · ')}. EX 교체 후 덮어쓰기`:'')}
+ else if(a==='deckload'&&d){const xe=exErr(deckIds(d.t));if(!deckIds(d.t).every(id=>S.owned[id]&&!(S.ab||[]).some(a=>a.id===id&&!a.got))){const B=bldInit(),t=d.t,L=t.lineup||[],pad=(x,n)=>[...(x||[]),...Array(n).fill(null)].slice(0,n);B.lu=L.length===9?L.map(x=>[x.pos,x.id]):BLD_POS.map(p=>[p,null]);B.bench=pad(t.bench,ROSTER.bench);B.rot=pad(t.rot,5);B.pen=pad(t.pen,ROSTER.rp);B.fxsel=[...(t.fxsel||[])];B.mgr=t.mgr||'';S.bldSel=null;S.msg=`'${d.name}'에 없는 카드가 있어 덱 화면에서 열림`;save();location.hash='builder';render();return}Object.assign(S.team,JSON.parse(JSON.stringify(d.t)));pullTeam();S.msg=`'${d.name}' 불러오기 완료`+(xe.length?` · ${xe.join(' · ')}. EX 교체 후 덮어쓰기`:'')}
  else if(a==='deckdel'&&d){if(!S.deckDel){S.deckDel=1;render();return}S.decks=D.filter(x=>x!==d);S.deckGone=[...(S.deckGone||[]),d.id].slice(-200);for(const k in S.modeDeck||{})if(S.modeDeck[k]===d.id)S.modeDeck[k]='';S.deckSel='';S.deckDel=0}
  save();render()}
 // ===== 덱 짜보기: 보유 여부와 관계없이 전체 카드로 25명을 짜 보고 코스트·덱 효과를 확인 =====
@@ -2723,7 +2727,7 @@ function vLineup(){const sub=`<div class="subnav" role="tablist">${[['order','�
  ${`<div class="strip${B?' cur':''}"><div class="sh" data-tb="B" title="아래 보유 카드를 야수로">야수</div><div class="row scroll">${S.lu.map((x,i)=>oc('lu',i,'',{num:(i+1)+'번',under:posSel(i)})).join('')}<span class="gap"></span>${S.bench.map((x,i)=>oc('bench',i,'벤치',{num:(i+1)+'번'})).join('')}</div></div>`
  +`<div class="strip pit${B?'':' cur'}"><div class="sh" data-tb="P" title="아래 보유 카드를 투수로">투수</div><div class="row scroll">${S.rot.map((x,i)=>(i?'<span class="arr" aria-hidden="true">›</span>':'')+oc('rot',i,'선발',{num:(i+1)+'번',cls:'sp'})).join('')}<span class="gap"></span>${PEN_RL.map((_,n)=>n+2).map((j,n)=>oc('pen',j,PEN_RL[n],{num:'중계'+(n+1),cls:'rp'})).join('')}<span class="gap"></span>${oc('pen',1,'셋업',{cls:'su'})}${oc('pen',0,'마무리',{cls:'cl'})}</div></div>`+rotmRow()+tcRow()}
  ${(()=>{const e=validate();return e.length?`<div class="luwarn" role="status"><b>경기 전에 고칠 점 ${e.length}개</b>${e.slice(0,6).map(x=>`<span>${esc(x)}</span>`).join('')}${e.length>6?`<span>외 ${e.length-6}개</span>`:''}</div>`:''})()}${deckBar()}<details class="pdet"${S.pdetOpen?' open':''}><summary>저장한 덱 · 모드별 덱${(S.decks||[]).length?` <small>(${S.decks.length}개)</small>`:''}</summary>${presetBar()}</details>
- <p class="note hint${S.sel||S.msg?' on':''}" aria-live="polite">${S.msg?esc(S.msg):S.sel?'바꿀 자리나 넣을 카드 선택. 같은 자리 다시 누르면 취소.':''}</p><p class="note help">${S.sel?'같은 줄의 다른 자리를 누르면 서로 바뀌고, 아래 보유 카드를 누르면 그 카드가 들어갑니다. 같은 자리를 다시 누르면 선택 해제.':'PC: 카드·자리를 끌어 놓아 교체 가능. 카드를 누르면 상세 정보가 뜨고, 거기서 [자리 교체하기]를 누른 다음 다른 자리(타순 교체·벤치 교대)나 보유 카드를 누르면 바뀝니다. 빈 자리는 바로 선택. 수비 위치는 카드 아래 메뉴에서 바꾸고, 메뉴 옆 등급은 그 위치 수비 적성입니다.'}</p></section>
+ <p class="note hint${S.sel||S.msg?' on':''}" aria-live="polite">${S.msg?esc(S.msg):S.sel?'바꿀 자리나 넣을 카드 선택. 같은 자리 다시 누르면 취소.':''}</p><p class="note help">${S.sel?'같은 줄의 다른 자리를 누르면 서로 바뀌고, 아래 보유 카드를 누르면 그 카드로 교체. 같은 자리를 다시 누르면 선택 해제.':'PC: 카드·자리를 끌어 놓아 교체 가능. 카드를 누르면 상세 정보가 뜨고, 거기서 [자리 교체하기]를 누른 다음 다른 자리(타순 교체·벤치 교대)나 보유 카드를 누르면 교체. 빈 자리는 바로 선택. 수비 위치는 카드 아래 메뉴에서 바꾸고, 메뉴 옆 등급은 그 위치 수비 적성.'}</p></section>
  <section class="band lu2 one"><div><div class="tools"><h2 style="margin:0">보유 카드</h2><div class="tabs tb" role="tablist">${[['B','야수'],['P','투수']].map(([k,n])=>`<button role="tab" aria-selected="${S.tb===k}" class="${S.tb===k?'on':''}" data-tb="${k}">${n}</button>`).join('')}</div>
  <div class="tabs" role="tablist">${FN.map(([k,n])=>`<button role="tab" aria-selected="${pf===k}" class="${pf===k?'on':''}" data-pf="${k}">${n}</button>`).join('')}</div>
  <select id="sort" aria-label="정렬">${[['ovr','능력 순'],['cost','코스트 높은 순'],['costa','코스트 낮은 순'],['yeard','최신 연도 순'],['year','오래된 연도 순'],['name','이름 순'],...keys.map(k=>['r_'+k,SKN[k]+' 순']),...(B?[['avg','타율 순(리그)'],['hr','홈런 순(리그)'],['rbi','타점 순(리그)'],['sb','도루 순(리그)']]:[['era','평균자책 순(리그)'],['so','탈삼진 순(리그)'],['w','승 순(리그)'],['sv','세이브 순(리그)']])].map(([v,n])=>`<option value="${v}"${S.sort===v?' selected':''}>${n}</option>`).join('')}</select>
@@ -2743,7 +2747,7 @@ function setS(s,id){if(s.k==='lu')S.lu[s.i][1]=id;else S[s.k][s.i]=id}
 const canPos=(c,p)=>!c||p==='DH'||!!(c.ps&&c.ps[p]!=null);
 const posName=(k,i)=>k==='lu'?S.lu[i][0]:null;
 // 자리 이동은 자유(SJ 2026-11-27): 수비 불가 위치여도 옮겨지고, 경고만 띄움. 경기 시작·덱 저장 때 validate()로 다시 알림
-const posWarn=(c,p)=>c&&!canPos(c,p)?`⚠ ${c.name}은(는) ${PFULL[p]} 수비 불가 · 경기 전에 바꿔 주세요`:'';
+const posWarn=(c,p)=>c&&!canPos(c,p)?`⚠ ${c.name}은(는) ${PFULL[p]} 수비 불가 · 경기 전에 교체 필요`:'';
 function swapSlots(a,b){const x=getS(a),y=getS(b);if(a.k==='lu'&&b.k==='lu'){[S.lu[a.i],S.lu[b.i]]=[S.lu[b.i],S.lu[a.i]];return}
  setS(a,y);setS(b,x);S.msg=(a.k==='lu'&&posWarn(by[y],S.lu[a.i][0]))||(b.k==='lu'&&posWarn(by[x],S.lu[b.i][0]))||''}
 function place(id){const s=S.sel;if(!s)return;const c=by[id];if(c.type!==KIND(s.k))return;if(abOf(c.id)){S.msg=`${c.name}은(는) 유학 중 · 사용 불가.`;return}
@@ -2775,7 +2779,7 @@ const SXH={B:['BABIP','wRC+'],P:['WHIP','FIP','LOB%','피BABIP']},sxF=(t,i,v)=>v
 function seasonLine(c){const H=c.type==='B'?['타율','홈런','타점','도루','경기','타석']:['ERA','승','패','세이브','홀드','탈삼진','이닝','경기'],X=[]; // 카드에는 클래식 기록만 (세부 지표 c.sx는 성능 배분에만 사용)
  return `<div class="scroll"><table class="sl"><thead><tr><th>연도</th>${H.map(h=>`<th>${h}</th>`).join('')}${X.map(h=>`<th class="sxh">${h}</th>`).join('')}</tr></thead><tbody><tr><td>${c.year}</td>${c.s.map((v,i)=>`<td>${i===0?(c.type==='B'?Number(v).toFixed(3).replace(/^0/,''):Number(v).toFixed(2)):v}</td>`).join('')}${X.map((h,i)=>`<td>${sxF(c.type,i,c.sx[i])}</td>`).join('')}</tr></tbody></table></div>`}
 function backFace(c,live){const occ={};S.blocks.forEach(b=>{if(b.on===c.id)cells(b).forEach(([r,q])=>occ[(r+b.at[0])*4+q+b.at[1]]=b)});const op=open(c),os=openSet(c),pt=patOf(c);
- const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g:''}${b&&b.u===S.blkSel?' selb':''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g:''}"></span>`}).join('');
+ const grid=[...Array(16).keys()].map(i=>{const b=occ[i],lock=!os.has(i);return live?`<button class="cell${lock?' lock':''}${b?' g-'+b.g+' k-'+bkey(b):''}${b&&b.u===S.blkSel?' selb':''}" data-cell="${i}"${b?' draggable="true"':''} ${lock?'disabled aria-label="잠긴 칸"':`aria-label="${Math.floor(i/4)+1}행 ${i%4+1}열"`}></button>`:`<span class="cell${lock?' lock':''}${b?' g-'+b.g+' k-'+bkey(b):''}"></span>`}).join('');
  const no=c.no!=null&&c.no!==''?String(c.no):'',info=[ageOf(c)!=null?`${ageOf(c)}세`:'',c.hs||'',c.un||'',HAND[c.h]||'',no?`No. ${no}`:'',PFULL[c.pos]||c.pos,c.rg0?(c.rg0===c.rg?c.rg0:`${c.rg0}(${c.rg})`):(c.rg||'')].filter(Boolean);
  // 뒷면(SJ 2026-11-26): 위 2단(사진+프로필 | 수비 위치·구종) → 시즌 기록 → 아래 2단(스킬 칸 | 장착 스킬·서포트)
  return `<div class="cback cb2${live?' live':''}" style="--tc:${c.col}"><div class="cbh"><b>${no?esc(no)+'. ':''}${esc(c.name)}</b><span>${c.year} ${esc(c.team)}</span></div>
@@ -2788,21 +2792,22 @@ function skFront(c){const sk=skillOf(c.id),ks=(c.type==='B'?BK:PKEY).filter(k=>s
  return `${S.work?xlSheet(c):card(c,{full:1})}<div class="skd"><h3>스킬로 바뀐 능력치</h3>${ks.length?`<table><tr><th>능력</th><th>원래</th><th>스킬 후</th><th>변화</th></tr>${ks.map(k=>{const v=c.r[k],t=Math.min(120,v+sk[k]);return `<tr><td>${SKN[k]}</td><td>${v}</td><td><b>${t}</b></td><td class="up">+${t-v}</td></tr>`}).join('')}</table>`:'<p class="note">장착한 스킬 없음</p>'}</div>`}
 function blkInv(c){const sk=skillOf(c.id),sel=S.blocks.find(b=>b.u===S.blkSel),mine=S.blocks.filter(b=>b.t===c.type&&(b.on===c.id||(b.on===null&&(!b.home||b.home.cid===c.id)))),BF=S.blkF||{},KS=[...new Set(mine.flatMap(b=>Object.keys(b.st)))],GO='SABC',shown=mine.filter(b=>b.on===c.id||b.home||b.u===S.blkSel||((!BF.k||b.st[BF.k]!=null)&&(!BF.g||b.g===BF.g))).sort((x,y)=>(y.on===c.id)-(x.on===c.id)||GO.indexOf(x.g)-GO.indexOf(y.g));
  return `<p class="note help" style="margin-top:0">장착한 블록은 이 선수 안에서만 이동·회전. 빼면 사라짐.</p>
- <div class="tools"><button class="rotb" data-a="rot" data-hk="9" ${sel?'':'disabled'} title="R 키 · 보드의 블록 두 번 누르기">↻ 회전 <kbd>R</kbd></button>${sel&&(sel.home||sel.on===c.id)?'<button class="ghost danger" data-a="blkdel">빼내기 (블록 사라짐)</button>':''}<span class="note" style="margin:0">${sel?(sel.on===c.id?'장착된 자리에서 바로 돌아가요 · 다른 칸을 눌러 옮기기':'놓을 칸 선택 (끌어 놓기 가능)'):'블록 선택 · 보드의 블록을 누르면 들어 올려져요'}</span></div>
- <div class="tools blkf"><select id="blkfk" aria-label="블록 종류"><option value="">전체 종류</option>${KS.map(k=>`<option value="${k}"${BF.k===k?' selected':''}>${SKN[k]||k}</option>`).join('')}</select><select id="blkfg" aria-label="블록 등급"><option value="">전체 등급</option>${['S','A','B','C'].map(g=>`<option value="${g}"${BF.g===g?' selected':''}>${g}급</option>`).join('')}</select><span class="note" style="margin:0">${shown.length}/${mine.length}개${BF.k||BF.g?' · 장착한 블록은 항상 보여요':''}</span></div>
+ <div class="skleg">${(c.type==='B'?BK:PKEY).map(k=>`<span><i class="k-${k}"></i>${SKN[k]}</span>`).join('')}</div>
+ <div class="tools"><button class="rotb" data-a="rot" data-hk="9" ${sel?'':'disabled'} title="R 키 · 보드의 블록 두 번 누르기">↻ 회전 <kbd>R</kbd></button>${sel&&(sel.home||sel.on===c.id)?'<button class="ghost danger" data-a="blkdel">빼내기 (블록 사라짐)</button>':''}<span class="note" style="margin:0">${sel?(sel.on===c.id?'장착된 자리에서 바로 회전 · 다른 칸을 눌러 옮기기':'놓을 칸 선택 (끌어 놓기 가능)'):'블록 선택 · 보드의 블록을 누르면 들어 올림'}</span></div>
+ <div class="tools blkf"><select id="blkfk" aria-label="블록 종류"><option value="">전체 종류</option>${KS.map(k=>`<option value="${k}"${BF.k===k?' selected':''}>${SKN[k]||k}</option>`).join('')}</select><select id="blkfg" aria-label="블록 등급"><option value="">전체 등급</option>${['S','A','B','C'].map(g=>`<option value="${g}"${BF.g===g?' selected':''}>${g}급</option>`).join('')}</select><span class="note" style="margin:0">${shown.length}/${mine.length}개${BF.k||BF.g?' · 장착한 블록은 항상 표시':''}</span></div>
  <div class="inv">${(()=>{const G=[],M={};shown.forEach(b=>{if(b.on||b.home){G.push([b,1]);return}const k=b.sh+'|'+b.g+'|'+Object.keys(b.st).sort().map(x=>x+b.st[x]).join(',')+'|'+S.locks.includes('b'+b.u);if(M[k]){M[k][1]++;if(b.u===S.blkSel)M[k][0]=b}else{M[k]=[b,1];G.push(M[k])}});return G})().map(([b,n])=>{const cs=cells(b),h=Math.max(...cs.map(x=>x[0]))+1,w=Math.max(...cs.map(x=>x[1]))+1;
-  return `<button class="blk${b.u===S.blkSel?' sel':''}" data-blk="${b.u}" draggable="${b.on?'false':'true'}"><span class="mini" style="grid-template-columns:repeat(${w},12px)">${[...Array(h*w).keys()].map(i=>{const on=cs.some(([r,q])=>r*w+q===i);return `<i class="${on?'cell g-'+b.g:''}" style="${on?'':'visibility:hidden'}"></i>`}).join('')}</span><small><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))}${n>1?`<b class="blkn">×${n}</b>`:''}</small><small>${Object.entries(b.st).map(([k,v])=>SKN[k]+'+'+v).join(' ')} · ${b.on?'장착됨':'보관 중'}${S.locks.includes('b'+b.u)?' · 잠금':''}</small></button>`}).join('')||'<p class="note">맞는 블록 없음</p>'}</div>
+  return `<button class="blk${b.u===S.blkSel?' sel':''}" data-blk="${b.u}" draggable="${b.on?'false':'true'}"><span class="mini" style="grid-template-columns:repeat(${w},12px)">${[...Array(h*w).keys()].map(i=>{const on=cs.some(([r,q])=>r*w+q===i);return `<i class="${on?'cell g-'+b.g+' k-'+bkey(b):''}" style="${on?'':'visibility:hidden'}"></i>`}).join('')}</span><small><b class="gl g-${b.g}">${b.g}</b>${esc(bname(b))}${n>1?`<b class="blkn">×${n}</b>`:''}</small><small>${Object.entries(b.st).map(([k,v])=>SKN[k]+'+'+v).join(' ')} · ${b.on?'장착됨':'보관 중'}${S.locks.includes('b'+b.u)?' · 잠금':''}</small></button>`}).join('')||'<p class="note">맞는 블록 없음</p>'}</div>
  <div class="sum">${Object.keys(sk).length?Object.entries(sk).map(([k,v])=>`<span>${SKN[k]} +${v}</span>`).join(''):'<span>장착한 스킬 없음</span>'}</div>`}
 function vCard(){const c=by[S.cardId],op=open(c);
  const d=deckFx(),inUse=used().includes(c.id),back=backFace(c,0);
  return `<section class="band"><div class="tools"><h2 style="margin:0">카드 상세</h2><select id="cpick" aria-label="카드 선택">${OWN.map(x=>`<option value="${esc(x.id)}" ${x.id===c.id?'selected':''}>${x.year} ${esc(x.team)} ${esc(x.name)}</option>`).join('')}</select>
  <div class="tabs">${[[0,'앞면'],[1,'뒷면']].map(([v,n])=>`<button class="${+S.back===v?'on':''}" data-face="${v}">${n}</button>`).join('')}</div></div>
  <div class="cd"><div data-bigflip="1" style="cursor:pointer" title="눌러서 앞뒤 전환">${S.back?back:card(c,{full:1})}</div>
- <div>${S.back?`<h3>스킬</h3><p>장착한 스킬은 카드 뒷면에 칸으로 보여요. 블록 장착·해제는 스킬 화면에서.</p><a href="#skill" data-skillgo="${esc(c.id)}"><button>스킬 장착하러 가기</button></a>`
+ <div>${S.back?`<h3>스킬</h3><p>장착한 스킬은 카드 뒷면에 칸으로 표시. 블록 장착·해제는 스킬 화면에서.</p><a href="#skill" data-skillgo="${esc(c.id)}"><button>스킬 장착하러 가기</button></a>`
  :`<h3>${PFULL[c.pos]} ${stars(c.cost)}</h3>
-  <p class="help" style="margin:0">막대 숫자 = 덱 효과·스킬 블록 포함, 오른쪽 작은 숫자 = 보너스. 육성으로 120까지 오르며 100을 넘는 등급은 S+, SS, SS+로 표시합니다.</p>
+  <p class="help" style="margin:0">막대 숫자 = 덱 효과·스킬 블록 포함, 오른쪽 작은 숫자 = 보너스. 육성으로 120까지 오르며 100을 넘는 등급은 S+, SS, SS+로 표시.</p>
   <div class="lbl">덱 효과</div><p style="margin:0">${inUse?`1군 등록 중: ${d.fx.map(x=>`${x.n} ${x.g}`).join(' · ')||'팀컬러 없음'} (${c.type==='B'?'야수 +'+d.bat:'투수 +'+d.pit})`:'1군 등록 시 덱 효과 적용.'}</p>
-  ${c.type==='P'&&c.arm?`<div class="lbl">투구폼</div><p style="margin:0"><b>${ARM_N[c.arm]}</b> <small>같은 손 타자에게 강하고 반대 손 타자에게 약해요 · 땅볼 많음</small></p>`:''}${c.type==='P'?`<div class="lbl">구종</div><div class="apt">${ptNow(c).map(([n,g],i)=>{const b0=Object.values(c.pt)[i];return `<span>${esc(n)}<b${g.startsWith('SS')?' style="color:#e2b23c"':''}>${esc(g)}</b>${g!==b0?`<small style="opacity:.6"> (기본 ${esc(b0)})</small>`:''}</span>`}).join('')}</div>`:''}
+  ${c.type==='P'&&c.arm?`<div class="lbl">투구폼</div><p style="margin:0"><b>${ARM_N[c.arm]}</b> <small>같은 손 타자에게 강하고 반대 손 타자에게 약함 · 땅볼 많음</small></p>`:''}${c.type==='P'?`<div class="lbl">구종</div><div class="apt">${ptNow(c).map(([n,g],i)=>{const b0=Object.values(c.pt)[i];return `<span>${esc(n)}<b${g.startsWith('SS')?' style="color:#e2b23c"':''}>${esc(g)}</b>${g!==b0?`<small style="opacity:.6"> (기본 ${esc(b0)})</small>`:''}</span>`}).join('')}</div>`:''}
   <div class="lbl">이번 시즌</div><p style="margin:0">${S.gp[baseId(S.cardId)]||0}경기 출전 · 컨디션 <b>${CONDN[condOf(by[S.cardId])]}</b></p>`}</div></div></section>`}
 let grab=null;
 function tapBlk(i,cid){const c=by[cid],r=Math.floor(i/4),q=i%4;const hit=S.blocks.find(b=>b.on===cid&&cells(b).some(([a,d])=>a+b.at[0]===r&&d+b.at[1]===q));
@@ -2815,7 +2820,7 @@ function tapBlk(i,cid){const c=by[cid],r=Math.floor(i/4),q=i%4;const hit=S.block
 function rotBlk(b){if(!b)return;const cid=b.on||(b.home&&b.home.cid),prev=b.on?b.at:b.home&&b.home.at;b.rot=((b.rot||0)+1)%4;if(!cid||!prev||!by[cid])return;
  const os=openSet(by[cid]),fitAt=(r0,q0)=>cells(b).every(([a,d])=>{const R=a+r0,Q=d+q0;return R>=0&&Q>=0&&R<4&&Q<4&&os.has(R*4+Q)&&!S.blocks.some(o=>o!==b&&o.on===cid&&cells(o).some(([x,y])=>x+o.at[0]===R&&y+o.at[1]===Q))});
  let best=null;for(let r0=-3;r0<4;r0++)for(let q0=-3;q0<4;q0++)if(fitAt(r0,q0)){const d=Math.abs(r0-prev[0])+Math.abs(q0-prev[1]);if(!best||d<best[2])best=[r0,q0,d]}
- if(best){b.on=cid;b.at=[best[0],best[1]];delete b.home;S.msg=''}else{if(b.on){b.home={cid,at:prev,rot:(b.rot+3)%4};b.on=null;b.at=null}S.msg='돌린 모양이 들어갈 빈칸이 없어요 · 다시 돌리거나 다른 칸을 눌러 놓아 주세요'}}
+ if(best){b.on=cid;b.at=[best[0],best[1]];delete b.home;S.msg=''}else{if(b.on){b.home={cid,at:prev,rot:(b.rot+3)%4};b.on=null;b.at=null}S.msg='돌린 모양이 들어갈 빈칸 없음 · 다시 돌리거나 다른 칸에 놓기'}}
 // 미리보기: 놓일 칸 전부 표시
 function blkFoot(i,cid){const b=S.blocks.find(x=>x.u===S.blkSel);if(!b)return null;const r=Math.floor(i/4),q=i%4,os=openSet(by[cid]);
  for(const [a,d] of [...(grab?[grab]:[]),...cells(b)]){const r0=r-a,q0=q-d;if(r0<0||q0<0)continue;const cs=cells(b).map(([x,y])=>[x+r0,y+q0]);
@@ -2888,81 +2893,91 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
- {id:'n1128s',d:'2026-11-28',t:'설명은 ? 버튼으로',b:['화면 설명 글을 숨기고 제목 옆 ? 버튼으로 열고 닫게 바꿨어요.','설명 문구를 짧게 줄였어요.'],rw:{tix:{pk_n:10}}},
-{id:'n1128r',d:'2026-11-28',t:'메뉴 정리 · 장비창고 합성·확정권 · 스킬 대상 선택',b:['상위 메뉴 이름: 경기 → 모드, 팀 → 덱 빌더. 경기장 메뉴는 뺐어요(경기는 각 모드에서 시작).','선수단: 도감(F1) · 보유 카드 · 합성 · 유학 · 미션. 선수단의 합성은 선수 카드만.','장비창고: 스킬 · 작전 카드 · 서포트 카드 · 장비 · 합성(스킬 블록·서포트·작전) · 확정권. 확정권은 상점이 아니라 여기서 열어요.','상점 카드팩은 PC에서도 드롭다운으로 골라요.','스킬 화면에서 편집 중 1군 / 보유 선수 전체 / 스킬 끼운 선수 중 골라, 구단·이름으로 찾아 끼울 수 있어요.','페이지를 옮길 때 화면이 좌우로 흔들리던 문제를 고쳤어요.'],rw:{tix:{pk_n:10,prem:1}}},
-{id:'n1128q',d:'2026-11-28',t:'덱 불러오기: 리그 고르기',b:['팀 > 덱에서 저장한 덱을 주간 리그 · 연도별 리그 · 친구 리그 중 원하는 라인업으로 골라 불러올 수 있어요.'],rw:{tix:{pk_n:10}}},
-{id:'n1128p',d:'2026-11-28',t:'덱 효과 B 조건 완화',b:['덱 효과 B는 켜는 조건이 쉬워지고 효과는 조금 작아졌어요.','불펜 8명에 맞춰 덱 효과 A의 기준 인원도 조정했어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128o',d:'2026-11-28',t:'리그 득점 보정',b:['로스터 25인 변경으로 늘어난 득점을 맞추려고 인플레이 타구 안타율을 조금 낮췄어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128n',d:'2026-11-28',t:'로스터 개편: 벤치 3 · 불펜 8',b:['1군 로스터가 벤치 3명, 불펜 8명으로 바뀌었어요. 저장된 라인업은 자동으로 새 구성에 맞춰 옮겨져요.','불펜에 중계5·중계6 역할이 생겼어요.','불펜이 모자라면 연습생(가상 구원투수)이 빈자리를 채워요.'],rw:{tix:{pk_n:10,prem:1}}},
- {id:'n1128m',d:'2026-11-28',t:'중간 계투 역할 추가',b:['불펜에 필승조·접전·롱릴리프·패전처리 역할이 생겼어요. 경기 상황에 맞는 투수가 올라와요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128l',d:'2026-11-28',t:'라인업 추천: 백업 포수 · 커리어하이',b:['라인업 추천에서 백업 포수는 필터 연도에 맞는 선수가 먼저 들어가요.','커리어하이 와일드카드는 한 명만 우선돼요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128k',d:'2026-11-28',t:'덱 효과 선택: 부족 인원 표시',b:['S·A·B 덱 효과 선택에서 아직 조건이 안 된 효과도 회색으로 보이고, 몇 명이 더 필요한지 알려 줘요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128j',d:'2026-11-28',t:'라인업 추천 보정',b:['특수 카드는 연도·구단 필터나 같은 구단 계보에 맞을 때만 추천에서 우선돼요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128i',d:'2026-11-28',t:'라인업 추천 개선',b:['라인업 추천에서 EX·커리어하이·영구결번 카드를 넣을지 체크박스로 고를 수 있어요.','특수 카드 타자는 벤치로, 특수 카드 투수는 선발로 먼저 들어가요.','아래 보유 카드 목록도 추천 필터를 따라가요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128h',d:'2026-11-28',t:'팀 컬러: 원소속 구단만 인정',b:['영구결번·커리어하이·EX 카드는 원래 소속 구단의 팀 컬러에만 들어가요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128g',d:'2026-11-28',t:'연도별 리그 포기 버튼 실수 방지',b:['연도별 리그 감독실에서 [다음 휴식일까지 자동]을 누른 뒤 같은 자리에 [이 리그 포기]가 밀려와 잘못 눌릴 수 있던 문제를 고쳤어요. 자동 버튼은 자리를 지키고(휴식일엔 회색), 포기 버튼은 아래쪽으로 떨어뜨렸어요.','포기는 [이 리그 포기…] → 확인 문구와 [포기하기]를 눌러야 돼요. 확인은 8초 뒤 자동으로 취소돼요.'],rw:{tix:{pk_n:10}}},
-{id:'n1128f',d:'2026-11-28',t:'불펜 역할 강화',b:['승리·세이브 판정을 고쳤어요. 승리는 마지막으로 리드를 잡을 때 마운드에 있던 투수에게 가고(선발은 5이닝 이상일 때만), 세이브는 등판할 때의 점수차로 판정해요.','시대별 선발 이닝·완투율이 실제 기록을 따라가요. 옛 시대 선발은 더 길게 던져요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128e',d:'2026-11-28',t:'스킬 끼우기 편의 개선',b:['장착한 블록을 고른 채 [↻ 회전]·R 키·보드에서 두 번 누르기로 그 자리에서 바로 돌릴 수 있어요. 돌린 모양이 안 맞으면 가장 가까운 빈자리로 옮겨 끼워요.','고른 블록은 보드에 노란 테두리로 표시돼요.','필터를 바꿔도 장착·들어 올린·고른 블록은 목록에서 사라지지 않아요.'],rw:{tix:{pk_n:10,block:1}}},
-{id:'n1128d',d:'2026-11-28',t:'합성 재료: 같은 작전·서포트 카드 묶음',b:['합성에서 같은 작전 카드·서포트 카드를 한 칸으로 묶어 ×장수로 보여줘요. 누를 때마다 한 장씩 재료로 들어가고, 다 넣은 뒤 누르면 한 장씩 빠져요.'],rw:{tix:{pk_n:10}}},
-{id:'n1128c',d:'2026-11-28',t:'히든 스텟: 희생타 · 수비 세분화',b:['히든 스텟 추가: 희생타가 많았던 선수는 주자 3루 땅볼·희생플라이·진루타가 잘 나와요.','수비는 실제 KBO 기록(2001~)으로 포구·송구·범위를 나눠 실책·보살·도루저지·피안타에 각각 반영돼요.','일부 선수의 포지션 수비 수치가 조금 바뀌었어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128b',d:'2026-11-28',t:'블록 자동 합성 안내 수정',b:['블록 자동 합성에서 재료 안내가 바르게 보이도록 고쳤어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1128a',d:'2026-11-28',t:'상점 길게 눌러 연속 구매',b:['상점의 [○○P로 열기] 버튼이나 보유 팩 개봉 버튼을 누르고 있으면 계속 구매·개봉돼요. 손을 떼면 멈춰요.','포인트가 모자라거나 팩이 다 떨어지면 자동으로 멈춰요.'],rw:{tix:{pk_n:10}}},
-{id:'n1127o',d:'2026-11-27',t:'팀 메뉴: 덱 · 가상덱 · 덱 삭제',b:['팀 메뉴 첫 칸이 [덱](저장한 덱)이에요. 예전 [덱] 화면은 [가상덱]으로 이름을 바꿔 두 번째로 옮겼어요.','덱 화면 위쪽 빨간 [🗑 이 덱 삭제] 버튼으로 저장한 덱을 지울 수 있어요. 실수 방지로 한 번 더 눌러야 지워져요.'],rw:{tix:{pk_n:10}}},
-{id:'n1127n',d:'2026-11-27',t:'선발 운용 \'유연\' 수정',b:['\'유연\' 모드에서 하위 선발 한 명이 아예 등판하지 않던 문제를 고쳤어요.','이제 회복된 선발 중 로테이션 앞 번호부터 나가요.'],rw:{tix:{pk_n:10}}},
- {id:'n1127m',d:'2026-11-27',t:'투수 구종 등급 실측 반영',b:['2016년 이후 투수 카드는 그해 실제 트래킹 등급을 그대로 써요(네일 스위퍼 S 등).','투수마다 구종별로 좌타자·우타자 상대 효과가 실측대로 달라요. 예를 들어 네일의 스위퍼는 좌타자에게도 잘 통해요.'],rw:{tix:{pk_n:10}}},
- {id:'n1127l',d:'2026-11-27',t:'스위퍼 보정',b:['하트·네일·크로우 카드의 주무기를 스위퍼로 바로잡았어요.','스위퍼는 실제 메이저리그 데이터처럼 같은 손 타자에게는 약한 타구를 많이 만들고, 반대 손 타자에게는 효과가 줄어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1127k',d:'2026-11-27',t:'구종 2.0: 실제 데이터 구종',b:['2016년 이후 투수는 실제 투구 트래킹 데이터로 구종과 등급을 바꿨어요(스위퍼·투심 포함).','투수마다 우타자·좌타자에게 실제로 던지는 구종 비율이 경기에 반영돼요.','데이터가 없는 옛날 투수는 그 시대의 클래식 구종만 가져요.','박철순(팜볼·너클볼), 옥스프링·마일영(너클볼) 등 확인된 선수에게 팜볼과 너클볼을 넣었어요.','낮은 등급 슬라이더·커브는 실투 홈런을 더 맞고, 등급 효과는 C→B→A→S로 고르게 올라가요.'],rw:{tix:{pk_n:10}}},
- {id:'n1127j',d:'2026-11-27',t:'선발 운용 버튼 수정',b:['라인업의 선발 운용 버튼(1~5번 순서대로 / 체력 되면 에이스 우선)이 눌리지 않던 문제를 고쳤어요.'],rw:{tix:{pk_n:10}}},
-{id:'n1127i',d:'2026-11-27',t:'저장 덱 바로 편집',b:['팀 > 저장 덱에서 선수 카드를 눌러 상세를 보고, 자리 교체·빼기·보유 카드 넣기까지 라인업 화면과 똑같이 할 수 있어요.','여기서 바꾼 내용은 그 저장 덱에 바로 저장되고, 리그에서 쓰는 라인업은 그대로예요.'],rw:{tix:{pk_n:10}}},
-{id:'n1127h',d:'2026-11-27',t:'라인업 자유 이동 · 바로 빼기',b:['라인업에서 수비 위치가 안 맞아도 선수를 자유롭게 옮길 수 있어요. 대신 라인업 위에 [경기 전에 고칠 점]이 노란 줄로 떠요(포수 없음, 수비 불가 위치 등).','선수 카드를 누르면 [빼기] 버튼으로 다른 선수로 바꾸지 않고 바로 뺄 수 있어요.','덱을 저장하거나 경기를 시작할 때도 고칠 점을 알려 줘요.'],rw:{tix:{pk_n:10}}},
-{id:'n1127g',d:'2026-11-27',t:'새 덱 효과: 우투좌타 · 스위치히터',b:['우투좌타(B): 타순 9명 중 우투좌타가 6명 이상이면 켜지고, 그 선수들만 야수 +3.','스위치히터(B): 스위치히터가 4명 이상이면 켜지고, 그 선수들만 야수 +3에 투수 손과 상관없이 늘 유리한 타석(플래툰 +1).','B칸은 하나라서 덱 효과 선택에서 골라 켜요.'],rw:{tix:{pk_n:10}}},
- {id:'n1127f',d:'2026-11-27',t:'지역 덱 효과 변경',b:['지역 덱 효과가 구단 연고지가 아니라 선수 출신 지역(고교 기준)으로 바뀌었어요.','1군 25명 중 같은 출신 선수가 6명 이상이면 \'출신 지역 B\'가 켜지고, 그 출신 선수에게만 야수 +3·투수 +2가 붙어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1127e',d:'2026-11-27',t:'선발 로테이션 · 요일제 · 원정 응원단',b:['EX 카드는 같은 계보 덱 인원으로만 세요(올스타·골든글러브 덱 인원에는 안 들어가요).','선발 투수는 등판 후 5일을 쉬어야 완전히 회복돼요. 4일만 쉬면 피로가 남아 구위·제구가 깎여요.','리그 요일제: 화~일 6경기, 월요일은 휴식일이에요(주간·연도·친구 리그).','친구 리그 도전 상대도 컨디션이 무작위로 정해져요.','작전 카드 추가: 원정 응원단(원정 경기에서 전원 정신력 +5).'],rw:{tix:{pk_n:10}}},
- {id:'n1127d',d:'2026-11-27',t:'메뉴 개편 · 장비창고 · 선수단',b:['새 상위 메뉴 [장비창고]에서 스킬, 작전 카드, 서포트 카드, 장비를 한곳에서 관리해요. (작전·서포트 카드는 라인업 화면에서 옮겨 왔어요. 지금 편집 중인 리그 라인업에 적용돼요)','[카드] 메뉴 이름을 [선수단]으로 바꿨어요. (합성·유학·도감·미션)','팀 메뉴는 덱 · 저장 덱 · 보유 카드만 남았어요. Shift+숫자 단축키 순서: 홈1 경기2 팀3 장비창고4 선수단5 상점6'],rw:{tix:{pk_n:10,prem:1}}},
-{id:'n1127c',d:'2026-11-27',t:'팀 > 저장 덱 보기',b:['팀 > 저장 덱(F2)에서 저장한 덱을 드롭다운으로 골라 리그 라인업 화면과 같은 모양으로 볼 수 있어요. 보기 전용이라 지금 라인업은 바뀌지 않아요.','[이 덱을 지금 라인업으로 불러오기]로 바로 불러올 수도 있어요.'],rw:{tix:{pk_n:10}}},
-{id:'n1127b',d:'2026-11-27',t:'미션 ★3 보상 · 타순 이름',b:['구단 미션 ★3 보상은 EX 조각 1개예요. 조각 3개가 모이면 EX 확정권 1장(구단 지정 가능)으로 바뀌어요. 미션 목록에 지금 모은 조각 수(n/3)를 함께 표시합니다.','타순 적성 "테이블세터(테세)"를 "상위 타선(상위)"으로 바꿨어요.'],rw:{tix:{pk_n:10}}},
-{id:'n1127a',d:'2026-11-27',t:'장비 전체 보기 · 미션 EX 보상 명칭',b:['팀 > 장비(F3)에서 가진 장비를 한눈에 볼 수 있어요. 누가 착용했는지 보이고, 바로 빼거나 1군 선수에게 끼울 수 있어요. 같은 구단 장비를 그 구단 선수에게 끼우면 효과 +10%(★ 표시).','구단 미션 ★3 보상 표시를 바로잡았어요.'],rw:{tix:{pk_n:10,prem:1}}},
-{id:'n1126z3',d:'2026-11-26',t:'기기 간 보유 카드 동기화 수정',b:['PC와 폰을 오가며 할 때, 한 기기의 저장이 다른 기기에서 얻은 카드를 덮어써 카드가 사라질 수 있던 문제를 고쳤습니다.','이제 로그인하면 클라우드를 먼저 확인하고, 두 기기에서 모두 바뀐 게 있으면 카드·작전 카드·확정권·포인트·블록·장비를 합칩니다. 이미 사라진 카드는 그 카드가 남아 있는 기기에서 새 버전으로 접속하면 돌아옵니다.'],rw:{tix:{pk_n:10}}},
- {id:'n1126z2',d:'2026-11-26',t:'아이폰 팝업 위쪽 버튼 수정',b:['아이폰에서 카드 상세 등 팝업 위쪽 버튼(자리 교체하기·잠금·비교하기·닫기)이 상태표시줄에 가려 눌리지 않던 문제를 고쳤습니다.'],rw:{tix:{pk_n:10}}},
-{id:'n1126z',d:'2026-11-26',t:'폰에서 경기 시작 버튼 가림 수정',b:['폰에서 리그 감독실의 경기 시작 버튼이 아래 묶음 버튼에 가려 눌리지 않던 문제를 고쳤습니다.','폰 상단의 포인트·블록·리그 표시와 부제를 숨겨 화면을 덜 내려도 되게 했습니다. (포인트·블록은 홈 보유 현황에서 볼 수 있어요)'],rw:{tix:{pk_n:10}}},
-{id:'n1126y',d:'2026-11-26',t:'스킬 블록 모두 4칸으로',b:['스킬 블록이 모두 4칸 모양으로 바뀌어, 16칸에 블록 4개를 꽉 채워 끼울 수 있습니다.','갖고 있던 2·3칸 블록은 같은 등급의 4칸 블록으로 바뀌고 능력치도 4칸 기준으로 올라갑니다. 장착돼 있던 2·3칸 블록은 보관함으로 돌아가니 다시 끼워 주세요.'],rw:{tix:{pk_n:10,block:2}}},
-{id:'n1126x',d:'2026-11-26',t:'스킬 블록 묶음 표시 · 앞면 능력치 보기',b:['모양·등급·능력치가 같은 보관 블록은 하나로 묶어 ×개수로 보여줍니다.','스킬 화면에서 카드를 누르거나 [앞면 (능력치)] 탭을 누르면 앞면으로 뒤집혀, 스킬로 바뀐 능력치(원래 → 스킬 후)를 볼 수 있습니다.'],rw:{tix:{pk_n:10}}},
-{id:'n1126w',d:'2026-11-26',t:'업무 모드 스킬 칸 회색 음영',b:['업무 모드에서 장착한 스킬 블록이 보드에 회색 음영으로 보입니다 (C 연한 회색 → S 진한 회색).','블록 목록과 카드 뒷면의 색을 빼고 회색으로 바꿨습니다. 잠긴 칸은 빗금으로 표시됩니다.'],rw:{tix:{pk_n:10}}},
-{id:'n1126v',d:'2026-11-26',t:'스킬 블록 필터',b:['스킬 화면에서 끼울 블록을 종류(능력치)와 등급으로 거를 수 있어요. 높은 등급이 앞에 오고, 이미 장착한 블록은 필터와 관계없이 항상 보여요.'],rw:{tix:{pk_n:10,pk_b:1}}},
- {id:'n1126u',d:'2026-11-26',t:'라인업은 리그 안으로 · 다른 팀 보기',b:['라인업은 이제 각 리그 화면의 라인업 탭에서 바로 고쳐요. 팀 메뉴의 라인업과 "편집 중인 라인업" 전환 버튼은 없앴어요(친구 리그는 리그 화면의 "이 리그 라인업 수정"으로).','순위표·팀 기록에서 다른 구단 이름을 누르면 그 팀 라인업과 투수진, 시즌 기록을 볼 수 있어요.','내 팀 선수별 기록은 기록실로 옮겼어요.'],rw:{tix:{pk_n:10,prem:1}}},
- {id:'n1126t',d:'2026-11-26',t:'업무 모드 카드 상세 일람표',b:['업무 모드에서 카드를 누르면 앞·뒷면 대신 엑셀 표 한 장으로 보여요. 기본 정보, 수비 위치, 스킬 블록, 능력치(기본·덱·스킬·장비·합계), 시즌 기록이 색 없이 나와요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126s',d:'2026-11-26',t:'팀 기록 · 항목별 우리 팀 순위',b:['리그 > 기록실 맨 위에 팀 기록이 생겼어요. 공격(타율·출루율·홈런·득점·도루)과 수비(평균자책·실점·탈삼진·세이브·실책)에서 우리 팀이 몇 위인지 한눈에 보고, 모든 팀 기록을 항목별로 정렬해 볼 수 있어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126r',d:'2026-11-26',t:'리그 탭을 제목줄로',b:['리그 탭이 감독실 제목 옆으로 올라가고 감독실 · 라인업 · 일정 · 기록실 · 리그 정보로 정리됐어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126q',d:'2026-11-26',t:'리그 화면 탭 나누기',b:['주간·연도별 리그 화면 위에 탭이 생겼어요. 감독실, 매치업(연도별은 선발·예상), 내 팀 기록, 경기 결과, 선수 기록, 순위표를 한 화면에 하나씩 넘겨 봐요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126p',d:'2026-11-26',t:'업무 모드 대박 카드 알림',b:['업무 모드에서는 대박 카드가 나와도 전면 팝업 대신 화면 오른쪽 아래에 한 줄로 잠깐 떴다 사라져요. R이나 1로 연타해서 계속 뽑을 수 있어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126o',d:'2026-11-26',t:'키보드 단축키',b:['숫자 1~9: 화면 버튼 오른쪽 위에 적힌 번호를 누르면 그 버튼이 눌려요. 합성은 1 자동 추천 · 2 합성하기 · 3 재료 비우기, 리그는 1 경기 시작 · 2 결과만 보기, 라인업은 1 추천 · 2 덱으로 저장 · 3 타선 분석 · 4 배터리 분석, 상점은 1 팩 열기.','F1~F4: 하위 탭 넘기기(예: 카드 메뉴에서 F1 합성 · F2 유학 · F3 도감 · F4 미션).','Shift+1~5: 위 메뉴 홈 · 경기 · 팀 · 카드 · 상점.'],rw:{tix:{pk_n:10}}},
- {id:'n1126n',d:'2026-11-26',t:'라인업을 덱으로 저장 · 덱 짜보기 → 덱',b:['라인업 화면 왼쪽 위에 덱 이름을 쓰고 "덱으로 저장"을 누르면 지금 라인업이 덱으로 저장돼요. 고른 덱이 있으면 "덮어쓰기"도 바로 할 수 있어요.','팀 메뉴의 "덱 짜보기"는 "덱"으로 이름을 바꿨어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126m',d:'2026-11-26',t:'확정권 구단·연도 지정 수정',b:['EX 카드 확정권의 구단 지정, 골든글러브·커리어하이 확정권의 연도 지정이 고른 뒤 풀려 버리던 문제를 고쳤어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126l',d:'2026-11-26',t:'도감 구단 필터 유지',b:['도감에서 구단을 고른 뒤 연도를 바꿔도 구단 필터가 유지돼요. 그해 이름이 다르면 같은 계보 구단으로 바뀌어요(예: 해태 → KIA).'],rw:{tix:{pk_n:10}}},
- {id:'n1126k',d:'2026-11-26',t:'도감 종류 필터에 국가대표',b:['도감 > 전체 선수의 "전체 종류" 필터에서 국가대표를 고르면 대표팀에 뽑혔던 선수 카드만 모아 볼 수 있어요.','대회별 명단은 도감 위 국가대표 탭에서 볼 수 있어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126j',d:'2026-11-26',t:'도감은 카드 보기, 세트 보상은 미션으로',b:['도감은 전체 선수와 국가대표 카드를 둘러보는 곳이 됐어요.','팀 세트, 골든글러브, 커리어하이, EX, 누적 목표 세트는 미션 > 수집 세트로 옮겼어요. 진행과 보상은 그대로예요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126i',d:'2026-11-26',t:'업무 모드 색 맞춤',b:['업무 모드에서 홈과 리그 대시보드 칸이 어둡게 남던 것을 엑셀 표 색으로 바꿨어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126h',d:'2026-11-26',t:'홈 · 리그 화면 3×2 대시보드',b:['홈에는 편집 중인 라인업, 구단, 오늘의 미션, 리그 현황, 공지·쿠폰, 보유 현황이 한 화면에 나와요.','주간 리그와 연도별 리그 화면 첫머리가 감독실 판(최근 경기, 다음 경기, 기록 순위, 순위, Hot & Cold, 리그 진행)으로 바뀌었어요.','칸마다 높이를 맞춰 노트북 한 화면에 들어가고, 긴 내용은 칸 안에서 스크롤돼요. 자세한 기록은 아래 접힌 칸에 있어요.'],rw:{tix:{pk_n:10,prem:1,pk_sp:1}}},
- {id:'n1126g',d:'2026-11-26',t:'폰 앱 하단 바 위치 수정',b:['홈 화면에 설치한 앱에서 내용이 짧은 화면일 때 하단 메뉴가 바닥에서 떠 보이던 문제를 고쳤어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126f',d:'2026-11-26',t:'상점 탭 · 폰 감독실 묶음 전환',b:['상점이 선수 카드팩 · 서포트 · 작전 · 스킬 블록 탭으로 나뉘었어요.','폰에서는 감독실이 경기 · 기록 · 순위 · 편지함 · 구단 묶음으로 나뉘고, 아래 버튼으로 넘겨 봐요.'],rw:{tix:{pk_n:10,pk_b:1}}},
- {id:'n1126e',d:'2026-11-26',t:'홈이 감독실로 · 상점 메뉴 분리',b:['홈이 감독실 대시보드로 바뀌었어요. 최근 경기, 다음 경기(바로 시작), 우리 팀 기록 순위, 리그 순위, Hot & Cold를 한 화면에서 봐요.','출석·미션·쿠폰·공지는 받은 편지함 칸에 모였어요.','카드팩은 맨 위(폰은 아래 탭바) 상점 메뉴로 따로 뺐어요.'],rw:{tix:{pk_n:10,prem:1}}},
- {id:'n1126d',d:'2026-11-26',t:'사진 묶음 내보내기 · 불러오기',b:['홈 > 구단 설정 · 저장 데이터에서 내가 올린 사진을 파일 하나로 내보내고, 받은 파일을 불러올 수 있어요.','다른 사람에게 넘길 때는 직접 찍은 사진이나 CC 라이선스 사진만 넣어 주세요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126c',d:'2026-11-26',t:'도감 · 국가대표 탭',b:['도감에 국가대표 탭이 생겼어요. 대회별 명단과 모은 선수를 한눈에 볼 수 있어요.','대회 이름이나 선수 이름으로 검색하고, 보유/미보유로 거를 수 있어요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126b',d:'2026-11-26',t:'모바일 일람표 · 도감 사진 올리기 · 카드 팝업 정리',b:['보유 카드 일람표가 폰에서 넘치지 않고, "보이는 기록"에서 3칸씩 골라 볼 수 있어요.','도감에서 아직 없는 카드에도 사진을 올릴 수 있어요(카드마다 따로).','카드 상세 팝업을 탭하면 뒤집히고, 폰 화면 한 장에 들어가게 줄였어요.','장비는 칸을 눌러야 맞는 장비가 펼쳐져요.','이제 업데이트마다 공지 보상으로 팩을 드려요.'],rw:{tix:{pk_n:10}}},
- {id:'n1126',d:'2026-11-26',t:'모바일 화면 개편 · 홈 화면 앱 지원',b:['폰에서는 아래 탭바로 메뉴를 옮겨 다닐 수 있어요.','카드팩은 맨 위 드롭다운에서 고르고 바로 열 수 있어요.','브라우저 공유 메뉴의 "홈 화면에 추가"로 앱처럼 설치할 수 있어요.','유학은 이제 다시 보내면 이전 결과가 새 결과로 바뀌어요.'],rw:{tix:{pk_n:10,prem:2,pk_sp:1,pk_tc:1}}}
+ {id:'n1128u',d:'2026-11-28',t:'스킬 블록 색: 능력치별',b:['스킬 블록 색을 등급 대신 주 능력치 기준으로 변경. 교타 파랑 · 장타 군청 · 주력 노랑 · 번트 연두 · 수비 초록 · 정신 보라 · 선구 하늘.','투수 블록: 체력 갈색 · 구속 노랑 · 구위 빨강 · 변화구 주황 · 제구 분홍 · 정신 보라.','등급은 S 금테 · A 흰테와 이름 앞 등급 글자로 표시.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128t',d:'2026-11-28',t:'말투 정리 · 공지 묶음',b:['안내·알림 문구를 짧은 개조식으로 통일.','안 읽은 공지는 한 창에 날짜별로 묶어 표시. 보상은 합쳐서 모두 받기 한 번.','홈 공지 목록은 날짜별 한 줄.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128s',d:'2026-11-28',t:'설명은 ? 버튼으로',b:['화면 설명 글을 숨기고 제목 옆 ? 버튼으로 열고 닫게 변경.','설명 문구를 짧게 줄임.'],rw:{tix:{pk_n:10}}},
+{id:'n1128r',d:'2026-11-28',t:'메뉴 정리 · 장비창고 합성·확정권 · 스킬 대상 선택',b:['상위 메뉴 이름: 경기 → 모드, 팀 → 덱 빌더. 경기장 메뉴는 뺌(경기는 각 모드에서 시작).','선수단: 도감(F1) · 보유 카드 · 합성 · 유학 · 미션. 선수단의 합성은 선수 카드만.','장비창고: 스킬 · 작전 카드 · 서포트 카드 · 장비 · 합성(스킬 블록·서포트·작전) · 확정권. 확정권은 상점이 아니라 여기서 열림.','상점 카드팩은 PC에서도 드롭다운으로 고름.','스킬 화면에서 편집 중 1군 / 보유 선수 전체 / 스킬 끼운 선수 중 골라, 구단·이름으로 찾아 끼울 수 있음.','페이지를 옮길 때 화면이 좌우로 흔들리던 문제를 수정.'],rw:{tix:{pk_n:10,prem:1}}},
+{id:'n1128q',d:'2026-11-28',t:'덱 불러오기: 리그 고르기',b:['팀 > 덱에서 저장한 덱을 주간 리그 · 연도별 리그 · 친구 리그 중 원하는 라인업으로 골라 불러올 수 있음.'],rw:{tix:{pk_n:10}}},
+{id:'n1128p',d:'2026-11-28',t:'덱 효과 B 조건 완화',b:['덱 효과 B는 켜는 조건이 쉬워지고 효과는 조금 작아짐.','불펜 8명에 맞춰 덱 효과 A의 기준 인원도 조정.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128o',d:'2026-11-28',t:'리그 득점 보정',b:['로스터 25인 변경으로 늘어난 득점을 맞추려고 인플레이 타구 안타율을 조금 낮춤.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128n',d:'2026-11-28',t:'로스터 개편: 벤치 3 · 불펜 8',b:['1군 로스터가 벤치 3명, 불펜 8명으로 바뀜. 저장된 라인업은 자동으로 새 구성에 맞춰 옮겨짐.','불펜에 중계5·중계6 역할이 생김.','불펜이 모자라면 연습생(가상 구원투수)이 빈자리를 채움.'],rw:{tix:{pk_n:10,prem:1}}},
+ {id:'n1128m',d:'2026-11-28',t:'중간 계투 역할 추가',b:['불펜에 필승조·접전·롱릴리프·패전처리 역할이 생김. 경기 상황에 맞는 투수가 올라옴.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128l',d:'2026-11-28',t:'라인업 추천: 백업 포수 · 커리어하이',b:['라인업 추천에서 백업 포수는 필터 연도에 맞는 선수가 먼저 들어감.','커리어하이 와일드카드는 한 명만 우선.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128k',d:'2026-11-28',t:'덱 효과 선택: 부족 인원 표시',b:['S·A·B 덱 효과 선택에서 아직 조건이 안 된 효과도 회색으로 보이고, 몇 명이 더 필요한지 알려 줌.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128j',d:'2026-11-28',t:'라인업 추천 보정',b:['특수 카드는 연도·구단 필터나 같은 구단 계보에 맞을 때만 추천에서 우선.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128i',d:'2026-11-28',t:'라인업 추천 개선',b:['라인업 추천에서 EX·커리어하이·영구결번 카드를 넣을지 체크박스로 고를 수 있음.','특수 카드 타자는 벤치로, 특수 카드 투수는 선발로 먼저 들어감.','아래 보유 카드 목록도 추천 필터를 따라감.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128h',d:'2026-11-28',t:'팀 컬러: 원소속 구단만 인정',b:['영구결번·커리어하이·EX 카드는 원래 소속 구단의 팀 컬러에만 들어감.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128g',d:'2026-11-28',t:'연도별 리그 포기 버튼 실수 방지',b:['연도별 리그 감독실에서 [다음 휴식일까지 자동]을 누른 뒤 같은 자리에 [이 리그 포기]가 밀려와 잘못 눌릴 수 있던 문제를 수정. 자동 버튼은 자리를 지키고(휴식일엔 회색), 포기 버튼은 아래쪽으로 떨어뜨림.','포기는 [이 리그 포기…] → 확인 문구와 [포기하기]를 눌러야 됨. 확인은 8초 뒤 자동으로 취소.'],rw:{tix:{pk_n:10}}},
+{id:'n1128f',d:'2026-11-28',t:'불펜 역할 강화',b:['승리·세이브 판정을 수정. 승리는 마지막으로 리드를 잡을 때 마운드에 있던 투수에게 가고(선발은 5이닝 이상일 때만), 세이브는 등판할 때의 점수차로 판정.','시대별 선발 이닝·완투율이 실제 기록을 따라감. 옛 시대 선발은 더 길게 던짐.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128e',d:'2026-11-28',t:'스킬 끼우기 편의 개선',b:['장착한 블록을 고른 채 [↻ 회전]·R 키·보드에서 두 번 누르기로 그 자리에서 바로 돌릴 수 있음. 돌린 모양이 안 맞으면 가장 가까운 빈자리로 옮겨 끼움.','고른 블록은 보드에 노란 테두리로 표시.','필터를 바꿔도 장착·들어 올린·고른 블록은 목록에서 사라지지 않음.'],rw:{tix:{pk_n:10,block:1}}},
+{id:'n1128d',d:'2026-11-28',t:'합성 재료: 같은 작전·서포트 카드 묶음',b:['합성에서 같은 작전 카드·서포트 카드를 한 칸으로 묶어 ×장수로 보여줌. 누를 때마다 한 장씩 재료로 들어가고, 다 넣은 뒤 누르면 한 장씩 빠짐.'],rw:{tix:{pk_n:10}}},
+{id:'n1128c',d:'2026-11-28',t:'히든 스텟: 희생타 · 수비 세분화',b:['히든 스텟 추가: 희생타가 많았던 선수는 주자 3루 땅볼·희생플라이·진루타가 잘 나옴.','수비는 실제 KBO 기록(2001~)으로 포구·송구·범위를 나눠 실책·보살·도루저지·피안타에 각각 반영.','일부 선수의 포지션 수비 수치가 조금 바뀜.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128b',d:'2026-11-28',t:'블록 자동 합성 안내 수정',b:['블록 자동 합성에서 재료 안내가 바르게 보이도록 수정.'],rw:{tix:{pk_n:10}}},
+ {id:'n1128a',d:'2026-11-28',t:'상점 길게 눌러 연속 구매',b:['상점의 [○○P로 열기] 버튼이나 보유 팩 개봉 버튼을 누르고 있으면 계속 구매·개봉. 손을 떼면 멈춤.','포인트가 모자라거나 팩이 다 떨어지면 자동으로 멈춤.'],rw:{tix:{pk_n:10}}},
+{id:'n1127o',d:'2026-11-27',t:'팀 메뉴: 덱 · 가상덱 · 덱 삭제',b:['팀 메뉴 첫 칸이 [덱](저장한 덱). 예전 [덱] 화면은 [가상덱]으로 이름을 바꿔 두 번째로 옮김.','덱 화면 위쪽 빨간 [🗑 이 덱 삭제] 버튼으로 저장한 덱을 지울 수 있음. 실수 방지로 한 번 더 눌러야 지워짐.'],rw:{tix:{pk_n:10}}},
+{id:'n1127n',d:'2026-11-27',t:'선발 운용 \'유연\' 수정',b:['\'유연\' 모드에서 하위 선발 한 명이 아예 등판하지 않던 문제를 수정.','이제 회복된 선발 중 로테이션 앞 번호부터 나감.'],rw:{tix:{pk_n:10}}},
+ {id:'n1127m',d:'2026-11-27',t:'투수 구종 등급 실측 반영',b:['2016년 이후 투수 카드는 그해 실제 트래킹 등급을 그대로 씀(네일 스위퍼 S 등).','투수마다 구종별로 좌타자·우타자 상대 효과가 실측대로 다름. 예를 들어 네일의 스위퍼는 좌타자에게도 잘 통함.'],rw:{tix:{pk_n:10}}},
+ {id:'n1127l',d:'2026-11-27',t:'스위퍼 보정',b:['하트·네일·크로우 카드의 주무기를 스위퍼로 바로잡음.','스위퍼는 실제 메이저리그 데이터처럼 같은 손 타자에게는 약한 타구를 많이 만들고, 반대 손 타자에게는 효과가 줄어듦.'],rw:{tix:{pk_n:10}}},
+ {id:'n1127k',d:'2026-11-27',t:'구종 2.0: 실제 데이터 구종',b:['2016년 이후 투수는 실제 투구 트래킹 데이터로 구종과 등급을 변경(스위퍼·투심 포함).','투수마다 우타자·좌타자에게 실제로 던지는 구종 비율이 경기에 반영.','데이터가 없는 옛날 투수는 그 시대의 클래식 구종만 가짐.','박철순(팜볼·너클볼), 옥스프링·마일영(너클볼) 등 확인된 선수에게 팜볼과 너클볼을 넣음.','낮은 등급 슬라이더·커브는 실투 홈런을 더 맞고, 등급 효과는 C→B→A→S로 고르게 올라감.'],rw:{tix:{pk_n:10}}},
+ {id:'n1127j',d:'2026-11-27',t:'선발 운용 버튼 수정',b:['라인업의 선발 운용 버튼(1~5번 순서대로 / 체력 되면 에이스 우선)이 눌리지 않던 문제를 수정.'],rw:{tix:{pk_n:10}}},
+{id:'n1127i',d:'2026-11-27',t:'저장 덱 바로 편집',b:['팀 > 저장 덱에서 선수 카드를 눌러 상세를 보고, 자리 교체·빼기·보유 카드 넣기까지 라인업 화면과 똑같이 할 수 있음.','여기서 바꾼 내용은 그 저장 덱에 바로 저장되고, 리그에서 쓰는 라인업은 그대로.'],rw:{tix:{pk_n:10}}},
+{id:'n1127h',d:'2026-11-27',t:'라인업 자유 이동 · 바로 빼기',b:['라인업에서 수비 위치가 안 맞아도 선수를 자유롭게 옮길 수 있음. 대신 라인업 위에 [경기 전에 고칠 점]이 노란 줄로 뜸(포수 없음, 수비 불가 위치 등).','선수 카드를 누르면 [빼기] 버튼으로 다른 선수로 바꾸지 않고 바로 뺄 수 있음.','덱을 저장하거나 경기를 시작할 때도 고칠 점을 알려 줌.'],rw:{tix:{pk_n:10}}},
+{id:'n1127g',d:'2026-11-27',t:'새 덱 효과: 우투좌타 · 스위치히터',b:['우투좌타(B): 타순 9명 중 우투좌타가 6명 이상이면 켜지고, 그 선수들만 야수 +3.','스위치히터(B): 스위치히터가 4명 이상이면 켜지고, 그 선수들만 야수 +3에 투수 손과 상관없이 늘 유리한 타석(플래툰 +1).','B칸은 하나라서 덱 효과 선택에서 골라 켬.'],rw:{tix:{pk_n:10}}},
+ {id:'n1127f',d:'2026-11-27',t:'지역 덱 효과 변경',b:['지역 덱 효과가 구단 연고지가 아니라 선수 출신 지역(고교 기준)으로 바뀜.','1군 25명 중 같은 출신 선수가 6명 이상이면 \'출신 지역 B\'가 켜지고, 그 출신 선수에게만 야수 +3·투수 +2가 붙음.'],rw:{tix:{pk_n:10}}},
+ {id:'n1127e',d:'2026-11-27',t:'선발 로테이션 · 요일제 · 원정 응원단',b:['EX 카드는 같은 계보 덱 인원으로만 셈(올스타·골든글러브 덱 인원에는 안 들어감).','선발 투수는 등판 후 5일을 쉬어야 완전히 회복. 4일만 쉬면 피로가 남아 구위·제구가 깎임.','리그 요일제: 화~일 6경기, 월요일은 휴식일(주간·연도·친구 리그).','친구 리그 도전 상대도 컨디션이 무작위로 정해짐.','작전 카드 추가: 원정 응원단(원정 경기에서 전원 정신력 +5).'],rw:{tix:{pk_n:10}}},
+ {id:'n1127d',d:'2026-11-27',t:'메뉴 개편 · 장비창고 · 선수단',b:['새 상위 메뉴 [장비창고]에서 스킬, 작전 카드, 서포트 카드, 장비를 한곳에서 관리. (작전·서포트 카드는 라인업 화면에서 옮겨 옴. 지금 편집 중인 리그 라인업에 적용)','[카드] 메뉴 이름을 [선수단]으로 변경. (합성·유학·도감·미션)','팀 메뉴는 덱 · 저장 덱 · 보유 카드만 남음. Shift+숫자 단축키 순서: 홈1 경기2 팀3 장비창고4 선수단5 상점6'],rw:{tix:{pk_n:10,prem:1}}},
+{id:'n1127c',d:'2026-11-27',t:'팀 > 저장 덱 보기',b:['팀 > 저장 덱(F2)에서 저장한 덱을 드롭다운으로 골라 리그 라인업 화면과 같은 모양으로 볼 수 있음. 보기 전용이라 지금 라인업은 바뀌지 않음.','[이 덱을 지금 라인업으로 불러오기]로 바로 불러올 수도 있음.'],rw:{tix:{pk_n:10}}},
+{id:'n1127b',d:'2026-11-27',t:'미션 ★3 보상 · 타순 이름',b:['구단 미션 ★3 보상은 EX 조각 1개. 조각 3개가 모이면 EX 확정권 1장(구단 지정 가능)으로 바뀜. 미션 목록에 지금 모은 조각 수(n/3)를 함께 표시.','타순 적성 "테이블세터(테세)"를 "상위 타선(상위)"으로 변경.'],rw:{tix:{pk_n:10}}},
+{id:'n1127a',d:'2026-11-27',t:'장비 전체 보기 · 미션 EX 보상 명칭',b:['팀 > 장비(F3)에서 가진 장비를 한눈에 볼 수 있음. 누가 착용했는지 보이고, 바로 빼거나 1군 선수에게 끼울 수 있음. 같은 구단 장비를 그 구단 선수에게 끼우면 효과 +10%(★ 표시).','구단 미션 ★3 보상 표시를 바로잡음.'],rw:{tix:{pk_n:10,prem:1}}},
+{id:'n1126z3',d:'2026-11-26',t:'기기 간 보유 카드 동기화 수정',b:['PC와 폰을 오가며 할 때, 한 기기의 저장이 다른 기기에서 얻은 카드를 덮어써 카드가 사라질 수 있던 문제를 수정.','이제 로그인하면 클라우드를 먼저 확인하고, 두 기기에서 모두 바뀐 게 있으면 카드·작전 카드·확정권·포인트·블록·장비를 합침. 이미 사라진 카드는 그 카드가 남아 있는 기기에서 새 버전으로 접속하면 돌아옴.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126z2',d:'2026-11-26',t:'아이폰 팝업 위쪽 버튼 수정',b:['아이폰에서 카드 상세 등 팝업 위쪽 버튼(자리 교체하기·잠금·비교하기·닫기)이 상태표시줄에 가려 눌리지 않던 문제를 수정.'],rw:{tix:{pk_n:10}}},
+{id:'n1126z',d:'2026-11-26',t:'폰에서 경기 시작 버튼 가림 수정',b:['폰에서 리그 감독실의 경기 시작 버튼이 아래 묶음 버튼에 가려 눌리지 않던 문제를 수정.','폰 상단의 포인트·블록·리그 표시와 부제를 숨겨 화면을 덜 내려도 되게 함. (포인트·블록은 홈 보유 현황에서 볼 수 있음)'],rw:{tix:{pk_n:10}}},
+{id:'n1126y',d:'2026-11-26',t:'스킬 블록 모두 4칸으로',b:['스킬 블록이 모두 4칸 모양으로 바뀌어, 16칸에 블록 4개를 꽉 채워 끼울 수 있음.','갖고 있던 2·3칸 블록은 같은 등급의 4칸 블록으로 바뀌고 능력치도 4칸 기준으로 올라감. 장착돼 있던 2·3칸 블록은 보관함으로 돌아가니 다시 끼울 것.'],rw:{tix:{pk_n:10,block:2}}},
+{id:'n1126x',d:'2026-11-26',t:'스킬 블록 묶음 표시 · 앞면 능력치 보기',b:['모양·등급·능력치가 같은 보관 블록은 하나로 묶어 ×개수로 보여줌.','스킬 화면에서 카드를 누르거나 [앞면 (능력치)] 탭을 누르면 앞면으로 뒤집혀, 스킬로 바뀐 능력치(원래 → 스킬 후)를 볼 수 있음.'],rw:{tix:{pk_n:10}}},
+{id:'n1126w',d:'2026-11-26',t:'업무 모드 스킬 칸 회색 음영',b:['업무 모드에서 장착한 스킬 블록이 보드에 회색 음영으로 보임 (C 연한 회색 → S 진한 회색).','블록 목록과 카드 뒷면의 색을 빼고 회색으로 변경. 잠긴 칸은 빗금으로 표시.'],rw:{tix:{pk_n:10}}},
+{id:'n1126v',d:'2026-11-26',t:'스킬 블록 필터',b:['스킬 화면에서 끼울 블록을 종류(능력치)와 등급으로 거를 수 있음. 높은 등급이 앞에 오고, 이미 장착한 블록은 필터와 관계없이 항상 보임.'],rw:{tix:{pk_n:10,pk_b:1}}},
+ {id:'n1126u',d:'2026-11-26',t:'라인업은 리그 안으로 · 다른 팀 보기',b:['라인업은 이제 각 리그 화면의 라인업 탭에서 바로 고침. 팀 메뉴의 라인업과 "편집 중인 라인업" 전환 버튼은 없앰(친구 리그는 리그 화면의 "이 리그 라인업 수정"으로).','순위표·팀 기록에서 다른 구단 이름을 누르면 그 팀 라인업과 투수진, 시즌 기록을 볼 수 있음.','내 팀 선수별 기록은 기록실로 옮김.'],rw:{tix:{pk_n:10,prem:1}}},
+ {id:'n1126t',d:'2026-11-26',t:'업무 모드 카드 상세 일람표',b:['업무 모드에서 카드를 누르면 앞·뒷면 대신 엑셀 표 한 장으로 보임. 기본 정보, 수비 위치, 스킬 블록, 능력치(기본·덱·스킬·장비·합계), 시즌 기록이 색 없이 나옴.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126s',d:'2026-11-26',t:'팀 기록 · 항목별 우리 팀 순위',b:['리그 > 기록실 맨 위에 팀 기록이 생김. 공격(타율·출루율·홈런·득점·도루)과 수비(평균자책·실점·탈삼진·세이브·실책)에서 우리 팀이 몇 위인지 한눈에 보고, 모든 팀 기록을 항목별로 정렬해 볼 수 있음.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126r',d:'2026-11-26',t:'리그 탭을 제목줄로',b:['리그 탭이 감독실 제목 옆으로 올라가고 감독실 · 라인업 · 일정 · 기록실 · 리그 정보로 정리.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126q',d:'2026-11-26',t:'리그 화면 탭 나누기',b:['주간·연도별 리그 화면 위에 탭이 생김. 감독실, 매치업(연도별은 선발·예상), 내 팀 기록, 경기 결과, 선수 기록, 순위표를 한 화면에 하나씩 넘겨 봄.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126p',d:'2026-11-26',t:'업무 모드 대박 카드 알림',b:['업무 모드에서는 대박 카드가 나와도 전면 팝업 대신 화면 오른쪽 아래에 한 줄로 잠깐 떴다 사라짐. R이나 1로 연타해서 계속 뽑을 수 있음.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126o',d:'2026-11-26',t:'키보드 단축키',b:['숫자 1~9: 화면 버튼 오른쪽 위에 적힌 번호를 누르면 그 버튼이 눌림. 합성은 1 자동 추천 · 2 합성하기 · 3 재료 비우기, 리그는 1 경기 시작 · 2 결과만 보기, 라인업은 1 추천 · 2 덱으로 저장 · 3 타선 분석 · 4 배터리 분석, 상점은 1 팩 열기.','F1~F4: 하위 탭 넘기기(예: 카드 메뉴에서 F1 합성 · F2 유학 · F3 도감 · F4 미션).','Shift+1~5: 위 메뉴 홈 · 경기 · 팀 · 카드 · 상점.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126n',d:'2026-11-26',t:'라인업을 덱으로 저장 · 덱 짜보기 → 덱',b:['라인업 화면 왼쪽 위에 덱 이름을 쓰고 "덱으로 저장"을 누르면 지금 라인업이 덱으로 저장. 고른 덱이 있으면 "덮어쓰기"도 바로 할 수 있음.','팀 메뉴의 "덱 짜보기"는 "덱"으로 이름을 변경.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126m',d:'2026-11-26',t:'확정권 구단·연도 지정 수정',b:['EX 카드 확정권의 구단 지정, 골든글러브·커리어하이 확정권의 연도 지정이 고른 뒤 풀려 버리던 문제를 수정.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126l',d:'2026-11-26',t:'도감 구단 필터 유지',b:['도감에서 구단을 고른 뒤 연도를 바꿔도 구단 필터가 유지. 그해 이름이 다르면 같은 계보 구단으로 바뀜(예: 해태 → KIA).'],rw:{tix:{pk_n:10}}},
+ {id:'n1126k',d:'2026-11-26',t:'도감 종류 필터에 국가대표',b:['도감 > 전체 선수의 "전체 종류" 필터에서 국가대표를 고르면 대표팀에 뽑혔던 선수 카드만 모아 볼 수 있음.','대회별 명단은 도감 위 국가대표 탭에서 볼 수 있음.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126j',d:'2026-11-26',t:'도감은 카드 보기, 세트 보상은 미션으로',b:['도감은 전체 선수와 국가대표 카드를 둘러보는 곳이 됨.','팀 세트, 골든글러브, 커리어하이, EX, 누적 목표 세트는 미션 > 수집 세트로 옮김. 진행과 보상은 그대로.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126i',d:'2026-11-26',t:'업무 모드 색 맞춤',b:['업무 모드에서 홈과 리그 대시보드 칸이 어둡게 남던 것을 엑셀 표 색으로 변경.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126h',d:'2026-11-26',t:'홈 · 리그 화면 3×2 대시보드',b:['홈에는 편집 중인 라인업, 구단, 오늘의 미션, 리그 현황, 공지·쿠폰, 보유 현황이 한 화면에 나옴.','주간 리그와 연도별 리그 화면 첫머리가 감독실 판(최근 경기, 다음 경기, 기록 순위, 순위, Hot & Cold, 리그 진행)으로 바뀜.','칸마다 높이를 맞춰 노트북 한 화면에 들어가고, 긴 내용은 칸 안에서 스크롤. 자세한 기록은 아래 접힌 칸에 있음.'],rw:{tix:{pk_n:10,prem:1,pk_sp:1}}},
+ {id:'n1126g',d:'2026-11-26',t:'폰 앱 하단 바 위치 수정',b:['홈 화면에 설치한 앱에서 내용이 짧은 화면일 때 하단 메뉴가 바닥에서 떠 보이던 문제를 수정.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126f',d:'2026-11-26',t:'상점 탭 · 폰 감독실 묶음 전환',b:['상점이 선수 카드팩 · 서포트 · 작전 · 스킬 블록 탭으로 나뉨.','폰에서는 감독실이 경기 · 기록 · 순위 · 편지함 · 구단 묶음으로 나뉘고, 아래 버튼으로 넘겨 봄.'],rw:{tix:{pk_n:10,pk_b:1}}},
+ {id:'n1126e',d:'2026-11-26',t:'홈이 감독실로 · 상점 메뉴 분리',b:['홈이 감독실 대시보드로 바뀜. 최근 경기, 다음 경기(바로 시작), 우리 팀 기록 순위, 리그 순위, Hot & Cold를 한 화면에서 봄.','출석·미션·쿠폰·공지는 받은 편지함 칸에 모임.','카드팩은 맨 위(폰은 아래 탭바) 상점 메뉴로 따로 뺌.'],rw:{tix:{pk_n:10,prem:1}}},
+ {id:'n1126d',d:'2026-11-26',t:'사진 묶음 내보내기 · 불러오기',b:['홈 > 구단 설정 · 저장 데이터에서 내가 올린 사진을 파일 하나로 내보내고, 받은 파일을 불러올 수 있음.','다른 사람에게 넘길 때는 직접 찍은 사진이나 CC 라이선스 사진만 넣을 것.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126c',d:'2026-11-26',t:'도감 · 국가대표 탭',b:['도감에 국가대표 탭이 생김. 대회별 명단과 모은 선수를 한눈에 볼 수 있음.','대회 이름이나 선수 이름으로 검색하고, 보유/미보유로 거를 수 있음.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126b',d:'2026-11-26',t:'모바일 일람표 · 도감 사진 올리기 · 카드 팝업 정리',b:['보유 카드 일람표가 폰에서 넘치지 않고, "보이는 기록"에서 3칸씩 골라 볼 수 있음.','도감에서 아직 없는 카드에도 사진을 올릴 수 있음(카드마다 따로).','카드 상세 팝업을 탭하면 뒤집히고, 폰 화면 한 장에 들어가게 줄임.','장비는 칸을 눌러야 맞는 장비가 펼쳐짐.','이제 업데이트마다 공지 보상으로 팩을 지급.'],rw:{tix:{pk_n:10}}},
+ {id:'n1126',d:'2026-11-26',t:'모바일 화면 개편 · 홈 화면 앱 지원',b:['폰에서는 아래 탭바로 메뉴를 옮겨 다닐 수 있음.','카드팩은 맨 위 드롭다운에서 고르고 바로 열 수 있음.','브라우저 공유 메뉴의 "홈 화면에 추가"로 앱처럼 설치할 수 있음.','유학은 이제 다시 보내면 이전 결과가 새 결과로 바뀜.'],rw:{tix:{pk_n:10,prem:2,pk_sp:1,pk_tc:1}}}
 ];
 
 var NOTICES=Array.isArray(NOTICES)?NOTICES:[]; // notices.js가 빠진 빌드에서도 화면이 깨지지 않게 (tools/build2.py로 빌드해야 공지가 들어감)
-const ntcOpen=()=>S.ntcView?NOTICES.find(n=>n.id===S.ntcView):NOTICES.find(n=>!(S.ntc||{})[n.id]);
-function noticeHTML(){if(S.modal||S.dexView||S.bmodal||S.ntcHide)return '';const n=ntcOpen();if(!n)return '';const got=(S.ntc||{})[n.id]==='got',rw=n.rw&&!got;
- return `<div class="modal ntcm" role="dialog" aria-modal="true" aria-label="공지사항"><div class="mbox"><small class="note" style="margin:0">공지 · ${n.d}</small><h2 style="margin:4px 0 10px">${esc(n.t)}</h2><ul class="ntcb">${n.b.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
- ${n.rw?`<p class="ntcr">${got?'받은 보상':'보상'} · <b>${esc(rwText(n.rw))}</b></p>`:''}<div class="tools" style="justify-content:flex-end"><button ${rw?'':'class="ghost"'} data-a="ntcok" data-id="${n.id}">${rw?'보상 받기':'닫기'}</button></div></div></div>`}
+// 공지 묶음(SJ 2026-11-28): 안 읽은 공지는 날짜별로 묶어 한 창에 · 보상은 합쳐서 '모두 받기' 한 번. 홈 목록도 날짜별 한 줄
+const ntcList=()=>{const v=S.ntcView;if(v&&v.startsWith('d:'))return NOTICES.filter(n=>n.d===v.slice(2));if(v){const n=NOTICES.find(n=>n.id===v);return n?[n]:[]}return NOTICES.filter(n=>!(S.ntc||{})[n.id])};
+const ntcOpen=()=>ntcList()[0];
+const rwSum=L=>{const o={};for(const r of L){for(const k in r){if(k==='tix'){o.tix=o.tix||{};for(const t in r.tix)o.tix[t]=(o.tix[t]||0)+(r.tix[t]|0)}else if(typeof r[k]==='number')o[k]=(o[k]||0)+r[k]}}return o};
+const ntcDays=()=>{const m=new Map();for(const n of NOTICES){if(!m.has(n.d))m.set(n.d,[]);m.get(n.d).push(n)}return [...m]};
+function noticeHTML(){if(S.modal||S.dexView||S.bmodal||S.ntcHide)return '';const L=ntcList();if(!L.length)return '';
+ const N=S.ntc||{},un=L.filter(n=>n.rw&&N[n.id]!=='got'),rw=un.length?rwSum(un.map(n=>n.rw)):null,allRw=rwSum(L.filter(n=>n.rw).map(n=>n.rw)),dd=[...new Set(L.map(n=>n.d))];
+ const body=L.length===1?`<small class="note" style="margin:0">공지 · ${L[0].d}</small><h2 style="margin:4px 0 10px">${esc(L[0].t)}</h2><ul class="ntcb">${L[0].b.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`
+  :`<small class="note" style="margin:0">공지 ${L.length}건${dd.length>1?` · ${dd[dd.length-1]} ~ ${dd[0]}`:` · ${dd[0]}`}</small><h2 style="margin:4px 0 10px">업데이트 모음</h2><div class="ntcg">${dd.map(d=>`<h3>${d.slice(5).replace('-','.')}</h3>${L.filter(n=>n.d===d).map(n=>`<details${L.length<=6?' open':''}><summary>${esc(n.t)}</summary><ul class="ntcb">${n.b.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`).join('')}`).join('')}</div>`;
+ const rwt=rw?rwText(rw):Object.keys(allRw).length?rwText(allRw):'';
+ return `<div class="modal ntcm" role="dialog" aria-modal="true" aria-label="공지사항"><div class="mbox">${body}
+ ${rwt?`<p class="ntcr">${rw?(un.length>1?`보상 ${un.length}건 합계`:'보상'):'받은 보상'} · <b>${esc(rwt)}</b></p>`:''}<div class="tools" style="justify-content:flex-end"><button ${rw?'':'class="ghost"'} data-a="ntcall" data-ids="${L.map(n=>n.id).join(',')}">${rw?(un.length>1?'모두 받기':'보상 받기'):'닫기'}</button></div></div></div>`}
 let VERNEW=false;
 async function verCheck(silent){if(!silent){S.verMsg='확인 중…';render()}try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'}),t=await r.text(),m=t.match(/const BUILD='([^']+)'/),nb=m&&m[1];
- if(nb&&nb!==BUILD&&BUILD!=='__BUILD__'){VERNEW=true;if(silent){S.verMsg='새 버전이 있어요';render();return}S.verMsg='새 버전으로 바꾸는 중…';render();try{const g=await navigator.serviceWorker?.getRegistration();await g?.update()}catch(e){}location.reload();return}
- if(!silent){S.verMsg='최신 버전이에요';render()}}catch(e){if(!silent){S.verMsg='확인 실패 · 인터넷 연결을 확인해 주세요';render()}}}
+ if(nb&&nb!==BUILD&&BUILD!=='__BUILD__'){VERNEW=true;if(silent){S.verMsg='새 버전 있음';render();return}S.verMsg='새 버전으로 바꾸는 중…';render();try{const g=await navigator.serviceWorker?.getRegistration();await g?.update()}catch(e){}location.reload();return}
+ if(!silent){S.verMsg='최신 버전';render()}}catch(e){if(!silent){S.verMsg='확인 실패 · 인터넷 연결 확인';render()}}}
 setInterval(()=>{if(!document.hidden&&!VERNEW)verCheck(true)},15*60*1000);
-const verBanner=()=>VERNEW?`<div class="verb" role="status">새 버전이 나왔어요 <button data-a="vercheck">새로고침</button></div>`:'';
+const verBanner=()=>VERNEW?`<div class="verb" role="status">새 버전 출시 <button data-a="vercheck">새로고침</button></div>`:'';
 // 대박 연출(SJ 2026-11-26): 9·10코스트, 골든글러브·올스타(EX·커리어하이·영구결번 포함)가 나오면 전면 팝업. 탭할 때마다 다음 카드
 const HIREV=c=>!!c&&(c.cost>=9||['GG','AS','EX','CH','RN'].includes(c.v));let revSeen=null;
 function revQueue(ids){const L=ids.map(id=>by[id]||byId[id]).filter(HIREV).map(c=>c.id);if(!L.length)return;if(S.work){revFlash(L);return}S.reveal=[...(S.reveal||[]),...L]}
@@ -3308,8 +3323,8 @@ function weekTick(){const s=S&&S.season;if(!s)return false;if(!s.tier){s.tier=1;
   if(!s.over)sim(()=>{msg+=lgPoTick(s,true)});
   S.lgHist=[...(S.lgHist||[]),{wk:s.wk,tier:s.tier,rank:s.rank,won:s.champ===0}].slice(-30);
   const nt=s.champ===0&&s.tier<10?s.tier+1:s.tier;newSeason(nt);
-  S.toast=`지난 시즌 ${tierName(s.tier)} 정규 ${s.rank}위${s.champ===0?' · 포스트시즌 우승':''} 마감${msg?' ('+msg.replace(/^ · /,'')+')':''} · 이번 시즌은 ${tierName(nt)}예요`;return true}
-function startGame(auto,mode){mode=mode||'lg';useMode(mode==='yl'?'yl':'lg');const e=validate();if(e.length){S.msg='⚠ 경기 전에 고쳐 주세요: '+e.slice(0,4).join(' / ')+(e.length>4?' 외':'');location.hash='lineup';render();return}
+  S.toast=`지난 시즌 ${tierName(s.tier)} 정규 ${s.rank}위${s.champ===0?' · 포스트시즌 우승':''} 마감${msg?' ('+msg.replace(/^ · /,'')+')':''} · 이번 시즌은 ${tierName(nt)}`;return true}
+function startGame(auto,mode){mode=mode||'lg';useMode(mode==='yl'?'yl':'lg');const e=validate();if(e.length){S.msg='⚠ 경기 전에 수정 필요: '+e.slice(0,4).join(' / ')+(e.length>4?' 외':'');location.hash='lineup';render();return}
   if(mode==='lg'&&weekTick()){render();return}
   const L=mode==='yl'?S.yl:S.season;if(!L||L.over||L.done)return;
   const pr=curPair(L);
@@ -3404,7 +3419,7 @@ function lastRes(L){return L.last&&L.last.length?`<section class="band"><h3>지�
 // 내 투수 피로도 표시: 피로가 남은 투수만. 선발은 15 미만이어야 등판, 불펜은 55 이상이면 그날 휴식
 function fatHTML(L){const T=teamOf(0,L),F=fatPrev(L,0,T),P=[...(T.rot||[]).map(id=>[id,'선발']),...(T.pen||[]).map(id=>[id,'불펜'])].filter(([id])=>id&&(F[id]||0)>0).sort((a,b)=>F[b[0]]-F[a[0]]);
  if(!P.length)return '<p class="note fat" style="margin:6px 0 0">투수 피로 없음</p>';
- return `<p class="note fat" style="margin:6px 0 0" title="던진 만큼 피로가 쌓이고 체력에 비례해 하루마다 회복. 선발은 피로 15 미만일 때 등판(아니면 다음 순번), 피로 20을 넘으면 구위·제구가 떨어지고, 불펜은 55 이상이면 그날 휴식. 시즌 중 새로 로테이션에 넣은 선발은 피로 75로 합류해 몇 경기 쉬어요">투수 피로 ${P.map(([id,r])=>{const v=F[id],out=r==='선발'?v>=FAT.spOk:v>=FAT.rpOut;return `<span style="white-space:nowrap;display:inline-flex;align-items:center;gap:4px;margin-right:10px${out?';color:#ff8a7a':''}">${esc(byId[id].name)} ${fatBar(v,r==='선발')}${out?(r==='선발'?' 등판 대기':' 휴식'):''}</span>`}).join('')}</p>`}
+ return `<p class="note fat" style="margin:6px 0 0" title="던진 만큼 피로가 쌓이고 체력에 비례해 하루마다 회복. 선발은 피로 15 미만일 때 등판(아니면 다음 순번), 피로 20을 넘으면 구위·제구가 떨어지고, 불펜은 55 이상이면 그날 휴식. 시즌 중 새로 로테이션에 넣은 선발은 피로 75로 합류, 몇 경기 휴식">투수 피로 ${P.map(([id,r])=>{const v=F[id],out=r==='선발'?v>=FAT.spOk:v>=FAT.rpOut;return `<span style="white-space:nowrap;display:inline-flex;align-items:center;gap:4px;margin-right:10px${out?';color:#ff8a7a':''}">${esc(byId[id].name)} ${fatBar(v,r==='선발')}${out?(r==='선발'?' 등판 대기':' 휴식'):''}</span>`}).join('')}</p>`}
 function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),H=teamOf(pr[1],L);
   const spA=byId[fatSP(A,fatPrev(L,pr[0],A))],spH=byId[fatSP(H,fatPrev(L,pr[1],H))],sp=t=>t===A?spA:spH,cost=regCards(T).reduce((x,c)=>x+c.cost,0);
   return `<div class="mu"><div class="side"><small>원정 · 평균 ${teamOvr(A)}</small><h2>${esc(tname(pr[0],L))}</h2>${sp(A)?cardHTML(sp(A),{cond:pr[0]===0?S.cond[sp(A).id]:0}):''}</div>
@@ -3462,8 +3477,8 @@ function vYears(){useMode('yl');const L=S.yl,won=S.ylWon||{};ranked();
   if(L&&!L.done){const pr=curPair(L),c=L.post&&L.post.cur,nx=ylNextAt(Date.now()),hm=t=>{const d=new Date(t+H9);return `${md(t)} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
     const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드 · ${wdayOf(L)}`;
     const six=`<p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p><p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p><div class="btns" style="margin-top:10px">${!L.post?`<button data-a="m-torest" ${pr?'':'disabled'} title="휴식 라운드나 포스트시즌 직전, 최대 ${YL_RUN_MAX}경기까지 결과만 보기로 이어서 진행">다음 휴식일까지 자동</button>`:''}</div>
-    <div class="ylquit">${S.ylQuit&&Date.now()-S.ylQuit<8000?`<span class="note" style="margin:0">정말 ${L.year} 리그를 포기할까요? 기록과 보상이 사라져요.</span><button data-a="m-quit" data-c="1" class="danger">포기하기</button><button data-a="m-quitx" class="ghost">취소</button>`:`<button data-a="m-quit" class="ghost quitb">이 리그 포기…</button>`}</div>`; // SJ 2026-11-28: 자동 버튼이 사라지면 포기 버튼이 그 자리로 밀려와 잘못 눌림 → 자리 고정 + 확인 단계
-    return lgPage('yl',[['ofc','감독실',tb=>ofcHTML(L,{right:tb,key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 넘어가요">휴식 넘기기</button></div>`})],['lu','라인업',()=>vLineup()],['sc','일정',()=>`<section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
+    <div class="ylquit">${S.ylQuit&&Date.now()-S.ylQuit<8000?`<span class="note" style="margin:0">정말 ${L.year} 리그 포기? 기록과 보상 삭제.</span><button data-a="m-quit" data-c="1" class="danger">포기하기</button><button data-a="m-quitx" class="ghost">취소</button>`:`<button data-a="m-quit" class="ghost quitb">이 리그 포기…</button>`}</div>`; // SJ 2026-11-28: 자동 버튼이 사라지면 포기 버튼이 그 자리로 밀려와 잘못 눌림 → 자리 고정 + 확인 단계
+    return lgPage('yl',[['ofc','감독실',tb=>ofcHTML(L,{right:tb,key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 진행">휴식 넘기기</button></div>`})],['lu','라인업',()=>vLineup()],['sc','일정',()=>`<section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
           ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}</section>`+lastRes(L)+gamesHTML(L)],['st','기록실',()=>teamStatsHTML(L)+myTeamHTML(L,'yl')+(statsHTML(L)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(L)+asHTML(L)],['lg','리그 정보',()=>`<section class="band"><h3>시즌 진행</h3>${six}</section>${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${standFull(L,L.post?'정규시즌 최종 순위':'순위표')}`]],{L,title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌'})}
   const Y=YL_YEARS(),res=L&&L.done?`<section class="band"><h3>${L.year} 리그 결과</h3><p>정규시즌 ${L.rank}위 · 우승 <b>${esc(tname(L.champ,L))}</b>${L.champ===0?' (우승)':''}</p>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>${tableHTML(L,'정규시즌 최종 순위')}${titleHTML(L)}${asHTML(L)}`:'';
   return `<section class="hero"><h1>연도별 리그</h1><p class="mini" title="그해 실제 구단들과 팀당 144경기 + 포스트시즌. 08~23시 15분마다 자동 진행(약 2~3일). 숫자는 구단 수·평균 전력">144경기 · 15분마다 자동 · 우승 ${Object.keys(won).length}/${Y.length}</p>
@@ -3482,7 +3497,7 @@ function mAct(a,b){
 function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map((x,i)=>i?`<td>${x}</td>`:`<th scope="row" style="text-align:left;white-space:nowrap;padding-right:8px">${x}</th>`).join('')}</tr>`).join('')}</tbody></table>`,
   sec=(t,b)=>`<section class="band"><h3>${t}</h3>${b}</section>`,up='<b style="color:var(--good,#2e8b57)">▲</b>',dn='<b style="color:var(--bad,#c0392b)">▼</b>';
  return `<section class="band"><h2>능력치 가이드</h2><p class="note">모든 능력치 평균 <b>70</b>(그 시즌 리그 평균). 100 = 한 단계 위, 40 = 한 단계 아래.</p></section>
- ${sec('타석 결과는 이렇게 정해져요',`<p class="note">타자·투수 비율(삼진율 등)을 <b>log5</b>로 합산. 판정 순서: 볼넷 → 삼진 → 홈런 → 땅볼/뜬공 → 안타.</p>`+T(['결과','타자 쪽 (능력치 +10)','투수 쪽 (능력치 +10)'],[
+ ${sec('타석 결과는 결정 방식',`<p class="note">타자·투수 비율(삼진율 등)을 <b>log5</b>로 합산. 판정 순서: 볼넷 → 삼진 → 홈런 → 땅볼/뜬공 → 안타.</p>`+T(['결과','타자 쪽 (능력치 +10)','투수 쪽 (능력치 +10)'],[
   ['볼넷',`선구 ${up}3.2%p`,`제구 ${dn}4.5%p`],
   ['삼진',`교타 ${dn}4.2%p · 선구 ${dn}1.5%p · 장타 ${up}1.8%p`,`구속·변화구 ${up}11%p (구속×0.55 + 변화구×0.45)`],
   ['홈런',`장타 ${up}1.6%p`,`구위 ${dn}0.5%p · 땅볼 성향이면 더 적게`],
@@ -3490,21 +3505,21 @@ function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<
   ['인플레이 안타',`교타 ${up}2.8%p`,`구위 ${dn}1.2%p · 팀 수비`],
   ['땅볼 타구','안타 3.5%p 덜 됨, 주력 +10마다 내야안타 1.5%p. 장타는 거의 없고 병살 위험','—'],
   ['뜬공·라인드라이브','안타 3%p 더 됨. 2루타 30% + 장타 +10마다 6%p, 3루타는 주력',`구위 ${dn}2루타`]]))}
- ${sec('좌우 상성',`<p class="note">타자와 투수가 <b>같은 손</b>이면 타자가 불리해요(삼진 +4%, 안타 −0.8%p, 홈런 −7%). 반대 손이면 그만큼 유리하고, 스위치히터는 언제나 절반만큼 유리해요. <b>언더핸드·사이드암</b> 투수는 이 차이가 1.8배라 같은 손 타자에겐 아주 강하고 반대 손 타자에겐 약해요. 땅볼도 더 많이 유도해요(언더 +5%p, 사이드 +3%p).</p>`)}
+ ${sec('좌우 상성',`<p class="note">타자와 투수가 <b>같은 손</b>이면 타자 불리(삼진 +4%, 안타 −0.8%p, 홈런 −7%). 반대 손이면 그만큼 유리, 스위치히터는 항상 절반만큼 유리. <b>언더핸드·사이드암</b> 투수는 이 차이가 1.8배라 같은 손 타자에겐 아주 강하고 반대 손 타자에겐 약함. 땅볼 유도 증가(언더 +5%p, 사이드 +3%p).</p>`)}
  ${sec('타자 능력치',T(['능력치','쓰이는 곳'],[
-  ['교타','인플레이 안타, 삼진 줄이기'],['장타','홈런, 2루타, 뜬공 비율(삼진은 조금 늘어요)'],['선구','볼넷, 삼진 조금 줄이기'],
+  ['교타','인플레이 안타, 삼진 줄이기'],['장타','홈런, 2루타, 뜬공 비율(삼진 소폭 증가)'],['선구','볼넷, 삼진 조금 줄이기'],
   ['주력','내야안타, 3루타, 도루 시도·성공, 한 베이스 더 가기, 병살 피하기, 외야 보살 피하기'],
   ['수비','포지션 수비값 → 팀 수비(안타 억제), 실책·보살 확률. 포수는 도루 저지'],
   ['멘탈','7회 이후 2점 차 이내나 득점권에서 교타 +(멘탈−70)×0.2'],['번트','희생번트 성공률']]))}
  ${sec('투수 능력치',T(['능력치','쓰이는 곳'],[
-  ['구속','삼진(가장 큼), 뜬공 성향'],['변화구','삼진'],['구위','홈런·안타·2루타 억제'],['구종','땅볼/뜬공 성향(등급이 높을수록 강함). 변화구 등급은 변화, 직구 등급은 구속이 오른 만큼 올라가요(덱 효과·스킬·유학 포함). 기준값 D58·C68·B78·A87·S95에서 97 이상 SS, 103 이상 SSS, 109 이상 SSS+. 변화구가 S(95)를 넘으면 넘은 만큼 탈삼진도 늘어요'],['제구','볼넷 억제'],
+  ['구속','삼진(가장 큼), 뜬공 성향'],['변화구','삼진'],['구위','홈런·안타·2루타 억제'],['구종','땅볼/뜬공 성향(등급이 높을수록 강함). 변화구 등급은 변화, 직구 등급은 구속이 오른 만큼 상승(덱 효과·스킬·유학 포함). 기준값 D58·C68·B78·A87·S95에서 97 이상 SS, 103 이상 SSS, 109 이상 SSS+. 변화구가 S(95)를 넘으면 넘은 만큼 탈삼진 증가'],['제구','볼넷 억제'],
   ['체력','투구 한계. 선발 16 + 체력×0.16타자, 불펜 3 + 체력÷20타자. 한계의 70%를 넘기면 구위 최대 −14, 제구 최대 −10'],
   ['멘탈','접전·득점권에서 제구 +(멘탈−70)×0.2']]))}
  ${sec('수비',`<p class="note">포지션별 수비값(보통 90, 대개 80~100). 포수·유격수·중견수 1.3배 가중. 팀 수비 +10 → 경기당 실점 약 -0.3.</p>`+T(['항목','계산'],[
-  ['실책','타구를 잡은 야수 기준 2.5%, 수비 +10마다 −1.2%p'],['외야 보살','추가 진루하던 주자를 잡을 확률. 외야 수비가 높고 주자가 느릴수록 높아요'],
-  ['도루 저지','포수 수비 +10마다 도루 성공률 −4%p'],['못 맡는 포지션','수비값이 크게 깎여요. 대타·대주자는 다음 수비 때 자동 교체']]))}
+  ['실책','타구를 잡은 야수 기준 2.5%, 수비 +10마다 −1.2%p'],['외야 보살','추가 진루하던 주자를 잡을 확률. 외야 수비가 높고 주자가 느릴수록 높음'],
+  ['도루 저지','포수 수비 +10마다 도루 성공률 −4%p'],['못 맡는 포지션','수비값 크게 하락. 대타·대주자는 다음 수비 때 자동 교체']]))}
  ${sec('그 밖의 보정',T(['항목','효과'],[
-  ['컨디션','최악 −20% · 나쁨 −10% · 보통 0 · 좋음 +4% · 최상 +8%. 타자는 교타(선구는 절반), 투수는 제구(구위는 절반)에 곱해요'],
+  ['컨디션','최악 −20% · 나쁨 −10% · 보통 0 · 좋음 +4% · 최상 +8%. 타자는 교타(선구는 절반), 투수는 제구(구위는 절반)에 곱함'],
   ['덱 효과(팀컬러)','모든 능력치에 +보너스(체력 제외)'],['포수 궁합','투수와 포수의 궁합에 따라 제구(구위는 60%) 보정'],
   ['감독 성향','강공·도루·번트·대타·선발 교체·불펜·고의4구·수비 시프트 경향(0~4)'],
   ['작전·서포트 카드, 스킬 블록','카드에 적힌 상황에서 해당 능력치 가감']]))}
@@ -3528,7 +3543,7 @@ function myTeamHTML(L,m){const k=MODEK(m),T=userT(m),P=(L&&L.ps)||{},st=id=>P['0
   const fx=(()=>{try{return simTeam(T).tc.fx.map(x=>x.n).join(' · ')}catch(e){return ''}})();
   const open=(S.tpOpen||{})[k]!==false;
   return `<section class="band myteam"><details${open?' open':''} data-tp="${k}"><summary><h3 style="display:inline;margin:0">우리 팀</h3> <span class="pill">${MODEN[k]} 전용 라인업</span>${fx?` <small>${esc(fx)}</small>`:''}</summary>
-   <div class="tools" style="margin:8px 0">${k==='on'?'<a href="#lineup"><button class="ghost">이 리그 라인업 수정</button>':`<a><button class="ghost" data-a="lgtab" data-g="${k}" data-k="lu">이 리그 라인업 수정</button>`}</a>${L?'<small style="margin-left:auto">성적은 이 리그 기록이에요</small>':''}</div>
+   <div class="tools" style="margin:8px 0">${k==='on'?'<a href="#lineup"><button class="ghost">이 리그 라인업 수정</button>':`<a><button class="ghost" data-a="lgtab" data-g="${k}" data-k="lu">이 리그 라인업 수정</button>`}</a>${L?'<small style="margin-left:auto">성적은 이 리그 기록</small>':''}</div>
    <div class="scroll"><table class="tbl"><thead><tr><th>타순</th><th>위치</th><th class="l">타자</th><th>타율</th><th>출루율</th><th>홈런</th><th>타점</th></tr></thead><tbody>
    ${(T.lineup||[]).map((x,i)=>`<tr><td>${i+1}</td><td>${esc(PK[x.pos]||x.pos)}</td><td class="l">${nm(x.id)}</td>${bat(st(x.id))}</tr>`).join('')}
    ${(T.bench||[]).filter(Boolean).map(id=>`<tr class="use"><td>벤치</td><td>${esc((byId[baseId(id)]||{}).pos||'')}</td><td class="l">${nm(id)}</td>${bat(st(id))}</tr>`).join('')}</tbody></table>
@@ -3543,10 +3558,10 @@ function dsOpts(){const o=[['m:lg',MODEN.lg+' 라인업'],['m:yl',MODEN.yl+' 라
   for(const d of S.decks||[])o.push(['d:'+d.id,(d.name||'덱')+(deckOk(d)?'':' · 가상')]);return o}
 function dsTeam(k,color){let t,name;if(!k)return null;
   if(k.startsWith('m:')){const m=k.slice(2);t=modeTeam(m);name=MODEN[m]}else{const d=(S.decks||[]).find(x=>x.id===k.slice(2));if(!d)return null;t=d.t;name=d.name||'덱'}
-  t=JSON.parse(JSON.stringify(t||{}));if(!t.lineup||t.lineup.filter(x=>x&&x.id&&byId[x.id]).length<9||!(t.rot||[]).filter(Boolean).length||!(t.pen||[]).filter(Boolean).length)return {err:`${name}: 타순 9명·선발·불펜이 다 채워져 있어야 해요`};
+  t=JSON.parse(JSON.stringify(t||{}));if(!t.lineup||t.lineup.filter(x=>x&&x.id&&byId[x.id]).length<9||!(t.rot||[]).filter(Boolean).length||!(t.pen||[]).filter(Boolean).length)return {err:`${name}: 타순 9명·선발·불펜이 모두 필요`};
   return {...clean(t),name,color,blocks:S.blocks,abSt:S.abSt||{},eq:eqMap(),rotIdx:0}}
 function dsRun(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8fe0'),n=+o.n||10;
-  if(!A||!B){S.dsRes={err:'양쪽 덱을 골라 주세요'};return}if(A.err||B.err){S.dsRes={err:A.err||B.err};return}
+  if(!A||!B){S.dsRes={err:'양쪽 덱 선택'};return}if(A.err||B.err){S.dsRes={err:A.err||B.err};return}
   if(o.a===o.b)B.name+=' (복제)';
   const R={n,w:[0,0],t:0,rs:[0,0],bat:[{},{}],pit:[{},{}],names:[A.name,B.name],last:null},T=[A,B],G=[];
   for(let i=0;i<n;i++){const aw=i%2,away=aw?1:0,home=1-away;T[0].rotIdx=i;T[1].rotIdx=i;
@@ -3590,7 +3605,7 @@ function dsPredGen(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8
     const [th,label]=gen(n),x={ty,th,label},p=boot.filter(t=>dsTest(x,t)).length/boot.length;if(p<.04||p>.92)continue;
     used.add(ty);opts.push({...x,p,pt:Math.max(10,Math.min(300,Math.round((10+25*(1-p)/p)/5)*5)),rw:dsRw(p)})}
   return {key:dsKey(),opts,pick:null}}
-function dsPredHTML(){if(dsDay().tr>=DS_TRY_DAY)return `<p class="note" style="text-align:center">오늘 예측 ${DS_TRY_DAY}번을 다 썼어요. 시뮬레이션은 계속 할 수 있어요.</p>`;let P=S.dsPred;if(!P||P.key!==dsKey()){P=S.dsPred=dsPredGen();if(!P)return ''}if(!P.opts.length)return '';
+function dsPredHTML(){if(dsDay().tr>=DS_TRY_DAY)return `<p class="note" style="text-align:center">오늘 예측 ${DS_TRY_DAY}번 모두 사용. 시뮬레이션은 계속 가능.</p>`;let P=S.dsPred;if(!P||P.key!==dsKey()){P=S.dsPred=dsPredGen();if(!P)return ''}if(!P.opts.length)return '';
   return `<div class="btns pred" style="justify-content:center" aria-label="덱 대결 예측 고르기"><small>예측 (오늘 ${DS_TRY_DAY-S.dsIt.tr}번 남음)</small>${P.opts.map((x,i)=>`<button data-a="ds-pred" data-i="${i}" class="${P.pick===i?'big':'ghost'}" aria-pressed="${P.pick===i}">${esc(x.label)} · ${esc(dsRwTxt(x))}</button>`).join('')}<button class="ghost" data-a="ds-reroll" title="예측 선택지 다시 뽑기">새로 뽑기</button></div>
    <p class="note help" style="text-align:center;margin:4px 0 0">하나 골라 시뮬레이션 → 결과로 판정. 어려울수록 보상 큼. 포인트는 하루 상한, 아이템은 하루 ${DS_ITEM_DAY}개.</p>`}
 function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.decks[0].id:'m:yl',n:10},O=dsOpts(),R=S.dsRes,f3=v=>v.toFixed(3).replace(/^0/,'');
@@ -3600,7 +3615,7 @@ function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.dec
     ${B.map(x=>`<tr><td class="l">${esc(x.c.name)} <small>${String(x.c.year).slice(2)}' ${esc(x.c.team)}</small></td><td>${x.g}</td><td>${x.ab?f3(x.h/x.ab):'-'}</td><td>${f3((x.h+x.bb)/Math.max(1,x.ab+x.bb))}</td><td>${x.hr}</td><td>${x.rbi}</td></tr>`).join('')}</tbody></table>
     <table class="tbl"><thead><tr><th class="l">투수</th><th>경기</th><th>이닝</th><th>실점/9</th><th>탈삼진</th><th>WHIP</th></tr></thead><tbody>
     ${P.map(x=>`<tr><td class="l">${esc(x.c.name)} <small>${String(x.c.year).slice(2)}' ${esc(x.c.team)}</small></td><td>${x.g}</td><td>${Math.floor(x.outs/3)}.${x.outs%3}</td><td>${x.outs?(x.r*27/x.outs).toFixed(2):'-'}</td><td>${x.k}</td><td>${x.outs?((x.h+x.bb)*3/x.outs).toFixed(2):'-'}</td></tr>`).join('')}</tbody></table></div></div>`};
-  return `<section class="hero"><h1>덱 대결</h1><p class="mini">보유 덱, 덱 짜보기로 만든 가상 덱, 리그별 라인업끼리 붙여 봐요. 보상·기록·피로는 없어요.</p>
+  return `<section class="hero"><h1>덱 대결</h1><p class="mini">보유 덱, 덱 짜보기로 만든 가상 덱, 리그별 라인업끼리 대결. 보상·기록·피로 없음.</p>
    <div class="tools" style="flex-wrap:wrap;gap:6px;justify-content:center">${sel('a')}<b style="align-self:center">VS</b>${sel('b')}
    <select data-ds="n" aria-label="경기 수">${DS_N.map(v=>`<option value="${v}"${+o.n===v?' selected':''}>${v}경기</option>`).join('')}</select><button class="big" data-a="ds-go">시뮬레이션</button></div>${dsPredHTML()}
    <p class="note help" style="text-align:center">홈·원정 교대, 선발은 로테이션 순. 스킬·유학·장비는 양쪽 모두 현재 상태 적용.</p></section>
@@ -3876,7 +3891,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='cards';NAVG.game='play';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'모드',team:'덱 빌더',gear:'장비창고',cards:'선수단',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='1346f52f80';
+const BUILD='f4e8fdbfbd';
 const TABI={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 3h4V6h-4zM3 12h18v1.6H3z" fill="currentColor"/></svg>',home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
@@ -3894,7 +3909,7 @@ const SAFE=(f,d)=>{try{return f()}catch(e){console.error('[render]',e);RERR=RERR
 function render(){if(!S)return;if(S.pkOut&&S.pkOut!==revSeen){revSeen=S.pkOut;if(S.pkOut.cards)revQueue(S.pkOut.cards.map(c=>c.id))}RERR='';SAFE(ensureUI);SAFE(xlSet);SAFE(msTick);if(S.season&&!G){SAFE(weekTick);SAFE(ylTick)}SAFE(restoreLift);SAFE(syncTeam);SAFE(rebuildOwn);
   if(FBMODE()&&!ON.user&&!S.guest){document.body.dataset.bg='field';hdr.innerHTML='';vw.innerHTML=loginView();return}
   const k=view(),y=scrollY;if(k!=='decks'&&String(S.teamK||'').startsWith('dk:'))dkLeave();document.body.dataset.bg=k==='lineup'?(S.tb==='P'?'pen':'team'):k==='skill'?'cage':k==='cards'||k==='card'?'team':k==='abroad'?'fungo':k==='game'?'catch':'field';hdr.innerHTML=SAFE(()=>head(k),'');document.querySelectorAll('body>#tabbar').forEach(e=>e.remove());{const tb=hdr.querySelector('#tabbar');if(tb)document.body.appendChild(tb)}let body;try{body=ROUTES[k]()}catch(e){console.error(e);body=`<section class="band"><h2>화면 오류</h2><p class="note">${esc(e.message)}</p></section>`}
-  vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+SAFE(cmpBar,'')+SAFE(()=>modal(),'')+SAFE(noticeHTML,'')+verBanner();if(RERR)vw.insertAdjacentHTML('afterbegin',`<p class="warn" style="margin:8px 0">화면 일부 오류 · ${esc(RERR)} (이 문구를 캡처해 알려 주세요)</p>`);S.toast='';
+  vw.innerHTML=(LEG.has(k)?`<div class="lg">${body}</div>`:body)+SAFE(cmpBar,'')+SAFE(()=>modal(),'')+SAFE(noticeHTML,'')+verBanner();if(RERR)vw.insertAdjacentHTML('afterbegin',`<p class="warn" style="margin:8px 0">화면 일부 오류 · ${esc(RERR)} (이 문구 캡처해서 제보)</p>`);S.toast='';
   vw.querySelectorAll('section').forEach(sec=>{if(!sec.querySelector(':scope .help'))return;const h=sec.querySelector('h1,h2,h3');if(!h||h.querySelector('.hq'))return;h.insertAdjacentHTML('beforeend','<button class="hq" data-hq="1" aria-label="설명" title="설명">?</button>')}); // 설명은 ? 버튼으로(SJ 2026-11-28)
   SAFE(()=>{const sv=$('#sv');if(sv)sv.value=btoa(unescape(encodeURIComponent(JSON.stringify(S,function(kk,v){return this===S&&TRANS.has(kk)?undefined:v}))));});if(S.modal||S.dexView)scrollTo(0,y);saveSoon()}
 // 메뉴를 옮기면 열려 있던 카드 팝업을 모두 닫음(SJ 2026-11-26: 닫기 안 누르면 다른 메뉴에서도 떠 있던 문제)
@@ -3904,7 +3919,7 @@ document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#na
 document.addEventListener('click',e=>{const q=e.target.closest&&e.target.closest('[data-hq]');if(q){e.preventDefault();e.stopPropagation();document.body.classList.toggle('showhelp')}},true);
 hdr.addEventListener('click',e=>{const hb=e.target.closest('#helpBtn,#helpBtn2');if(hb){document.body.classList.toggle('showhelp');render()}});
 // 기존 게임 동작 (경기 진행·리그·친구 리그·저장 코드·사진 올리기)
-const REALA=new Set(['dkdel','dkdelx','slotout','dkvload','tview','tvx','tsk','tss','lgtab','mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
+const REALA=new Set(['dkdel','dkdelx','slotout','dkvload','tview','tvx','tsk','tss','lgtab','mstab','oft','guest','start','auto','newseason','pa','inn','end','fin','tk','copy','load','reset','more','rmphoto','dexmore','dexclr','dexhv','phexp','ntcok','ntcall','vercheck','abonly','abmore','luview','decknew','decksave','deckren','deckload','deckdel','lustat','dism','synview','bldmore','bldclr','bldfrom','bldapply','bldsave','bldrec','bldview','luana','bldcode','bldimg','bldimp','coupon','eqon','eqoff','eqsl','eqmore','mssub','msgo','msclose','msopt','theme','work']);
 function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);return}if(a.startsWith('m-')){mAct(a,b);return}
   if(a==='start')startGame(false);else if(a==='auto')startGame(true);else if(a==='newseason'){newSeason();render()}
   else if(a==='pa'){pa(G,true);render()}else if(a==='inn'){const h=G.half,n=G.inn;let k=0;while(!G.done&&G.half===h&&G.inn===n&&k++<300)pa(G);render()}
@@ -3917,14 +3932,15 @@ function realClick(b){const a=b.dataset.a;if(a.startsWith('o-')){oAct(a,b);retur
   else if(/^bld/.test(a))bldAct(a);
   else if(a==='synview'){S.synView=b.dataset.v;render()}
   else if(a==='lustat'){S.luStat=b.dataset.v;render()}
-  else if(a==='dkdel'){const id=S.dkView;if(S.dkDel!==id){S.dkDel=id}else{dkLeave();S.decks=(S.decks||[]).filter(x=>x.id!==id);S.deckGone=[...(S.deckGone||[]),id].slice(-200);for(const k in S.modeDeck||{})if(S.modeDeck[k]===id)S.modeDeck[k]='';if(S.deckSel===id)S.deckSel='';S.dkView='';S.dkDel=0;S.toast='덱을 지웠어요';save()}render()}
+  else if(a==='dkdel'){const id=S.dkView;if(S.dkDel!==id){S.dkDel=id}else{dkLeave();S.decks=(S.decks||[]).filter(x=>x.id!==id);S.deckGone=[...(S.deckGone||[]),id].slice(-200);for(const k in S.modeDeck||{})if(S.modeDeck[k]===id)S.modeDeck[k]='';if(S.deckSel===id)S.deckSel='';S.dkView='';S.dkDel=0;S.toast='덱 삭제됨';save()}render()}
   else if(a==='dkdelx'){S.dkDel=0;render()}
-  else if(a==='slotout'){if(S.mslot){setS(S.mslot,null);S.msg='뺐어요 · 빈자리는 경기 전에 채워 주세요'}S.modal=null;S.mslot=null;save();render()}
-  else if(a==='dkvload'){const k=b.dataset.k||S.dkPrev||'lg';dkLeave();useMode(k);S.deckSel=S.dkView;deckAct('deckload');S.toast=`${MODEN[k]} 라인업으로 불러왔어요`;save();location.hash='lineup';render()}
+  else if(a==='slotout'){if(S.mslot){setS(S.mslot,null);S.msg='뺌 · 빈자리는 경기 전에 채울 것'}S.modal=null;S.mslot=null;save();render()}
+  else if(a==='dkvload'){const k=b.dataset.k||S.dkPrev||'lg';dkLeave();useMode(k);S.deckSel=S.dkView;deckAct('deckload');S.toast=`${MODEN[k]} 라인업으로 불러옴`;save();location.hash='lineup';render()}
   else if(/^deck/.test(a))deckAct(a);
   else if(a==='phexp')phExport();
   else if(a==='abonly'){S.abOnly=S.abOnly===false;S.abLim=0;render()}
   else if(a==='abmore'){S.abLim=(S.abLim||48)+48;render()}
+  else if(a==='ntcall'){S.ntc=S.ntc||{};const got=[];for(const id of (b.dataset.ids||'').split(',')){const n=NOTICES.find(x=>x.id===id);if(!n)continue;if(n.rw&&S.ntc[n.id]!=='got'){ECON.grant(S,n.rw);S.ntc[n.id]='got';got.push(n.rw)}else if(!S.ntc[n.id])S.ntc[n.id]=1}if(got.length)S.toast='공지 보상 · '+rwText(rwSum(got));S.ntcView=null;save();render()}
   else if(a==='ntcok'){const n=NOTICES.find(x=>x.id===b.dataset.id);S.ntc=S.ntc||{};if(n){if(n.rw&&S.ntc[n.id]!=='got'){ECON.grant(S,n.rw);S.ntc[n.id]='got';S.toast='공지 보상 · '+rwText(n.rw)}else if(!S.ntc[n.id])S.ntc[n.id]=1}S.ntcView=null;save();render()}
   else if(a==='vercheck')verCheck(false);
   else if(a==='dexhv'){const F=S.dexF=S.dexF||{},v=b.dataset.v;let H=F.h!=='miss',M=F.h!=='have';if(v==='have')H=!H;else M=!M;if(!H&&!M){if(v==='have')M=true;else H=true}F.h=H&&M?'':H?'have':'miss';S.dexLim=0;render()}
@@ -3966,7 +3982,7 @@ vw.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.sim){const B=bldInit(),id=S.bmodal;B.sim=B.sim||{};const x=B.sim[id]=B.sim[id]||{ab:{},sk:{},eq:{}};const g=t.dataset.sim,k=t.dataset.k;if(t.value&&t.value!=='0')x[g][k]=g==='eq'?t.value:+t.value;else delete x[g][k];if(!Object.keys(x.ab).length&&!Object.keys(x.sk).length&&!Object.keys(x.eq).length)delete B.sim[id];save();render();return}
   if(t.id==='decksel'){S.deckSel=t.value;S.deckDel=0;render();return}
   if(t.id==='deckname'||t.id==='ludn'){S.deckName=t.value;return}
-  if(t.id==='deckmgr'){const d=(S.decks||[]).find(x=>x.id===S.deckSel),m=MG.find(x=>x.id===t.value);if(d&&m){d.t.mgr=m.id;S.msg=`'${d.name}' 감독을 ${m.n}(으)로 바꿨어요`;save()}render();return}
+  if(t.id==='deckmgr'){const d=(S.decks||[]).find(x=>x.id===S.deckSel),m=MG.find(x=>x.id===t.value);if(d&&m){d.t.mgr=m.id;S.msg=`'${d.name}' 감독을 ${m.n}(으)로 변경`;save()}render();return}
   if(t.dataset.mdeck){S.modeDeck=S.modeDeck||{};S.modeDeck[t.dataset.mdeck]=t.value;save();render();return}
   if(t.id==='tll'){S.pkSel.tl=t.value;render();return}
   if(t.id==='tyl'){S.pkSel.ty={line:t.value,years:[]};render();return}

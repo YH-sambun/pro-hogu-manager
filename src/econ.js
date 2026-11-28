@@ -108,7 +108,7 @@ function poolOf(CARDS,pk,opt){opt=opt||{};let pool=CARDS.filter(c=>c.v!=='EX'&&c
 function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','c1','p','t','y','tl','ty','sx'].includes(k))return {err:'카드 팩 아님'};
   opt=opt||{};const sel=k==='t'?(opt.lines||[]):k==='y'?(opt.years||[]):null;if(sel&&new Set(sel.map(String)).size!==3)return {err:'3개 선택'};
   if(k==='tl'&&!opt.line)return {err:'구단 선택'};if(k==='ty'&&(!opt.line||new Set((opt.tyYears||[]).map(String)).size!==3))return {err:'구단 1개 · 연도 3개 선택'};
-  if(S.pt<pk.p)return {err:'포인트가 모자라요'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
+  if(S.pt<pk.p)return {err:'포인트 부족'};const pool=poolOf(CARDS,pk,opt);if(!pool.length)return {err:'뽑을 카드 없음'};
   S.pt-=pk.p;const out=[];const sp=k==='sx'?pool.filter(isSp):null,nsp=sp&&pool.filter(c=>!c.v);
   for(let i=0;i<pk.cnt;i++)out.push(k==='ty'?pool[Math.floor(rnd()*pool.length)]:sp?wpick(rnd()<.25?sp:nsp):wpick(pool));
   if(sp&&!out.some(isSp))out[out.length-1]=wpick(sp);
@@ -122,7 +122,7 @@ function buyCards(S,CARDS,k,opt){const pk=PACKS.find(p=>p.k===k);if(!pk||!['n','
 function useTicket(S,CARDS,k,arg){const pickId=arg;if(!(S.tix&&S.tix[k]>0))return {err:'확정권 없음'};let c;
   if(k==='pick'){c=CARDS.find(x=>x.id===pickId&&x.cost>=9&&!x.mx);if(!c)return {err:'레전드(9+) 카드 선택'}}
   else if(tixPool[k]){const all=CARDS.filter(c=>tixPool[k](c)&&(arg==null||(k==='gg'&&c.year===+arg)||(k==='ex'&&c.line===arg)||(k==='ch'&&c.year===+arg)||!['gg','ex','ch'].includes(k))),nw=all.filter(x=>!dexHas(S,x.id));c=wpick(nw.length?nw:all)} // 도감에 없는 카드 우선
-  else return {err:'팩형 확정권은 팩 화면에서 써요'};
+  else return {err:'팩형 확정권은 팩 화면에서 사용'};
   if(!c)return {err:'조건에 맞는 카드 없음'};S.tix[k]--;return {cards:[c],dex:gain(S,[c.id])}}
 function dismantle(S,byId,id,n){n=n||1;const have=S.owned[id]|0;if(have-n<1)return {err:'1장은 남겨야 함'};
   S.owned[id]=have-n;if(byId[id].v==='EX'){S.exShard=(S.exShard|0)+n;let tk=0;while(S.exShard>=3){S.exShard-=3;tk++}if(tk){S.tix=S.tix||{};S.tix.ex=(S.tix.ex|0)+tk}return {shard:n,tix:tk,left:S.exShard}} // EX 중복 → EX 조각, 3개마다 EX 확정권(구단 지정 가능)
@@ -196,7 +196,7 @@ function studyRoll(d,cost){const x=STUDY_BY[d]||STUDY[0],N=['대성공','성공'
 const abResetFee=cost=>Math.round(3000*(1+(cost||0)/5)/100)*100; // 유학 초기화 비용(SJ 2026-11-25: 포인트나 초기화권으로 지우고 다시 보냄)
 const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 유학 불가'}:{ok:true};
 const rushFee=msLeft=>Math.max(0,Math.ceil(msLeft/36e5))*RUSH;
-function pay(S,p){if((S.pt||0)<p)return {err:'포인트가 모자라요'};S.pt-=p;return {pt:p}}
+function pay(S,p){if((S.pt||0)<p)return {err:'포인트 부족'};S.pt-=p;return {pt:p}}
 // 쿠폰: Firestore coupons/{코드} 문서를 읽어 data로 넘김. 같은 코드는 한 번만(S.coupons에 기록). exp(만료 시각, ms 또는 Timestamp) 지나면 거절
 function redeem(S,code,data){code=String(code||'').trim().toUpperCase();S.coupons=S.coupons||{};
   if(!data)return {err:'없는 쿠폰'};if(S.coupons[code])return {err:'이미 사용한 쿠폰'};
@@ -221,7 +221,7 @@ function eqBonus(it,c){const K=EQ_KIND[it.k];if(!c||c.type!==K[0])return null;le
   if(c.pz)v*=1+.25*c.pz; // 숨은 잠재력(세이버 지표 좋았던 선수) ×1.25/×1.5
   if(it.line&&it.line===c.line)v+=Math.max(1,v*.1);return {stat:K[3],v:Math.max(1,Math.round(v))}}
 function equip(S,u,cardId,byId){const it=(S.eq||[]).find(x=>x.u===u),c=byId[cardId];if(!it||!c)return {err:'없는 장비·카드'};const K=EQ_KIND[it.k];
-  if(c.type!==K[0])return {err:K[0]==='B'?'타자용 장비예요':'투수용 장비예요'};
+  if(c.type!==K[0])return {err:K[0]==='B'?'타자용 장비':'투수용 장비'};
   for(const x of S.eq)if(x.on===cardId&&EQ_KIND[x.k][1]===K[1]&&x!==it)x.on=null; // 같은 슬롯에 있던 장비는 빠짐
   it.on=cardId;return {ok:true,bonus:eqBonus(it,c)}}
 function unequip(S,u){const it=(S.eq||[]).find(x=>x.u===u);if(it)it.on=null;return {ok:!!it}}
@@ -268,9 +268,9 @@ function msDone(S,ch,mid,out){S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{}
 function missionCheck(S){const out=[];for(const ch of CHAPTERS)for(const mid of ['m1','m2','m5']){const p=msProg(S,ch,mid);if(!p.done&&p.have>=p.need)msDone(S,ch,mid,out)}return out.concat(natCheck(S))}
 // 제출(★3): ids = 낼 카드 id 배열(중복 허용). 그 구단 7코+만. 기본은 중복만, S.opt.submitLast면 마지막 장도
 function missionSubmit(S,line,ids){const ch=CHAPTERS.find(c=>c.line===line);if(!ch)return {err:'없는 챕터'};S.ms=S.ms||{};const st=S.ms[ch.id]=S.ms[ch.id]||{};
-  if(st.m3)return {err:'이미 완료한 미션이에요'};const last=S.opt&&S.opt.submitLast,use={};
-  for(const id of ids){const c=CARDS_.find(x=>x.id===id);if(!c||c.line!==line||c.cost<7)return {err:'그 구단 7코스트 이상 카드만 낼 수 있어요'};use[id]=(use[id]|0)+1}
-  for(const id in use){const keep=last?0:1;if((S.owned[id]|0)-use[id]<keep)return {err:last?'가진 장수보다 많아요':'중복 카드만 낼 수 있어요 (옵션에서 마지막 1장 제출 허용 가능)'}}
+  if(st.m3)return {err:'이미 완료한 미션'};const last=S.opt&&S.opt.submitLast,use={};
+  for(const id of ids){const c=CARDS_.find(x=>x.id===id);if(!c||c.line!==line||c.cost<7)return {err:'그 구단 7코스트 이상 카드만 제출 가능'};use[id]=(use[id]|0)+1}
+  for(const id in use){const keep=last?0:1;if((S.owned[id]|0)-use[id]<keep)return {err:last?'보유 장수 초과':'중복 카드만 제출 가능 (옵션에서 마지막 1장 제출 허용 가능)'}}
   const room=msReq(st.cyc|0).m3-(st.sub|0);let n=0;for(const id in use){const k=Math.min(use[id],room-n);if(k<=0)break;S.owned[id]-=k;if(S.owned[id]<=0)delete S.owned[id];n+=k}
   st.sub=(st.sub|0)+n;const out=[];if(st.sub>=msReq(st.cyc|0).m3)msDone(S,ch,'m3',out);return {used:n,have:st.sub,out}}
 // ★4: 리그 우승 때 모드 쪽에서 호출(주간 리그 1위·연도별 리그 한국시리즈 우승). lineupCards = 1군 카드 객체 배열
@@ -291,7 +291,7 @@ function natCheck(S){const out=[];S.nat=S.nat||{};for(const n of NATS){if(S.nat[
 const isMissionOnly=c=>!!(c&&c.mx);
 // ── 4. 공통 ──────────────────────────────────────────────────
 function grant(S,rw){if(!rw)return S;S.pt=(S.pt||0)+(rw.pt||0);S.tix=S.tix||{};for(const k in rw.tix||{})S.tix[k]=(S.tix[k]|0)+rw.tix[k];return S}
-const rwText=rw=>[rw.pt?rw.pt.toLocaleString()+'P':'',...Object.entries(rw.tix||{}).filter(([,n])=>n).map(([k,n])=>TIX[k]+(n>1?' ×'+n:''))].filter(Boolean).join(' · ');
+const rwText=rw=>[rw.pt?rw.pt.toLocaleString()+'P':'',...Object.entries(rw.tix||{}).filter(([,n])=>n).map(([k,n])=>n>1?String(TIX[k]).replace(' 1개','')+' ×'+n:TIX[k])].filter(Boolean).join(' · ');
 // 저장 데이터 이전: coins → pt, 기존 보유 카드는 도감에 등록(완성 보상은 지급하지 않고 완성 표시만)
 function migrate(S){if(S.pt==null){S.pt=S.coins|0;delete S.coins}S.tix=S.tix||{};S.pity=S.pity||{p:0};
   if(!S.dex){S.dex={};for(const id in S.owned||{})S.dex[id]=1;S.dexDone={};

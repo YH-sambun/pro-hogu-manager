@@ -63,7 +63,7 @@ const FX_TARGETS=[...FX_LINES.map(l=>({k:'L:'+l,g:'단일구단',n:FX_LN[l]||l,m
 const FX_T_BY=Object.fromEntries(FX_TARGETS.map(t=>[t.k,t]));
 const CH_WILD=1; // 커리어하이: 연도 무관으로 단일연도 인원에 넣을 수 있는 장수
 const EX_MAX={B:1,P:1},exCount=ids=>{const n={B:0,P:0};for(const id of ids){const c=byId[baseId(id)];if(c&&c.v==='EX')n[c.type]++}return n},
-  exErr=ids=>{const n=exCount(ids),e=[];if(n.B>EX_MAX.B)e.push(`EX 타자는 ${EX_MAX.B}명까지 쓸 수 있어요(지금 ${n.B}명)`);if(n.P>EX_MAX.P)e.push(`EX 투수는 ${EX_MAX.P}명까지 쓸 수 있어요(지금 ${n.P}명)`);return e},
+  exErr=ids=>{const n=exCount(ids),e=[];if(n.B>EX_MAX.B)e.push(`EX 타자는 ${EX_MAX.B}명까지 가능(지금 ${n.B}명)`);if(n.P>EX_MAX.P)e.push(`EX 투수는 ${EX_MAX.P}명까지 가능(지금 ${n.P}명)`);return e},
   exTrim=cs=>{const keep=new Set();for(const t of ['B','P']){const x=cs.filter(c=>c&&c.v==='EX'&&c.type===t).sort((a,b)=>b.ovr-a.ovr).slice(0,EX_MAX[t]);x.forEach(c=>keep.add(c))}return cs.filter(c=>c&&(c.v!=='EX'||keep.has(c)))};
 const FILL_P=13,COST_CAP=150,ROSTER={bat:9,bench:3,sp:5,rp:8} // 2026-11-28 SJ: 벤치 3·불펜 8. 불펜: [마무리, 셋업, 중계1~6];
 // 투구폼(SJ 2026-11-25): 언더핸드(U)·사이드암(S) 투수. 공개 기사·위키 명단 기준(스포츠경향·OSEN·위키백과 '사이드암'), 나머지는 오버·스리쿼터로 봄

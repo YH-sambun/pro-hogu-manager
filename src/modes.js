@@ -181,8 +181,8 @@ function weekTick(){const s=S&&S.season;if(!s)return false;if(!s.tier){s.tier=1;
   if(!s.over)sim(()=>{msg+=lgPoTick(s,true)});
   S.lgHist=[...(S.lgHist||[]),{wk:s.wk,tier:s.tier,rank:s.rank,won:s.champ===0}].slice(-30);
   const nt=s.champ===0&&s.tier<10?s.tier+1:s.tier;newSeason(nt);
-  S.toast=`지난 시즌 ${tierName(s.tier)} 정규 ${s.rank}위${s.champ===0?' · 포스트시즌 우승':''} 마감${msg?' ('+msg.replace(/^ · /,'')+')':''} · 이번 시즌은 ${tierName(nt)}예요`;return true}
-function startGame(auto,mode){mode=mode||'lg';useMode(mode==='yl'?'yl':'lg');const e=validate();if(e.length){S.msg='⚠ 경기 전에 고쳐 주세요: '+e.slice(0,4).join(' / ')+(e.length>4?' 외':'');location.hash='lineup';render();return}
+  S.toast=`지난 시즌 ${tierName(s.tier)} 정규 ${s.rank}위${s.champ===0?' · 포스트시즌 우승':''} 마감${msg?' ('+msg.replace(/^ · /,'')+')':''} · 이번 시즌은 ${tierName(nt)}`;return true}
+function startGame(auto,mode){mode=mode||'lg';useMode(mode==='yl'?'yl':'lg');const e=validate();if(e.length){S.msg='⚠ 경기 전에 수정 필요: '+e.slice(0,4).join(' / ')+(e.length>4?' 외':'');location.hash='lineup';render();return}
   if(mode==='lg'&&weekTick()){render();return}
   const L=mode==='yl'?S.yl:S.season;if(!L||L.over||L.done)return;
   const pr=curPair(L);
@@ -277,7 +277,7 @@ function lastRes(L){return L.last&&L.last.length?`<section class="band"><h3>지�
 // 내 투수 피로도 표시: 피로가 남은 투수만. 선발은 15 미만이어야 등판, 불펜은 55 이상이면 그날 휴식
 function fatHTML(L){const T=teamOf(0,L),F=fatPrev(L,0,T),P=[...(T.rot||[]).map(id=>[id,'선발']),...(T.pen||[]).map(id=>[id,'불펜'])].filter(([id])=>id&&(F[id]||0)>0).sort((a,b)=>F[b[0]]-F[a[0]]);
  if(!P.length)return '<p class="note fat" style="margin:6px 0 0">투수 피로 없음</p>';
- return `<p class="note fat" style="margin:6px 0 0" title="던진 만큼 피로가 쌓이고 체력에 비례해 하루마다 회복. 선발은 피로 15 미만일 때 등판(아니면 다음 순번), 피로 20을 넘으면 구위·제구가 떨어지고, 불펜은 55 이상이면 그날 휴식. 시즌 중 새로 로테이션에 넣은 선발은 피로 75로 합류해 몇 경기 쉬어요">투수 피로 ${P.map(([id,r])=>{const v=F[id],out=r==='선발'?v>=FAT.spOk:v>=FAT.rpOut;return `<span style="white-space:nowrap;display:inline-flex;align-items:center;gap:4px;margin-right:10px${out?';color:#ff8a7a':''}">${esc(byId[id].name)} ${fatBar(v,r==='선발')}${out?(r==='선발'?' 등판 대기':' 휴식'):''}</span>`}).join('')}</p>`}
+ return `<p class="note fat" style="margin:6px 0 0" title="던진 만큼 피로가 쌓이고 체력에 비례해 하루마다 회복. 선발은 피로 15 미만일 때 등판(아니면 다음 순번), 피로 20을 넘으면 구위·제구가 떨어지고, 불펜은 55 이상이면 그날 휴식. 시즌 중 새로 로테이션에 넣은 선발은 피로 75로 합류, 몇 경기 휴식">투수 피로 ${P.map(([id,r])=>{const v=F[id],out=r==='선발'?v>=FAT.spOk:v>=FAT.rpOut;return `<span style="white-space:nowrap;display:inline-flex;align-items:center;gap:4px;margin-right:10px${out?';color:#ff8a7a':''}">${esc(byId[id].name)} ${fatBar(v,r==='선발')}${out?(r==='선발'?' 등판 대기':' 휴식'):''}</span>`}).join('')}</p>`}
 function muHTML(L,pr,label,aS,aA){const T=S.team,e=validate(),A=teamOf(pr[0],L),H=teamOf(pr[1],L);
   const spA=byId[fatSP(A,fatPrev(L,pr[0],A))],spH=byId[fatSP(H,fatPrev(L,pr[1],H))],sp=t=>t===A?spA:spH,cost=regCards(T).reduce((x,c)=>x+c.cost,0);
   return `<div class="mu"><div class="side"><small>원정 · 평균 ${teamOvr(A)}</small><h2>${esc(tname(pr[0],L))}</h2>${sp(A)?cardHTML(sp(A),{cond:pr[0]===0?S.cond[sp(A).id]:0}):''}</div>
@@ -335,8 +335,8 @@ function vYears(){useMode('yl');const L=S.yl,won=S.ylWon||{};ranked();
   if(L&&!L.done){const pr=curPair(L),c=L.post&&L.post.cur,nx=ylNextAt(Date.now()),hm=t=>{const d=new Date(t+H9);return `${md(t)} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
     const stage=L.post?`${c.nm} · ${tname(c.lo,L)} ${c.w[0]} : ${c.w[1]} ${tname(c.hi,L)} (${c.need}선승)`:`정규시즌 ${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드 · ${wdayOf(L)}`;
     const six=`<p class="mini" title="${L.teams.length>=8?'상위 4팀 포스트시즌(준PO 2선승·PO 3선승·KS 4선승)':'상위 2팀 한국시리즈(4선승)'}">${stage} · ${L.teams.length}팀</p><p title="08~23시 15분마다 자동 진행 · 직접 눌러 앞당길 수 있음">다음 자동 <b>${hm(nx)}</b>${pr?` · 내 다음 상대 <b>${esc(tname(pr[0]===0?pr[1]:pr[0],L))}</b>`:L.post?'':' · 다음 라운드는 휴식'}</p><div class="btns" style="margin-top:10px">${!L.post?`<button data-a="m-torest" ${pr?'':'disabled'} title="휴식 라운드나 포스트시즌 직전, 최대 ${YL_RUN_MAX}경기까지 결과만 보기로 이어서 진행">다음 휴식일까지 자동</button>`:''}</div>
-    <div class="ylquit">${S.ylQuit&&Date.now()-S.ylQuit<8000?`<span class="note" style="margin:0">정말 ${L.year} 리그를 포기할까요? 기록과 보상이 사라져요.</span><button data-a="m-quit" data-c="1" class="danger">포기하기</button><button data-a="m-quitx" class="ghost">취소</button>`:`<button data-a="m-quit" class="ghost quitb">이 리그 포기…</button>`}</div>`; // SJ 2026-11-28: 자동 버튼이 사라지면 포기 버튼이 그 자리로 밀려와 잘못 눌림 → 자리 고정 + 확인 단계
-    return lgPage('yl',[['ofc','감독실',tb=>ofcHTML(L,{right:tb,key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 넘어가요">휴식 넘기기</button></div>`})],['lu','라인업',()=>vLineup()],['sc','일정',()=>`<section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
+    <div class="ylquit">${S.ylQuit&&Date.now()-S.ylQuit<8000?`<span class="note" style="margin:0">정말 ${L.year} 리그 포기? 기록과 보상 삭제.</span><button data-a="m-quit" data-c="1" class="danger">포기하기</button><button data-a="m-quitx" class="ghost">취소</button>`:`<button data-a="m-quit" class="ghost quitb">이 리그 포기…</button>`}</div>`; // SJ 2026-11-28: 자동 버튼이 사라지면 포기 버튼이 그 자리로 밀려와 잘못 눌림 → 자리 고정 + 확인 단계
+    return lgPage('yl',[['ofc','감독실',tb=>ofcHTML(L,{right:tb,key:'yl',title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌',start:'m-start',auto:'m-auto',startN:'하이라이트 보기',prog:L.post?esc(c.nm):`${Math.min(L.round+1,L.sched.length)}/${L.sched.length}라운드`,sixT:'시즌 진행',six,idle:`<p class="note">${L.post?'내 경기 없음':'이번 라운드는 휴식'}</p><div class="tools"><button class="big" data-a="m-bye">다음 ${L.post?'경기':'라운드'} 진행</button><button data-a="m-bye" title="휴식일이라 내 경기 없음. 결과만 보기 자리에서 그대로 진행">휴식 넘기기</button></div>`})],['lu','라인업',()=>vLineup()],['sc','일정',()=>`<section class="hero">${pr?`<p class="mini" style="margin-top:0">내 선발 예정 <b>${esc((byId[fatSP(teamOf(0,L),fatPrev(L,0,teamOf(0,L)))]||{}).name||'-')}</b></p>`:''}${fatHTML(L)}${pr?predHTML(L):''}
           ${L.hl?`<details><summary>내 지난 경기 하이라이트 · ${esc(tname(L.hl.a,L))} ${L.hl.sc[0]} : ${L.hl.sc[1]} ${esc(tname(L.hl.h,L))}</summary><ol class="log">${L.hl.log.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:''}</section>`+lastRes(L)+gamesHTML(L)],['st','기록실',()=>teamStatsHTML(L)+myTeamHTML(L,'yl')+(statsHTML(L)||'<section class="band"><p class="note">아직 기록 없음</p></section>')+titleHTML(L)+asHTML(L)],['lg','리그 정보',()=>`<section class="band"><h3>시즌 진행</h3>${six}</section>${L.log.length?`<section class="band"><h3>포스트시즌</h3>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>`:''}${standFull(L,L.post?'정규시즌 최종 순위':'순위표')}`]],{L,title:L.year+' 리그',pill:L.post?'포스트시즌':'정규시즌'})}
   const Y=YL_YEARS(),res=L&&L.done?`<section class="band"><h3>${L.year} 리그 결과</h3><p>정규시즌 ${L.rank}위 · 우승 <b>${esc(tname(L.champ,L))}</b>${L.champ===0?' (우승)':''}</p>${L.log.map(x=>`<p class="mini">${esc(x)}</p>`).join('')}</section>${tableHTML(L,'정규시즌 최종 순위')}${titleHTML(L)}${asHTML(L)}`:'';
   return `<section class="hero"><h1>연도별 리그</h1><p class="mini" title="그해 실제 구단들과 팀당 144경기 + 포스트시즌. 08~23시 15분마다 자동 진행(약 2~3일). 숫자는 구단 수·평균 전력">144경기 · 15분마다 자동 · 우승 ${Object.keys(won).length}/${Y.length}</p>
@@ -355,7 +355,7 @@ function mAct(a,b){
 function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map((x,i)=>i?`<td>${x}</td>`:`<th scope="row" style="text-align:left;white-space:nowrap;padding-right:8px">${x}</th>`).join('')}</tr>`).join('')}</tbody></table>`,
   sec=(t,b)=>`<section class="band"><h3>${t}</h3>${b}</section>`,up='<b style="color:var(--good,#2e8b57)">▲</b>',dn='<b style="color:var(--bad,#c0392b)">▼</b>';
  return `<section class="band"><h2>능력치 가이드</h2><p class="note">모든 능력치 평균 <b>70</b>(그 시즌 리그 평균). 100 = 한 단계 위, 40 = 한 단계 아래.</p></section>
- ${sec('타석 결과는 이렇게 정해져요',`<p class="note">타자·투수 비율(삼진율 등)을 <b>log5</b>로 합산. 판정 순서: 볼넷 → 삼진 → 홈런 → 땅볼/뜬공 → 안타.</p>`+T(['결과','타자 쪽 (능력치 +10)','투수 쪽 (능력치 +10)'],[
+ ${sec('타석 결과는 결정 방식',`<p class="note">타자·투수 비율(삼진율 등)을 <b>log5</b>로 합산. 판정 순서: 볼넷 → 삼진 → 홈런 → 땅볼/뜬공 → 안타.</p>`+T(['결과','타자 쪽 (능력치 +10)','투수 쪽 (능력치 +10)'],[
   ['볼넷',`선구 ${up}3.2%p`,`제구 ${dn}4.5%p`],
   ['삼진',`교타 ${dn}4.2%p · 선구 ${dn}1.5%p · 장타 ${up}1.8%p`,`구속·변화구 ${up}11%p (구속×0.55 + 변화구×0.45)`],
   ['홈런',`장타 ${up}1.6%p`,`구위 ${dn}0.5%p · 땅볼 성향이면 더 적게`],
@@ -363,21 +363,21 @@ function vGuide(){const T=(h,rows)=>`<table class="tbl"><thead><tr>${h.map(x=>`<
   ['인플레이 안타',`교타 ${up}2.8%p`,`구위 ${dn}1.2%p · 팀 수비`],
   ['땅볼 타구','안타 3.5%p 덜 됨, 주력 +10마다 내야안타 1.5%p. 장타는 거의 없고 병살 위험','—'],
   ['뜬공·라인드라이브','안타 3%p 더 됨. 2루타 30% + 장타 +10마다 6%p, 3루타는 주력',`구위 ${dn}2루타`]]))}
- ${sec('좌우 상성',`<p class="note">타자와 투수가 <b>같은 손</b>이면 타자가 불리해요(삼진 +4%, 안타 −0.8%p, 홈런 −7%). 반대 손이면 그만큼 유리하고, 스위치히터는 언제나 절반만큼 유리해요. <b>언더핸드·사이드암</b> 투수는 이 차이가 1.8배라 같은 손 타자에겐 아주 강하고 반대 손 타자에겐 약해요. 땅볼도 더 많이 유도해요(언더 +5%p, 사이드 +3%p).</p>`)}
+ ${sec('좌우 상성',`<p class="note">타자와 투수가 <b>같은 손</b>이면 타자 불리(삼진 +4%, 안타 −0.8%p, 홈런 −7%). 반대 손이면 그만큼 유리, 스위치히터는 항상 절반만큼 유리. <b>언더핸드·사이드암</b> 투수는 이 차이가 1.8배라 같은 손 타자에겐 아주 강하고 반대 손 타자에겐 약함. 땅볼 유도 증가(언더 +5%p, 사이드 +3%p).</p>`)}
  ${sec('타자 능력치',T(['능력치','쓰이는 곳'],[
-  ['교타','인플레이 안타, 삼진 줄이기'],['장타','홈런, 2루타, 뜬공 비율(삼진은 조금 늘어요)'],['선구','볼넷, 삼진 조금 줄이기'],
+  ['교타','인플레이 안타, 삼진 줄이기'],['장타','홈런, 2루타, 뜬공 비율(삼진 소폭 증가)'],['선구','볼넷, 삼진 조금 줄이기'],
   ['주력','내야안타, 3루타, 도루 시도·성공, 한 베이스 더 가기, 병살 피하기, 외야 보살 피하기'],
   ['수비','포지션 수비값 → 팀 수비(안타 억제), 실책·보살 확률. 포수는 도루 저지'],
   ['멘탈','7회 이후 2점 차 이내나 득점권에서 교타 +(멘탈−70)×0.2'],['번트','희생번트 성공률']]))}
  ${sec('투수 능력치',T(['능력치','쓰이는 곳'],[
-  ['구속','삼진(가장 큼), 뜬공 성향'],['변화구','삼진'],['구위','홈런·안타·2루타 억제'],['구종','땅볼/뜬공 성향(등급이 높을수록 강함). 변화구 등급은 변화, 직구 등급은 구속이 오른 만큼 올라가요(덱 효과·스킬·유학 포함). 기준값 D58·C68·B78·A87·S95에서 97 이상 SS, 103 이상 SSS, 109 이상 SSS+. 변화구가 S(95)를 넘으면 넘은 만큼 탈삼진도 늘어요'],['제구','볼넷 억제'],
+  ['구속','삼진(가장 큼), 뜬공 성향'],['변화구','삼진'],['구위','홈런·안타·2루타 억제'],['구종','땅볼/뜬공 성향(등급이 높을수록 강함). 변화구 등급은 변화, 직구 등급은 구속이 오른 만큼 상승(덱 효과·스킬·유학 포함). 기준값 D58·C68·B78·A87·S95에서 97 이상 SS, 103 이상 SSS, 109 이상 SSS+. 변화구가 S(95)를 넘으면 넘은 만큼 탈삼진 증가'],['제구','볼넷 억제'],
   ['체력','투구 한계. 선발 16 + 체력×0.16타자, 불펜 3 + 체력÷20타자. 한계의 70%를 넘기면 구위 최대 −14, 제구 최대 −10'],
   ['멘탈','접전·득점권에서 제구 +(멘탈−70)×0.2']]))}
  ${sec('수비',`<p class="note">포지션별 수비값(보통 90, 대개 80~100). 포수·유격수·중견수 1.3배 가중. 팀 수비 +10 → 경기당 실점 약 -0.3.</p>`+T(['항목','계산'],[
-  ['실책','타구를 잡은 야수 기준 2.5%, 수비 +10마다 −1.2%p'],['외야 보살','추가 진루하던 주자를 잡을 확률. 외야 수비가 높고 주자가 느릴수록 높아요'],
-  ['도루 저지','포수 수비 +10마다 도루 성공률 −4%p'],['못 맡는 포지션','수비값이 크게 깎여요. 대타·대주자는 다음 수비 때 자동 교체']]))}
+  ['실책','타구를 잡은 야수 기준 2.5%, 수비 +10마다 −1.2%p'],['외야 보살','추가 진루하던 주자를 잡을 확률. 외야 수비가 높고 주자가 느릴수록 높음'],
+  ['도루 저지','포수 수비 +10마다 도루 성공률 −4%p'],['못 맡는 포지션','수비값 크게 하락. 대타·대주자는 다음 수비 때 자동 교체']]))}
  ${sec('그 밖의 보정',T(['항목','효과'],[
-  ['컨디션','최악 −20% · 나쁨 −10% · 보통 0 · 좋음 +4% · 최상 +8%. 타자는 교타(선구는 절반), 투수는 제구(구위는 절반)에 곱해요'],
+  ['컨디션','최악 −20% · 나쁨 −10% · 보통 0 · 좋음 +4% · 최상 +8%. 타자는 교타(선구는 절반), 투수는 제구(구위는 절반)에 곱함'],
   ['덱 효과(팀컬러)','모든 능력치에 +보너스(체력 제외)'],['포수 궁합','투수와 포수의 궁합에 따라 제구(구위는 60%) 보정'],
   ['감독 성향','강공·도루·번트·대타·선발 교체·불펜·고의4구·수비 시프트 경향(0~4)'],
   ['작전·서포트 카드, 스킬 블록','카드에 적힌 상황에서 해당 능력치 가감']]))}
@@ -401,7 +401,7 @@ function myTeamHTML(L,m){const k=MODEK(m),T=userT(m),P=(L&&L.ps)||{},st=id=>P['0
   const fx=(()=>{try{return simTeam(T).tc.fx.map(x=>x.n).join(' · ')}catch(e){return ''}})();
   const open=(S.tpOpen||{})[k]!==false;
   return `<section class="band myteam"><details${open?' open':''} data-tp="${k}"><summary><h3 style="display:inline;margin:0">우리 팀</h3> <span class="pill">${MODEN[k]} 전용 라인업</span>${fx?` <small>${esc(fx)}</small>`:''}</summary>
-   <div class="tools" style="margin:8px 0">${k==='on'?'<a href="#lineup"><button class="ghost">이 리그 라인업 수정</button>':`<a><button class="ghost" data-a="lgtab" data-g="${k}" data-k="lu">이 리그 라인업 수정</button>`}</a>${L?'<small style="margin-left:auto">성적은 이 리그 기록이에요</small>':''}</div>
+   <div class="tools" style="margin:8px 0">${k==='on'?'<a href="#lineup"><button class="ghost">이 리그 라인업 수정</button>':`<a><button class="ghost" data-a="lgtab" data-g="${k}" data-k="lu">이 리그 라인업 수정</button>`}</a>${L?'<small style="margin-left:auto">성적은 이 리그 기록</small>':''}</div>
    <div class="scroll"><table class="tbl"><thead><tr><th>타순</th><th>위치</th><th class="l">타자</th><th>타율</th><th>출루율</th><th>홈런</th><th>타점</th></tr></thead><tbody>
    ${(T.lineup||[]).map((x,i)=>`<tr><td>${i+1}</td><td>${esc(PK[x.pos]||x.pos)}</td><td class="l">${nm(x.id)}</td>${bat(st(x.id))}</tr>`).join('')}
    ${(T.bench||[]).filter(Boolean).map(id=>`<tr class="use"><td>벤치</td><td>${esc((byId[baseId(id)]||{}).pos||'')}</td><td class="l">${nm(id)}</td>${bat(st(id))}</tr>`).join('')}</tbody></table>
@@ -416,10 +416,10 @@ function dsOpts(){const o=[['m:lg',MODEN.lg+' 라인업'],['m:yl',MODEN.yl+' 라
   for(const d of S.decks||[])o.push(['d:'+d.id,(d.name||'덱')+(deckOk(d)?'':' · 가상')]);return o}
 function dsTeam(k,color){let t,name;if(!k)return null;
   if(k.startsWith('m:')){const m=k.slice(2);t=modeTeam(m);name=MODEN[m]}else{const d=(S.decks||[]).find(x=>x.id===k.slice(2));if(!d)return null;t=d.t;name=d.name||'덱'}
-  t=JSON.parse(JSON.stringify(t||{}));if(!t.lineup||t.lineup.filter(x=>x&&x.id&&byId[x.id]).length<9||!(t.rot||[]).filter(Boolean).length||!(t.pen||[]).filter(Boolean).length)return {err:`${name}: 타순 9명·선발·불펜이 다 채워져 있어야 해요`};
+  t=JSON.parse(JSON.stringify(t||{}));if(!t.lineup||t.lineup.filter(x=>x&&x.id&&byId[x.id]).length<9||!(t.rot||[]).filter(Boolean).length||!(t.pen||[]).filter(Boolean).length)return {err:`${name}: 타순 9명·선발·불펜이 모두 필요`};
   return {...clean(t),name,color,blocks:S.blocks,abSt:S.abSt||{},eq:eqMap(),rotIdx:0}}
 function dsRun(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8fe0'),n=+o.n||10;
-  if(!A||!B){S.dsRes={err:'양쪽 덱을 골라 주세요'};return}if(A.err||B.err){S.dsRes={err:A.err||B.err};return}
+  if(!A||!B){S.dsRes={err:'양쪽 덱 선택'};return}if(A.err||B.err){S.dsRes={err:A.err||B.err};return}
   if(o.a===o.b)B.name+=' (복제)';
   const R={n,w:[0,0],t:0,rs:[0,0],bat:[{},{}],pit:[{},{}],names:[A.name,B.name],last:null},T=[A,B],G=[];
   for(let i=0;i<n;i++){const aw=i%2,away=aw?1:0,home=1-away;T[0].rotIdx=i;T[1].rotIdx=i;
@@ -463,7 +463,7 @@ function dsPredGen(){const o=S.ds||{},A=dsTeam(o.a,'#e07a45'),B=dsTeam(o.b,'#4a8
     const [th,label]=gen(n),x={ty,th,label},p=boot.filter(t=>dsTest(x,t)).length/boot.length;if(p<.04||p>.92)continue;
     used.add(ty);opts.push({...x,p,pt:Math.max(10,Math.min(300,Math.round((10+25*(1-p)/p)/5)*5)),rw:dsRw(p)})}
   return {key:dsKey(),opts,pick:null}}
-function dsPredHTML(){if(dsDay().tr>=DS_TRY_DAY)return `<p class="note" style="text-align:center">오늘 예측 ${DS_TRY_DAY}번을 다 썼어요. 시뮬레이션은 계속 할 수 있어요.</p>`;let P=S.dsPred;if(!P||P.key!==dsKey()){P=S.dsPred=dsPredGen();if(!P)return ''}if(!P.opts.length)return '';
+function dsPredHTML(){if(dsDay().tr>=DS_TRY_DAY)return `<p class="note" style="text-align:center">오늘 예측 ${DS_TRY_DAY}번 모두 사용. 시뮬레이션은 계속 가능.</p>`;let P=S.dsPred;if(!P||P.key!==dsKey()){P=S.dsPred=dsPredGen();if(!P)return ''}if(!P.opts.length)return '';
   return `<div class="btns pred" style="justify-content:center" aria-label="덱 대결 예측 고르기"><small>예측 (오늘 ${DS_TRY_DAY-S.dsIt.tr}번 남음)</small>${P.opts.map((x,i)=>`<button data-a="ds-pred" data-i="${i}" class="${P.pick===i?'big':'ghost'}" aria-pressed="${P.pick===i}">${esc(x.label)} · ${esc(dsRwTxt(x))}</button>`).join('')}<button class="ghost" data-a="ds-reroll" title="예측 선택지 다시 뽑기">새로 뽑기</button></div>
    <p class="note help" style="text-align:center;margin:4px 0 0">하나 골라 시뮬레이션 → 결과로 판정. 어려울수록 보상 큼. 포인트는 하루 상한, 아이템은 하루 ${DS_ITEM_DAY}개.</p>`}
 function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.decks[0].id:'m:yl',n:10},O=dsOpts(),R=S.dsRes,f3=v=>v.toFixed(3).replace(/^0/,'');
@@ -473,7 +473,7 @@ function vDsim(){const o=S.ds=S.ds||{a:'m:lg',b:(S.decks&&S.decks[0])?'d:'+S.dec
     ${B.map(x=>`<tr><td class="l">${esc(x.c.name)} <small>${String(x.c.year).slice(2)}' ${esc(x.c.team)}</small></td><td>${x.g}</td><td>${x.ab?f3(x.h/x.ab):'-'}</td><td>${f3((x.h+x.bb)/Math.max(1,x.ab+x.bb))}</td><td>${x.hr}</td><td>${x.rbi}</td></tr>`).join('')}</tbody></table>
     <table class="tbl"><thead><tr><th class="l">투수</th><th>경기</th><th>이닝</th><th>실점/9</th><th>탈삼진</th><th>WHIP</th></tr></thead><tbody>
     ${P.map(x=>`<tr><td class="l">${esc(x.c.name)} <small>${String(x.c.year).slice(2)}' ${esc(x.c.team)}</small></td><td>${x.g}</td><td>${Math.floor(x.outs/3)}.${x.outs%3}</td><td>${x.outs?(x.r*27/x.outs).toFixed(2):'-'}</td><td>${x.k}</td><td>${x.outs?((x.h+x.bb)*3/x.outs).toFixed(2):'-'}</td></tr>`).join('')}</tbody></table></div></div>`};
-  return `<section class="hero"><h1>덱 대결</h1><p class="mini">보유 덱, 덱 짜보기로 만든 가상 덱, 리그별 라인업끼리 붙여 봐요. 보상·기록·피로는 없어요.</p>
+  return `<section class="hero"><h1>덱 대결</h1><p class="mini">보유 덱, 덱 짜보기로 만든 가상 덱, 리그별 라인업끼리 대결. 보상·기록·피로 없음.</p>
    <div class="tools" style="flex-wrap:wrap;gap:6px;justify-content:center">${sel('a')}<b style="align-self:center">VS</b>${sel('b')}
    <select data-ds="n" aria-label="경기 수">${DS_N.map(v=>`<option value="${v}"${+o.n===v?' selected':''}>${v}경기</option>`).join('')}</select><button class="big" data-a="ds-go">시뮬레이션</button></div>${dsPredHTML()}
    <p class="note help" style="text-align:center">홈·원정 교대, 선발은 로테이션 순. 스킬·유학·장비는 양쪽 모두 현재 상태 적용.</p></section>
