@@ -938,6 +938,8 @@ html{scrollbar-gutter:stable}
 .cell[class*=k-]{position:relative}.cell[class*=k-]::after{content:'★';position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.9);font-size:15px;line-height:1;text-shadow:0 1px 1px rgba(0,0,0,.35);pointer-events:none}.mini .cell[class*=k-]::after{font-size:8px}.cb2 .cell[class*=k-]::after{font-size:12px}body.xl .cell[class*=k-]::after{color:#555;text-shadow:none}
 .dkld button.on{border-color:var(--gold);color:var(--gold)}
 .dkld button:disabled{opacity:.4;cursor:not-allowed}.ylpick select{max-width:100%}
+@media(max-width:700px){html{scrollbar-gutter:auto}.subnav2{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important;gap:6px;width:100%}.subnav2 a{justify-content:center;padding:6px 4px;font-size:13px;min-width:0;white-space:nowrap}.subnav2 a kbd{display:none}}
+.tixg{display:inline-flex;gap:6px;flex-wrap:nowrap}.tixg button{flex:1 1 auto}@media(max-width:700px){.tixg{display:flex;width:100%}}
 </style></head><body>
 <div class="bgl" aria-hidden="true"></div>
 <div id="app"><header class="top" id="hdr"></header>
@@ -2102,7 +2104,7 @@ function vShop(){const SC=SHOPC[view()]||SHOPC.shop,PK=PACKS.filter(x=>SC.ks?SC.
   </div></div></section>`}
 function vTix(){const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),legends=tix.some(([k])=>k==='pick')?CARDS.filter(c=>c.cost>=9).sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.year-b.year):[];
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">확정권</h2><span class="pill">${tix.reduce((a,[,n])=>a+n,0)}장</span></div><p class="note help">길게 누르면 연속 개봉.</p>
-  ${tix.length?`<div class="tools">${tix.map(([k,n])=>`<button class="ghost" data-tix="${k}">${esc(TIXN[k]||k)} ×${n}</button>${k.startsWith('pk_')&&n>1?`<button class="ghost" data-tix="${k}" data-tixall="1">${n}개 전부 열기</button>`:''}`).join('')}
+  ${tix.length?`<div class="tools">${tix.map(([k,n])=>`<span class="tixg"><button class="ghost" data-tix="${k}">${esc(n>1?String(TIXN[k]||k).replace(' 1개',''):(TIXN[k]||k))} ×${n}</button>${k.startsWith('pk_')&&n>1?`<button class="ghost" data-tix="${k}" data-tixall="1">${n}개 전부 열기</button>`:''}</span>`).join('')}
    ${tix.filter(([k])=>k==='gg'||k==='ch'||k==='ex').map(([k])=>{const v=k==='gg'?'GG':k==='ch'?'CH':'EX',o=k==='ex'?[...new Set(CARDS.filter(c=>c.v==='EX').map(c=>c.line))].sort():[...new Set(CARDS.filter(c=>c.v===v).map(c=>c.year))].sort((a,b)=>b-a);return o.length?`<select id="tixarg-${k}" aria-label="${esc(TIXN[k]||k)} 조건"><option value="">${k==='ex'?'구단':'연도'} 무작위</option>${o.map(x=>`<option value="${esc(x)}"${String((S.tixArg||{})[k]||'')===String(x)?' selected':''}>${k==='ex'?esc(msLn(x)):x}</option>`).join('')}</select>`:''}).join('')}
    ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}"${S.tixPick===c.id?' selected':''}>${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+vnm(c):''}</option>`).join('')}</select>`:''}</div>`:''}
   ${tix.length?'':'<p class="note">보유 확정권 없음.</p>'}${pkOutHTML()}</section>`}
@@ -2898,6 +2900,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1128x',d:'2026-11-28',t:'폰 하위 메뉴 수정',b:['폰에서 하위 메뉴가 옆으로 잘려 합성·확정권이 안 보이던 문제 수정. 3칸씩 줄바꿈으로 전부 표시.','확정권: 팩과 전부 열기 버튼을 한 줄로 묶음.'],rw:{tix:{pk_n:10}}},
  {id:'n1128w',d:'2026-11-28',t:'리그 화면 통일 · 덱 바로 등록',b:['친구 리그도 감독실 · 라인업 · 일정 · 기록실 · 리그 정보 탭 구조로 통일.','연도별 리그 고르기는 연도 드롭다운 + 참가 버튼.','덱 빌더 > 덱: 리그 버튼을 누르면 그 리그에 바로 등록(화면 이동 없음). 덱에 문제가 있으면 경고 표시 + 등록 불가.','카드 뒷면 정보 줄 수 고정(대학 칸 없는 선수도 같은 크기).','스킬 블록 칸 가운데 별 표시.'],rw:{tix:{pk_n:10}}},
  {id:'n1128v',d:'2026-11-28',t:'경기 로직 보강 · 작전카드 3종',b:['득점권에서 타자 정신력이 장타에도 절반만큼 반영','AI 번트: 번트 능력이 장타보다 높을 때만, 클린업(3~5번)은 번트 안 함','포수 송구가 좋으면 상대 도루 시도 감소','공통 작전카드 추가: 언더독의 반란, 젊은 피, 노장은 살아있다 (젊은 피↔노장은 살아있다 상쇄)'],rw:{tix:{pk_n:10}}},
  {id:'n1128u',d:'2026-11-28',t:'스킬 블록 색: 능력치별',b:['스킬 블록 색을 등급 대신 주 능력치 기준으로 변경. 교타 파랑 · 장타 군청 · 주력 노랑 · 번트 연두 · 수비 초록 · 정신 보라 · 선구 하늘.','투수 블록: 체력 갈색 · 구속 노랑 · 구위 빨강 · 변화구 주황 · 제구 분홍 · 정신 보라.','등급은 S 금테 · A 흰테와 이름 앞 등급 글자로 표시.'],rw:{tix:{pk_n:10}}},
@@ -3915,7 +3918,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='cards';NAVG.game='play';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'모드',team:'덱 빌더',gear:'장비창고',cards:'선수단',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='da756595e2';
+const BUILD='44e2beeb6a';
 const TABI={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 3h4V6h-4zM3 12h18v1.6H3z" fill="currentColor"/></svg>',home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>
