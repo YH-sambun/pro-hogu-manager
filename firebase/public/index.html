@@ -1800,10 +1800,15 @@ const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 
 const rushFee=msLeft=>Math.max(0,Math.ceil(msLeft/36e5))*RUSH;
 function pay(S,p){if((S.pt||0)<p)return {err:'포인트 부족'};S.pt-=p;return {pt:p}}
 // 쿠폰: Firestore coupons/{코드} 문서를 읽어 data로 넘김. 같은 코드는 한 번만(S.coupons에 기록). exp(만료 시각, ms 또는 Timestamp) 지나면 거절
+// 쿠폰(SJ 2026-11-28): 콘솔에서 필드를 바로 적어도 받게 함. pt · tix{키:n} · 최상위 TIX 키(block, ch, pick, pk_t …). 문자열 숫자도 허용
+// 예전 코드는 최상위 필드를 무시했으므로, 이미 쓴 쿠폰(숫자 기록)은 최상위 필드만 한 번 더 지급(중복 없음)
 function redeem(S,code,data){code=String(code||'').trim().toUpperCase();S.coupons=S.coupons||{};
-  if(!data)return {err:'없는 쿠폰'};if(S.coupons[code])return {err:'이미 사용한 쿠폰'};
-  const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(exp&&Date.now()>exp)return {err:'기간 만료 쿠폰'};
-  const rw={pt:+data.pt||0,tix:data.tix||{}};S.coupons[code]=Date.now();grant(S,rw);return {rw,text:rwText(rw)}}
+  if(!data)return {err:'없는 쿠폰'};const prev=S.coupons[code];if(prev&&typeof prev==='object')return {err:'이미 사용한 쿠폰'};
+  const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(!prev&&exp&&Date.now()>exp)return {err:'기간 만료 쿠폰'};
+  const num=v=>Math.max(0,Math.floor(+v||0)),top={};for(const k in data)if(k!=='tix'&&k!=='pt'&&k!=='exp'&&(TIX[k]||k.startsWith('pk_'))&&num(data[k]))top[k]=num(data[k]);
+  const tix={};if(!prev){for(const k in (data.tix||{}))if(num(data.tix[k]))tix[k]=num(data.tix[k])}for(const k in top)tix[k]=(tix[k]||0)+top[k];
+  const rw={pt:prev?0:num(data.pt),tix};if(!rw.pt&&!Object.keys(tix).length)return {err:prev?'이미 사용한 쿠폰':'보상이 비어 있는 쿠폰'};
+  S.coupons[code]={t:Date.now(),v:2};grant(S,rw);return {rw,text:rwText(rw)}}
 // 연도 리그 경기 예측 전용 상한: 하루 1,500P (자동 진행 하루 약 60경기 × 평균 60P = 3,600P라 상한 없으면 과함). 주간 리그 예측은 상한 없음
 const PRED_CAP=1500;
 function predCapped(S,rw){const d=today();S.prc=S.prc&&S.prc.day===d?S.prc:{day:d,pt:0};const left=Math.max(0,PRED_CAP-S.prc.pt),pt=Math.min(left,rw.pt|0);
@@ -2094,26 +2099,32 @@ function pkOutHTML(){const o=S.pkOut;if(!o)return '';
    const top=L.slice().sort((a,b)=>b.cost-a.cost||b.ovr-a.ovr).slice(0,30),nw=new Set(L.filter(c=>(S.owned[baseId(c.id)]|0)<=1).map(c=>baseId(c.id))).size,cc={};for(const c of L){const k=c.cost>=9?'9+':c.cost>=7?'7~8':c.cost>=4?'4~6':'1~3';cc[k]=(cc[k]||0)+1}
    return `<p class="note" style="margin:0 0 8px">${N}장 · 신규 ${nw}종 · ${['9+','7~8','4~6','1~3'].filter(k=>cc[k]).map(k=>`${k}코 ${cc[k]}`).join(' · ')}<br>코스트 높은 30장만 표시</p><div class="pool">${top.map(c=>card(c,{pick:1})).join('')}</div>`})()):''}${o.text?`<p>${esc(o.text)}</p>`:''}${o.dex&&o.dex.length?`<p class="note" style="color:var(--gold)">도감 완성: ${o.dex.map(s=>esc(s.name)+' ('+esc(rwText(s.rw))+')').join(', ')}</p>`:''}</div>`}
 const SHOPX=['b','tc','t1','sp'],SHOPC={shop:{n:'선수 카드팩'},shop_sp:{n:'서포트 카드',ks:['sp']},shop_tc:{n:'작전 카드',ks:['tc','t1']},shop_b:{n:'스킬 블록',ks:['b']}};
+// 구단·연도 고르는 팩(t·y·tl·ty) 선택 UI: 상점과 확정권(SJ 2026-11-28: 구단 묶음 팩 확정권도 구단 고르기)에서 같이 씀
+const PKSELK=['t','y','tl','ty'];
+function pkPickInit(){const p=S.pkSel||(S.pkSel={t:LINES.slice(0,3),y:YEARS.slice(0,3),tl:LINES[0],ty:{line:LINES[0],years:[]}});if(!p.ty||!p.ty.years)p.ty={line:LINES[0],years:[]};if(!p.tl)p.tl=LINES[0];return p}
+function pkReady(pk){const p=pkPickInit();return ((pk!=='t'&&pk!=='y')||p[pk].length===3)&&(pk!=='ty'||p.ty.years.length===3)}
+function pkPickHTML(pk){const pick=pkPickInit(),multi=pk==='t'||pk==='y',sel=multi?pick[pk]:[];return `${multi?`<div class="lbl">${pk==='t'?'구단 계보':'연도'} 3개 고르기 <small>(${sel.length}/3)</small></div><div class="chips">${(pk==='t'?LINES:YEARS).map(v=>{const on=sel.includes(v),full=!on&&sel.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${pk==='t'?esc(lname(v)):v}</button>`}).join('')}</div>`:''}
+  ${pk==='tl'||pk==='ty'?`<div class="tools"><select id="${pk==='tl'?'tll':'tyl'}" aria-label="구단 계보">${LINES.map(l=>`<option value="${esc(l)}" ${(pk==='tl'?pick.tl:pick.ty.line)===l?'selected':''}>${esc(lname(l))}</option>`).join('')}</select></div>`:''}
+  ${pk==='ty'?(()=>{const ys=YEARS_OF(pick.ty.line),a=pick.ty.years;return `<div class="lbl">연도 3개 고르기 <small>(${a.length}/3)</small></div><div class="chips">${ys.map(v=>{const on=a.includes(v),full=!on&&a.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${v}</button>`}).join('')}</div>`})():''}`}
 function vShop(){const SC=SHOPC[view()]||SHOPC.shop,PK=PACKS.filter(x=>SC.ks?SC.ks.includes(x[0]):!SHOPX.includes(x[0]));if(!PK.some(x=>x[0]===S.pk)){S.pk=PK[0][0];S.pkOut=null;S.pkMsg=''}const pk=S.pk,P=PACKS.find(x=>x[0]===pk)||PACKS[0],pick=S.pkSel||(S.pkSel={t:LINES.slice(0,3),y:YEARS.slice(0,3),tl:LINES[0],ty:{line:LINES[0],years:[]}}),_fix=((!pick.ty||!pick.ty.years)&&(pick.ty={line:LINES[0],years:[]}),pick.tl||(pick.tl=LINES[0])),multi=pk==='t'||pk==='y',sel=multi?pick[pk]:[],ok=(!multi||sel.length===3)&&(pk!=='ty'||pick.ty.years.length===3),afford=S.pt>=P[2];
   const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),legends=tix.some(([k])=>k==='pick')?CARDS.filter(c=>c.cost>=9).sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.year-b.year):[];
   return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">${SC.n}</h2><span class="pill">${S.pt.toLocaleString()} P</span></div>
   <div class="pkm"><select id="pksel" aria-label="카드팩 고르기">${PK.map(([k,n,p])=>`<option value="${k}"${k===pk?' selected':''}>${esc(n)} · ${p.toLocaleString()}P</option>`).join('')}</select></div>
   <div class="shop"><div class="pkl">${PK.map(([k,n,p,d])=>`<button class="pkb${k===pk?' on':''}" data-pk="${k}"><b>${n}</b><em>${p.toLocaleString()}P</em><small>${d}</small>${pityHTML(k,1)}</button>`).join('')}</div>
   <div class="box"><h3 style="margin-top:0">${P[1]} <small style="color:var(--gold)">${P[2].toLocaleString()}P</small></h3><p class="note" style="margin-top:0">${P[3]}</p>${pityHTML(pk)}
-  ${multi?`<div class="lbl">${pk==='t'?'구단 계보':'연도'} 3개 고르기 <small>(${sel.length}/3)</small></div><div class="chips">${(pk==='t'?LINES:YEARS).map(v=>{const on=sel.includes(v),full=!on&&sel.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${pk==='t'?esc(lname(v)):v}</button>`}).join('')}</div>`:''}
-  ${pk==='tl'||pk==='ty'?`<div class="tools"><select id="${pk==='tl'?'tll':'tyl'}" aria-label="구단 계보">${LINES.map(l=>`<option value="${esc(l)}" ${(pk==='tl'?pick.tl:pick.ty.line)===l?'selected':''}>${esc(lname(l))}</option>`).join('')}</select></div>`:''}
-  ${pk==='ty'?(()=>{const ys=YEARS_OF(pick.ty.line),a=pick.ty.years;return `<div class="lbl">연도 3개 고르기 <small>(${a.length}/3)</small></div><div class="chips">${ys.map(v=>{const on=a.includes(v),full=!on&&a.length>=3;return `<button class="chip${on?' on':''}" data-pkv="${v}" aria-pressed="${on}" ${full?'disabled':''}>${v}</button>`}).join('')}</div>`})():''}
+  ${pkPickHTML(pk)}
   <div class="tools" style="margin-top:12px"><button data-a="pkbuy" data-hk="1" ${ok&&afford?'':'disabled'}>${P[2].toLocaleString()}P로 열기 <kbd class="kb">R</kbd></button>${multi&&sel.length<3?`<span class="note">${3-sel.length}개 더 선택</span>`:''}${!afford?'<span class="note" style="color:var(--bad)">포인트 부족</span>':''}${S.pkMsg?`<span class="note">${esc(S.pkMsg)}</span>`:''}</div>
   ${pkOutHTML()}<!-- 개봉 결과는 열기 버튼 바로 아래(오른쪽 상자)에: 목록 아래에 두면 화면 밖이라 안 보임 -->
   ${tix.length?`<p class="note" style="margin-top:16px">확정권 ${tix.reduce((a,[,n])=>a+n,0)}장은 <a href="#tix">장비창고 › 확정권</a>에서 열기.</p>`:''}
   </div></div></section>`}
-function vTix(){const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),legends=tix.some(([k])=>k==='pick')?CARDS.filter(c=>c.cost>=9).sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.year-b.year):[];
+function vTix(){const tix=Object.entries(S.tix||{}).filter(([k,n])=>n>0&&k!=='abr'),selL=tix.map(([k])=>k).filter(k=>k.startsWith('pk_')&&PKSELK.includes(k.slice(3))),selK=selL.includes(S.tixPk)?S.tixPk:selL[0]||null,_pk=selK&&(S.pk=selK.slice(3)),legends=tix.some(([k])=>k==='pick')?CARDS.filter(c=>c.cost>=9).sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.year-b.year):[];
  return `<section class="band"><div class="tools"><h2 style="margin:0;margin-right:auto">확정권</h2><span class="pill">${tix.reduce((a,[,n])=>a+n,0)}장</span></div><p class="note help">길게 누르면 연속 개봉.</p>
-  ${tix.length?`<div class="tools">${tix.map(([k,n])=>`<span class="tixg"><button class="ghost" data-tix="${k}">${esc(n>1?String(TIXN[k]||k).replace(' 1개',''):(TIXN[k]||k))} ×${n}</button>${k.startsWith('pk_')&&n>1?`<button class="ghost" data-tix="${k}" data-tixall="1">${n}개 전부 열기</button>`:''}</span>`).join('')}
+  ${tix.length?`<div class="tools">${tix.map(([k,n])=>PKSELK.includes(k.slice(3))&&k.startsWith('pk_')?`<span class="tixg"><button class="ghost${selK===k?' on':''}" data-tixpk="${k}">${esc(n>1?String(TIXN[k]||k).replace(' 1개',''):(TIXN[k]||k))} ×${n} · 고르기</button></span>`:`<span class="tixg"><button class="ghost" data-tix="${k}">${esc(n>1?String(TIXN[k]||k).replace(' 1개',''):(TIXN[k]||k))} ×${n}</button>${k.startsWith('pk_')&&n>1?`<button class="ghost" data-tix="${k}" data-tixall="1">${n}개 전부 열기</button>`:''}</span>`).join('')}
    ${tix.filter(([k])=>k==='gg'||k==='ch'||k==='ex').map(([k])=>{const v=k==='gg'?'GG':k==='ch'?'CH':'EX',o=k==='ex'?[...new Set(CARDS.filter(c=>c.v==='EX').map(c=>c.line))].sort():[...new Set(CARDS.filter(c=>c.v===v).map(c=>c.year))].sort((a,b)=>b-a);return o.length?`<select id="tixarg-${k}" aria-label="${esc(TIXN[k]||k)} 조건"><option value="">${k==='ex'?'구단':'연도'} 무작위</option>${o.map(x=>`<option value="${esc(x)}"${String((S.tixArg||{})[k]||'')===String(x)?' selected':''}>${k==='ex'?esc(msLn(x)):x}</option>`).join('')}</select>`:''}).join('')}
    ${legends.length?`<select id="tixpick" aria-label="레전드 선택권으로 받을 카드">${legends.map(c=>`<option value="${esc(c.id)}"${S.tixPick===c.id?' selected':''}>${esc(c.name)} ${c.year} ${esc(c.team)}${c.v?' '+vnm(c):''}</option>`).join('')}</select>`:''}</div>`:''}
+  ${selK?(()=>{const pk=selK.slice(3),P=PACKS.find(x=>x[0]===pk),n=S.tix[selK]|0,ok=pkReady(pk);return `<div class="box" style="margin-top:12px"><h3 style="margin-top:0">${esc(P?P[1]:pk)} 확정권 <small>${n}장</small></h3>${pkPickHTML(pk)}<div class="tools" style="margin-top:10px"><button data-tix="${selK}" ${ok?'':'disabled'}>1개 열기</button>${n>1?`<button class="ghost" data-tix="${selK}" data-tixall="1" ${ok?'':'disabled'}>${n}개 전부 열기</button>`:''}${ok?'':'<span class="note">먼저 고르기</span>'}</div></div>`})():''}
   ${tix.length?'':'<p class="note">보유 확정권 없음.</p>'}${pkOutHTML()}</section>`}
-function shopAct(D){if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
+function shopAct(D){if(D.tixpk){S.tixPk=D.tixpk;S.pk=D.tixpk.slice(3);return 1}if(D.pk){S.pk=D.pk;S.pkMsg='';S.pkOut=null;return 1}
   if(D.pkv){const k=S.pk,v=k==='y'||k==='ty'?+D.pkv:D.pkv,a=k==='ty'?S.pkSel.ty.years:S.pkSel[k],i=a.indexOf(v);if(i>=0)a.splice(i,1);else if(a.length<3)a.push(v);return 1}
   if(D.tix&&String(D.tix).startsWith('pk_')){const k=D.tix,pk=k.slice(3),P=PACKS.find(x=>x[0]===pk),n=D.tixall?(S.tix[k]|0):1,cards=[],txt=[],dex=[],o=S.pk;S.pkOut=null;S.pkMsg='';if(!P)return 1;
     for(let i=0;i<n&&(S.tix[k]|0)>0;i++){S.tix[k]--;S.pt+=P[2];S.pk=pk;shopAct({a:'pkbuy'});const r=S.pkOut;if(S.pkMsg){S.tix[k]++;S.pt-=P[2];break}if(r){if(r.cards)cards.push(...r.cards);if(r.dex)dex.push(...[].concat(r.dex));if(r.text)txt.push(r.text)}S.pkOut=null}
@@ -2207,7 +2218,7 @@ function phImport(f){const r=new FileReader();r.onload=()=>{try{const d=JSON.par
   try{save()}catch(e){S.phMsg='저장 공간 부족 · 일부만 들어갔을 수 있음'}S.phMsg=`사진 ${add}장 불러옴${skip?` · 이미 있어서 건너뜀 ${skip}`:''}${bad?` · 맞지 않는 항목 ${bad}`:''}`}catch(e){S.phMsg='사진 묶음 파일 아님'}render()};r.readAsText(f)}
 async function redeemCoupon(){const el=document.getElementById('cpn'),code=((el&&el.value)||'').trim().toUpperCase();if(!code){S.cpMsg='코드 입력';render();return}
   const F=window.FB;if(!F){S.cpMsg='쿠폰은 온라인 전용';render();return}
-  if((S.coupons||{})[code]){S.cpMsg='이미 사용한 쿠폰';render();return}
+  if(typeof (S.coupons||{})[code]==='object'){S.cpMsg='이미 사용한 쿠폰';render();return}
   S.cpMsg='확인 중…';render();
   try{const snap=await F.getDoc(F.doc(F.db,'coupons',code)),r=ECON.redeem(S,code,snap.exists()?snap.data():null);S.cpMsg=r.err||(r.text+' 획득');if(!r.err){S.cpPop={code,text:r.text};if(el)el.value=''}save()}catch(e){S.cpMsg='쿠폰 확인 실패 ('+(e.code||e.message)+')'}render()}
 const nextOpp=()=>{try{const s=S.season;if(!s||s.over)return '';const pr=curPair(s);if(!pr)return '';const o=pr[0]===0?pr[1]:pr[0];return `<a href="#season" class="pill" style="text-decoration:none;color:inherit">다음 경기 vs ${esc(tname(o))}</a>`}catch(e){return ''}};
@@ -2905,6 +2916,7 @@ function bldModal(){const c0=byId[S.bmodal];if(!c0)return '';const c=simCard(c0)
 //  · tix.prem / block / star / gg / ch / ex / legend / abr / pick (econ.js TIX 참고)
 // 형식: {id:'nYYYYMMDD-x', d:'YYYY-MM-DD', t:'제목', b:['바뀐 점 한 줄', ...], rw:{tix:{pk_n:10}}}
 var NOTICES=[
+ {id:'n1128z3',d:'2026-11-28',t:'쿠폰 보상 누락 수정',b:['쿠폰에 들어 있던 블록 팩 · 커리어하이 · 레전드 선택권 · 구단 묶음 팩 등이 지급되지 않던 문제 수정.','이미 그 쿠폰을 썼다면 같은 코드를 한 번 더 넣으면 빠졌던 보상만 지급.','구단 묶음 · 연도 묶음 · 구단 · 팀 팩 확정권도 열기 전에 구단·연도 고르기.'],rw:{tix:{pk_n:10}}},
  {id:'n1128z2',d:'2026-11-28',t:'쿠폰 보상 팝업',b:['쿠폰을 쓰면 받은 보상을 팝업으로 표시. 확정권 보기 버튼으로 바로 이동.'],rw:{tix:{pk_n:10}}},
  {id:'n1128z',d:'2026-11-28',t:'카드 개봉 렉 줄임',b:['한 번에 30장 넘게 열면 코스트 높은 30장만 그리고 나머지는 요약(장수 · 신규 · 코스트별).','대박 카드 연출의 반복 반짝임 효과 제거.','폰에서는 카드 반짝이 애니메이션 끔.'],rw:{tix:{pk_n:10}}},
  {id:'n1128y',d:'2026-11-28',t:'확정권 전부 열기 수정',b:['상점을 거치지 않고 장비창고 > 확정권에서 바로 열면 개봉이 안 되던 문제 수정.','대박 카드 연출이 여러 장 쌓이면 모두 건너뛰기 버튼 표시.'],rw:{tix:{pk_n:10}}},
@@ -3031,7 +3043,7 @@ vw.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest
  HOLD={n:0,t:setTimeout(function tick(){if(!HOLD)return;const x=vw.querySelector(sel);if(!x||x.disabled){holdStop();return}x.click();HOLD.n++;HOLD.t=setTimeout(tick,HOLD.n<5?200:100)},450)}});
 for(const ev of ['pointerup','pointercancel'])document.addEventListener(ev,holdStop);addEventListener('blur',holdStop);
 vw.addEventListener('click',e=>{if(HOLDSKIP&&Date.now()-HOLDSKIP<400&&e.isTrusted&&e.target.closest&&e.target.closest(HOLDQ)){HOLDSKIP=0;e.stopPropagation();e.preventDefault()}},true); // 길게 누른 뒤 손 뗄 때의 한 번 더 눌림 막기
-vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-revall],[data-revx],[data-ntc],[data-tix],[data-abreset],[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bswap],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-synexm],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face],[data-skflip],[data-rotm]');if(!t)return;const D=t.dataset;
+vw.addEventListener('click',e=>{S.msg='';const t=e.target.closest('[data-tixpk],[data-revall],[data-revx],[data-ntc],[data-tix],[data-abreset],[data-msn],[data-sft],[data-sfd],[data-pk],[data-pkv],[data-abrush],[data-dexk],[data-dexv],[data-bslot],[data-bswap],[data-bput],[data-bclr],[data-dexgot],[data-cmp],[data-cmpx],[data-cmpre],[data-abd],[data-abpick],[data-abget],[data-abok],[data-lock],[data-skillgo],[data-sktb],[data-skc],[data-sk2],[data-rec],[data-sk],[data-synex],[data-synexm],[data-mat],[data-tsel],[data-ssel],[data-sgive],[data-sdel],[data-mswap],[data-tf],[data-tin],[data-tout],[data-mf],[data-sub],[data-tb],[data-mgr],[data-ojoin],[data-close],[data-mflip],[data-detail],[data-bigflip],[data-slot],[data-pick],[data-a],[data-cell],[data-blk],[data-pf],[data-side],[data-face],[data-skflip],[data-rotm]');if(!t)return;const D=t.dataset;
  if(D.revall){S.reveal=null;render();return}
  if(D.revx){(S.reveal||[]).shift();if(!(S.reveal||[]).length)S.reveal=null;render();return}
  if(D.ntc){S.ntcView=D.ntc;S.ntcHide=false;render();return}
@@ -3929,7 +3941,7 @@ const NAVS={home:[['home','홈']],play:[['season','주간 리그'],['years','연
 const NAVG=Object.fromEntries(Object.entries(NAVS).flatMap(([g,L])=>L.map(([h])=>[h,g])));NAVG.card='cards';NAVG.game='play';NAVG.guide='home';NAVG.lineup='play';
 const NAVN={home:'홈',play:'모드',team:'덱 빌더',gear:'장비창고',cards:'선수단',store:'상점'};
 const view=()=>{const h=location.hash.slice(1);return ROUTES[h]?h:'home'};
-const BUILD='e3623e4191';
+const BUILD='510c6f4f46';
 const TABI={gear:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 3h4V6h-4zM3 12h18v1.6H3z" fill="currentColor"/></svg>',home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z" fill="currentColor"/></svg>',play:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 5.5q3 6.5 0 13M17 5.5q-3 6.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',team:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor" opacity=".7"/><path d="M2 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5zM15 14c4 0 7 2 7 6h-5" fill="currentColor"/></svg>',cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".55"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>',store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.3 11H5.3z" fill="currentColor"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>',guide:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z" fill="currentColor"/></svg>'};
 function head(k){if(NAVG[k]&&NAVS[NAVG[k]].some(([x])=>x===k))S['lastTab_'+NAVG[k]]=k;const s=S.season,tx=Object.values(S.tix||{}).reduce((a,b)=>a+(b|0),0),g=NAVG[k],L=NAVS[g]||[];
   return `${S.work?xlBar(k):''}<div class="logo">${S.work?'업무 현황<small>2026 하반기 실적 집계 · 담당 부서 공유용</small>':`프로호구 매니저<small>KBO 1982–2026 선수카드 매니저 · ${CARDS.length.toLocaleString()}장</small>`}</div>

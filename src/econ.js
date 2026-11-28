@@ -198,10 +198,15 @@ const canStudy=c=>c&&c.v?{err:'특수 카드(올스타·골든글러브·EX)는 
 const rushFee=msLeft=>Math.max(0,Math.ceil(msLeft/36e5))*RUSH;
 function pay(S,p){if((S.pt||0)<p)return {err:'포인트 부족'};S.pt-=p;return {pt:p}}
 // 쿠폰: Firestore coupons/{코드} 문서를 읽어 data로 넘김. 같은 코드는 한 번만(S.coupons에 기록). exp(만료 시각, ms 또는 Timestamp) 지나면 거절
+// 쿠폰(SJ 2026-11-28): 콘솔에서 필드를 바로 적어도 받게 함. pt · tix{키:n} · 최상위 TIX 키(block, ch, pick, pk_t …). 문자열 숫자도 허용
+// 예전 코드는 최상위 필드를 무시했으므로, 이미 쓴 쿠폰(숫자 기록)은 최상위 필드만 한 번 더 지급(중복 없음)
 function redeem(S,code,data){code=String(code||'').trim().toUpperCase();S.coupons=S.coupons||{};
-  if(!data)return {err:'없는 쿠폰'};if(S.coupons[code])return {err:'이미 사용한 쿠폰'};
-  const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(exp&&Date.now()>exp)return {err:'기간 만료 쿠폰'};
-  const rw={pt:+data.pt||0,tix:data.tix||{}};S.coupons[code]=Date.now();grant(S,rw);return {rw,text:rwText(rw)}}
+  if(!data)return {err:'없는 쿠폰'};const prev=S.coupons[code];if(prev&&typeof prev==='object')return {err:'이미 사용한 쿠폰'};
+  const exp=data.exp&&(data.exp.toMillis?data.exp.toMillis():+data.exp);if(!prev&&exp&&Date.now()>exp)return {err:'기간 만료 쿠폰'};
+  const num=v=>Math.max(0,Math.floor(+v||0)),top={};for(const k in data)if(k!=='tix'&&k!=='pt'&&k!=='exp'&&(TIX[k]||k.startsWith('pk_'))&&num(data[k]))top[k]=num(data[k]);
+  const tix={};if(!prev){for(const k in (data.tix||{}))if(num(data.tix[k]))tix[k]=num(data.tix[k])}for(const k in top)tix[k]=(tix[k]||0)+top[k];
+  const rw={pt:prev?0:num(data.pt),tix};if(!rw.pt&&!Object.keys(tix).length)return {err:prev?'이미 사용한 쿠폰':'보상이 비어 있는 쿠폰'};
+  S.coupons[code]={t:Date.now(),v:2};grant(S,rw);return {rw,text:rwText(rw)}}
 // 연도 리그 경기 예측 전용 상한: 하루 1,500P (자동 진행 하루 약 60경기 × 평균 60P = 3,600P라 상한 없으면 과함). 주간 리그 예측은 상한 없음
 const PRED_CAP=1500;
 function predCapped(S,rw){const d=today();S.prc=S.prc&&S.prc.day===d?S.prc:{day:d,pt:0};const left=Math.max(0,PRED_CAP-S.prc.pt),pt=Math.min(left,rw.pt|0);
